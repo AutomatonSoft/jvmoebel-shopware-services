@@ -33,11 +33,16 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - backend_venv:/app/.venv
     working_dir: /app
     environment:
-      - PYTHONPATH=/app/app
+      PYTHONPATH: /app/app
     command: >
-      uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      uv run uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
 
 volumes:
   postgres_data:
+  backend_venv:

@@ -1,10 +1,17 @@
+# app/domains/ar/models/service.py
+
 import logging
 from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .exceptions import ARModelNotFoundException
+from .exceptions import (
+    ARModelAlreadyExistsException,
+    ARModelNotFoundException,
+    InvalidARModelDimensionsException,
+
+)
 from .models import ARModel
 from .repository import ARModelRepository
 from .schemas import SARModelCreate, SARModelUpdate
@@ -76,11 +83,8 @@ class ARModelService:
         )
 
         if existing_model is not None:
-            # здесь позже добавим
-            # ARModelAlreadyExistsException
-            raise ValueError(
-                f"AR model already exists for SKU: {sku}"
-            )
+            raise ARModelAlreadyExistsException()
+
 
         filename = f"{sku}.{self._get_file_extension(file)}"
 

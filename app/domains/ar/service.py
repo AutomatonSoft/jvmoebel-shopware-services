@@ -1,4 +1,4 @@
-# app/domains/ar/models/service.py
+# app/domains/ar/service.py
 
 import logging
 from pathlib import Path

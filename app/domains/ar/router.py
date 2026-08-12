@@ -1,4 +1,4 @@
-# app/domains/ar/models/router.py
+# app/domains/ar/router.py
 
 from fastapi import (
     APIRouter,

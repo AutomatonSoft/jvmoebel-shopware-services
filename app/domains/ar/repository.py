@@ -1,4 +1,4 @@
-# app/domains/ar/models/repository.py
+# app/domains/ar/repository.py
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

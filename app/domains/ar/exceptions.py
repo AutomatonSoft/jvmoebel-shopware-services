@@ -1,3 +1,5 @@
+# app/domains/ar/exceptions.py
+
 from domains.base.exceptions import (
     AlreadyExistsException,
     BadRequestException,

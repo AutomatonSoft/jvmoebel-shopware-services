@@ -2,10 +2,11 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, EmailStr, Field
+import os
+
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-import os
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -39,8 +40,14 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     db: DbSettings = DbSettings()
+
+    ar_models_storage_path: Path = (
+        BASE_DIR / "storage" / "ar_models"
+    )
+
     # db_echo: bool = True
 
 
 # single instance
+
 settings = Settings()

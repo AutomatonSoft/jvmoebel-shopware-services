@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 from core.db.postgres import Base
-from core.db.models import User, Order, OrderItem, Product
+from core.db.models import ARModel
 from core.config import settings
 
 target_metadata = Base.metadata

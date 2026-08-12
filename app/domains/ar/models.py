@@ -1,3 +1,4 @@
+# app/domains/ar/models/models.py
 from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column

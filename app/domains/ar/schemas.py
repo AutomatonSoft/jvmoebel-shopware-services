@@ -1,4 +1,4 @@
-# app/domains/ar_models/schemas.py
+# app/domains/ar/models/schemas.py
 
 from pydantic import BaseModel, ConfigDict
 

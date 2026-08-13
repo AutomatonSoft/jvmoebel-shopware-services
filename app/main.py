@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from core.logger import configure_logging
-from domains.ar.router import router as products_router
+from domains.ar.router import router as ar_models_router
 
 
 configure_logging()
@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(products_router)
+app.include_router(ar_models_router)
 
 
 @app.get("/hello/")

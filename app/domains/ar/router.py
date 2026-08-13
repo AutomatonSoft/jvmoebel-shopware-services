@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -88,9 +90,9 @@ async def get_model_file(
 async def create_model(
     sku: str,
     file: UploadFile = File(...),
-    width: float = Form(...),
-    height: float = Form(...),
-    depth: float = Form(...),
+    width: Decimal = Form(...),
+    height: Decimal = Form(...),
+    depth: Decimal = Form(...),
     # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
     unit: Literal["m"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
@@ -128,9 +130,9 @@ async def create_model(
 async def update_model(
     sku: str,
     file: UploadFile = File(...),
-    width: float = Form(...),
-    height: float = Form(...),
-    depth: float = Form(...),
+    width: Decimal = Form(...),
+    height: Decimal = Form(...),
+    depth: Decimal = Form(...),
     # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
     unit: Literal["m"] = Form(...),
     session: AsyncSession = Depends(get_async_session),

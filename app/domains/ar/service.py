@@ -18,6 +18,9 @@ from .repository import ARModelRepository
 from .schemas import SARModelCreate, SARModelUpdate
 from .storage import ARModelStorage
 
+#опасный импорт, так как файл сгенерированный гпт и непроверенный
+from .validators import validate_model_file
+
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +102,11 @@ class ARModelService:
 
         await self._validate_file_size(file)
 
+        await validate_model_file(
+            file=file,
+            file_format=file_format,
+        )
+
         filename = f"{sku}.{file_format}"
 
         file_path = await self.storage.save(
@@ -164,6 +172,11 @@ class ARModelService:
         file_format = self._get_file_extension(file)
 
         await self._validate_file_size(file)
+
+        await validate_model_file(
+            file=file,
+            file_format=file_format,
+        )
 
         filename = f"{sku}.{file_format}"
 

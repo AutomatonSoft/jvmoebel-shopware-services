@@ -1,7 +1,6 @@
 # app/domains/ar/validators.py
 
 
-
 #               !!!ВАЖНО!!!
 # Этот валидатор написал гпт, я не работал с такими форматами ранее и не проверял
 # Поэтому узнать, писали ли ранее такой валидатор в компании и проверить его работу на тестах
@@ -180,10 +179,12 @@ async def _validate_glb(
             if not json_chunk_found:
                 raise InvalidARModelFileException()
 
-            await file.seek(
+            bin_data = await file.read(
                 chunk_length,
-                1,
             )
+
+            if len(bin_data) != chunk_length:
+                raise InvalidARModelFileException()
 
         else:
             raise InvalidARModelFileException()

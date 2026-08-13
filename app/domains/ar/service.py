@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 MAX_FILE_SIZE = 15 * 1024 * 1024
+FILE_CHECK_CHUNK_SIZE = 1024 * 1024
 
 SUPPORTED_FORMATS = {
     "glb",
@@ -96,7 +97,7 @@ class ARModelService:
 
         file_format = self._get_file_extension(file)
 
-        self._validate_file_size(file)
+        await self._validate_file_size(file)
 
         filename = f"{sku}.{file_format}"
 
@@ -162,7 +163,7 @@ class ARModelService:
 
         file_format = self._get_file_extension(file)
 
-        self._validate_file_size(file)
+        await self._validate_file_size(file)
 
         filename = f"{sku}.{file_format}"
 
@@ -265,11 +266,36 @@ class ARModelService:
         return extension
 
     @staticmethod
-    #Но метадата не всегда надежна. Возможно придется проверять побитово и добавить еще валидацию в роут
-    def _validate_file_size(
+    async def _validate_file_size(
             file: UploadFile,
     ) -> None:
 
-        if file.size is not None and file.size > MAX_FILE_SIZE:
+        if file.size is not None:
+            if file.size > MAX_FILE_SIZE:
+                raise ARModelFileTooLargeException()
+
+            return
+
+        total_size = 0
+
+        while total_size < MAX_FILE_SIZE:
+            chunk = await file.read(
+                min(
+                    FILE_CHECK_CHUNK_SIZE,
+                    MAX_FILE_SIZE - total_size,
+                ),
+            )
+
+            if not chunk:
+                await file.seek(0)
+                return
+
+            total_size += len(chunk)
+
+        extra_byte = await file.read(1)
+
+        await file.seek(0)
+
+        if extra_byte:
             raise ARModelFileTooLargeException()
 

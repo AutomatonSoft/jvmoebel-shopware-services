@@ -8,9 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .exceptions import (
     ARModelAlreadyExistsException,
+    ARModelFileTooLargeException,
     ARModelNotFoundException,
     InvalidARModelDimensionsException,
-
+    UnsupportedARModelFormatException,
 )
 from .models import ARModel
 from .repository import ARModelRepository
@@ -19,6 +20,14 @@ from .storage import ARModelStorage
 
 
 logger = logging.getLogger(__name__)
+
+
+MAX_FILE_SIZE = 15 * 1024 * 1024
+
+SUPPORTED_FORMATS = {
+    "glb",
+    "usdz",
+}
 
 
 class ARModelService:
@@ -85,8 +94,11 @@ class ARModelService:
         if existing_model is not None:
             raise ARModelAlreadyExistsException()
 
+        file_format = self._get_file_extension(file)
 
-        filename = f"{sku}.{self._get_file_extension(file)}"
+        self._validate_file_size(file)
+
+        filename = f"{sku}.{file_format}"
 
         file_path = await self.storage.save(
             file=file,
@@ -98,7 +110,7 @@ class ARModelService:
                 session=session,
                 sku=sku,
                 file_path=file_path,
-                file_format=self._get_file_extension(file),
+                file_format=file_format,
                 width=model_in.width,
                 height=model_in.height,
                 depth=model_in.depth,
@@ -148,7 +160,11 @@ class ARModelService:
 
         old_file_path = model.file_path
 
-        filename = f"{sku}.{self._get_file_extension(file)}"
+        file_format = self._get_file_extension(file)
+
+        self._validate_file_size(file)
+
+        filename = f"{sku}.{file_format}"
 
         new_file_path = await self.storage.save(
             file=file,
@@ -160,7 +176,7 @@ class ARModelService:
                 session=session,
                 obj=model,
                 file_path=new_file_path,
-                file_format=self._get_file_extension(file),
+                file_format=file_format,
                 width=model_in.width,
                 height=model_in.height,
                 depth=model_in.depth,
@@ -240,7 +256,19 @@ class ARModelService:
     ) -> str:
 
         extension = Path(
-            file.filename or ""
+            file.filename or "",
         ).suffix.lower().lstrip(".")
 
+        if extension not in SUPPORTED_FORMATS:
+            raise UnsupportedARModelFormatException()
+
         return extension
+
+    @staticmethod
+    def _validate_file_size(
+            file: UploadFile,
+    ) -> None:
+
+        if file.size is not None and file.size > MAX_FILE_SIZE:
+            raise ARModelFileTooLargeException()
+

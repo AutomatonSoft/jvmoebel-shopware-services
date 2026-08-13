@@ -28,7 +28,16 @@ class UnsupportedARModelFormatException(
 ):
     def __init__(self) -> None:
         super().__init__(
-            detail="Unsupported AR model format",
+            detail="Unsupported AR model format. Supported formats: GLB, USDZ",
+        )
+
+
+class ARModelFileTooLargeException(
+    BadRequestException,
+):
+    def __init__(self) -> None:
+        super().__init__(
+            detail="AR model file is too large. Maximum file size is 15 MB",
         )
 
 

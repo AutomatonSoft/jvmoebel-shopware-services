@@ -1,5 +1,3 @@
-# app/domains/ar/router.py
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -10,12 +8,14 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Literal
 
 from core.db.postgres import get_async_session
 
 from .schemas import (
+    SARModelAvailableResponse,
     SARModelCreate,
-    SARModelResponse,
+    SARModelUnavailableResponse,
     SARModelUpdate,
 )
 from .service import ARModelService
@@ -31,7 +31,10 @@ service = ARModelService()
 
 @router.get(
     "/{sku}",
-    response_model=SARModelResponse,
+    response_model=(
+        SARModelAvailableResponse
+        | SARModelUnavailableResponse
+    ),
 )
 async def get_model(
     sku: str,
@@ -43,12 +46,12 @@ async def get_model(
     )
 
     if model is None:
-        return SARModelResponse(
+        return SARModelUnavailableResponse(
             sku=sku,
             available=False,
         )
 
-    return SARModelResponse(
+    return SARModelAvailableResponse(
         sku=model.sku,
         available=True,
         format=model.file_format,
@@ -79,7 +82,7 @@ async def get_model_file(
 
 @router.post(
     "/{sku}",
-    response_model=SARModelResponse,
+    response_model=SARModelAvailableResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_model(
@@ -88,7 +91,8 @@ async def create_model(
     width: float = Form(...),
     height: float = Form(...),
     depth: float = Form(...),
-    unit: str = Form(...),
+    # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
+    unit: Literal["m"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     model_in = SARModelCreate(
@@ -105,7 +109,7 @@ async def create_model(
         model_in=model_in,
     )
 
-    return SARModelResponse(
+    return SARModelAvailableResponse(
         sku=model.sku,
         available=True,
         format=model.file_format,
@@ -119,7 +123,7 @@ async def create_model(
 
 @router.put(
     "/{sku}",
-    response_model=SARModelResponse,
+    response_model=SARModelAvailableResponse,
 )
 async def update_model(
     sku: str,
@@ -127,7 +131,8 @@ async def update_model(
     width: float = Form(...),
     height: float = Form(...),
     depth: float = Form(...),
-    unit: str = Form(...),
+    # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
+    unit: Literal["m"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     model_in = SARModelUpdate(
@@ -144,7 +149,7 @@ async def update_model(
         model_in=model_in,
     )
 
-    return SARModelResponse(
+    return SARModelAvailableResponse(
         sku=model.sku,
         available=True,
         format=model.file_format,

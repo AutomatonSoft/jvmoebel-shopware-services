@@ -265,6 +265,7 @@ class ARModelService:
         return extension
 
     @staticmethod
+    #Но метадата не всегда надежна. Возможно придется проверять побитово и добавить еще валидацию в роут
     def _validate_file_size(
             file: UploadFile,
     ) -> None:

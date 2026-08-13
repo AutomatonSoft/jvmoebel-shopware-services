@@ -41,6 +41,15 @@ class ARModelFileTooLargeException(
         )
 
 
+class InvalidARModelFileException(
+    BadRequestException,
+):
+    def __init__(self) -> None:
+        super().__init__(
+            detail="AR model file content does not match the declared format",
+        )
+
+
 class InvalidARModelDimensionsException(
     BadRequestException,
 ):

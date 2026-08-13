@@ -107,11 +107,10 @@ class ARModelService:
             file_format=file_format,
         )
 
-        filename = f"{sku}.{file_format}"
-
         file_path = await self.storage.save(
             file=file,
-            filename=filename,
+            sku=sku,
+            file_format=file_format,
         )
 
         try:
@@ -178,11 +177,10 @@ class ARModelService:
             file_format=file_format,
         )
 
-        filename = f"{sku}.{file_format}"
-
         new_file_path = await self.storage.save(
             file=file,
-            filename=filename,
+            sku=sku,
+            file_format=file_format,
         )
 
         try:
@@ -209,10 +207,9 @@ class ARModelService:
 
             raise
 
-        if old_file_path != new_file_path:
-            await self.storage.delete(
-                file_path=old_file_path,
-            )
+        await self.storage.delete(
+            file_path=old_file_path,
+        )
 
         logger.info(
             "AR model updated: sku=%s id=%s",
@@ -311,4 +308,3 @@ class ARModelService:
 
         if extra_byte:
             raise ARModelFileTooLargeException()
-

@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import UploadFile
 
@@ -20,10 +21,20 @@ class ARModelStorage:
     async def save(
         self,
         file: UploadFile,
-        filename: str,
+        sku: str,
+        file_format: str,
     ) -> str:
 
-        file_path = self.base_path / filename
+        sku_path = self.base_path / sku
+
+        sku_path.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        filename = f"{uuid4().hex}.{file_format}"
+
+        file_path = sku_path / filename
 
         with file_path.open("wb") as destination:
             while chunk := await file.read(1024 * 1024):
@@ -38,5 +49,5 @@ class ARModelStorage:
 
         path = Path(file_path)
 
-        if path.exists():
+        if path.is_file():
             path.unlink()

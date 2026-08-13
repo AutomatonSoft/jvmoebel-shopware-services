@@ -8,7 +8,6 @@ from core.db.postgres import Base
 
 
 class ARModel(Base):
-    __tablename__ = "ar_models"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)

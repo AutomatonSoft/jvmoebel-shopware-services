@@ -1,13 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Numeric, String, func
+from sqlalchemy import CheckConstraint, DateTime, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.db.postgres import Base
 
 
 class ARModel(Base):
+    __tablename__ = "ar_models"
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -22,3 +24,9 @@ class ARModel(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("width > 0", name="ck_ar_models_width_positive"),
+        CheckConstraint("height > 0", name="ck_ar_models_height_positive"),
+        CheckConstraint("depth > 0", name="ck_ar_models_depth_positive"),
+    )

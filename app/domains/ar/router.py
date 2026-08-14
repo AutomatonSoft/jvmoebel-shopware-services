@@ -20,6 +20,7 @@ from .schemas import (
     SARModelStatusUpdate,
     SARModelUnavailableResponse,
     SARModelUpdate,
+    SARModelStatusResponse
 )
 from .service import ARModelService
 
@@ -166,16 +167,22 @@ async def update_model(
 
 @router.patch(
     "/{sku}/status",
+    response_model=SARModelStatusResponse,
 )
 async def update_model_status(
     sku: str,
     status_in: SARModelStatusUpdate,
     session: AsyncSession = Depends(get_async_session),
 ):
-    return await service.update_status(
+    model = await service.update_status(
         session=session,
         sku=sku,
         status_in=status_in,
+    )
+
+    return SARModelStatusResponse(
+        sku=model.sku,
+        status=model.status,
     )
 
 

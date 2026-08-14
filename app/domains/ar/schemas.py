@@ -44,3 +44,8 @@ class SARModelAvailableResponse(SARModelBase):
 class SARModelUnavailableResponse(BaseModel):
     sku: str
     available: Literal[False]
+
+
+class SARModelStatusResponse(BaseModel):
+    sku: str
+    status: Literal["active", "not_active"]

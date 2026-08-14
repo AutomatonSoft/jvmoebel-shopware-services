@@ -28,4 +28,5 @@ class ARModel(Base):
         CheckConstraint("width > 0", name="ck_ar_models_width_positive"),
         CheckConstraint("height > 0", name="ck_ar_models_height_positive"),
         CheckConstraint("depth > 0", name="ck_ar_models_depth_positive"),
+        CheckConstraint("status IN ('active', 'not_active')", name="ck_ar_models_status"),
     )

@@ -14,6 +14,13 @@ class ARModelNotFoundException(NotFoundException):
         )
 
 
+class ARModelFileNotFoundException(NotFoundException):
+    def __init__(self) -> None:
+        super().__init__(
+            detail="AR model file not found",
+        )
+
+
 class ARModelAlreadyExistsException(
     AlreadyExistsException,
 ):

@@ -10,6 +10,7 @@ from .exceptions import (
     ARModelAlreadyExistsException,
     ARModelFileTooLargeException,
     ARModelNotFoundException,
+    ARModelFileNotFoundException,
     InvalidARModelDimensionsException,
     UnsupportedARModelFormatException,
 )
@@ -57,6 +58,11 @@ class ARModelService:
         if model.status != "active":
             return None
 
+        if not await self.storage.exists(
+            file_path=model.file_path,
+        ):
+            return None
+
         return model
 
     async def get_model_file(
@@ -72,6 +78,11 @@ class ARModelService:
 
         if model is None or model.status != "active":
             raise ARModelNotFoundException()
+
+        if not await self.storage.exists(
+            file_path=model.file_path,
+        ):
+            raise ARModelFileNotFoundException()
 
         return model.file_path
 
@@ -207,9 +218,12 @@ class ARModelService:
 
             raise
 
-        await self.storage.delete(
-            file_path=old_file_path,
-        )
+        # Эту проверку оставляем на случай, если изменим логику формирования пути на ту,
+        # которая потенциально может создавать одинаковые пути
+        if old_file_path != new_file_path:
+            await self.storage.delete(
+                file_path=old_file_path,
+            )
 
         logger.info(
             "AR model updated: sku=%s id=%s",

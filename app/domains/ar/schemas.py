@@ -39,9 +39,9 @@ class SARModelAvailableResponse(BaseModel):
     available: Literal[True]
     format: str
     file_url: str
-    width: Decimal
-    height: Decimal
-    depth: Decimal
+    width: Decimal = Field(examples=[2.4])
+    height: Decimal = Field(examples=[0.8])
+    depth: Decimal = Field(examples=[0.6])
     unit: Literal["m"] = "m"
 
 

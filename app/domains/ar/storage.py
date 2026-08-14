@@ -52,11 +52,9 @@ class ARModelStorage:
         if path.is_file():
             path.unlink()
 
-
     async def exists(
-            self,
-            file_path: str,
-        ) -> bool:
+        self,
+        file_path: str,
+    ) -> bool:
 
-            return Path(file_path).is_file()
-
+        return Path(file_path).is_file()

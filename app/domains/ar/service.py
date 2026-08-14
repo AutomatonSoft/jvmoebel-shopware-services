@@ -276,11 +276,17 @@ class ARModelService:
         return model
 
     async def delete_model(
-        self,
-        session: AsyncSession,
-        sku: str,
+            self,
+            session: AsyncSession,
+            sku: str,
     ) -> None:
+        """
+        При удалении файла удаления файла, может возникнуть ситуация, в ходе которой запись из бд удалиться,
+        а сам файл - нет. И он станет осиротевшим - orphan-файл
 
+        Сейчас это решается просто предупреждением в логировании. И такие файлы нужно удалять вручную.
+        Потом можно вынести задачу в фон
+        """
         logger.info(
             "Deleting AR model: sku=%s",
             sku,
@@ -311,6 +317,16 @@ class ARModelService:
         await self.storage.delete(
             file_path=file_path,
         )
+
+        if await self.storage.exists(
+                file_path=file_path,
+        ):
+            logger.error(
+                "AR model file still exists after deletion: "
+                "sku=%s file_path=%s. Manual deletion required.",
+                sku,
+                file_path,
+            )
 
         logger.info(
             "AR model deleted: sku=%s",

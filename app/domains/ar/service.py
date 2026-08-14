@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 from fastapi import UploadFile
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .exceptions import (
@@ -142,6 +143,15 @@ class ARModelService:
             )
 
             await session.commit()
+
+        except IntegrityError:
+            await session.rollback()
+
+            await self.storage.delete(
+                file_path=file_path,
+            )
+
+            raise ARModelAlreadyExistsException()
 
         except Exception:
             await session.rollback()

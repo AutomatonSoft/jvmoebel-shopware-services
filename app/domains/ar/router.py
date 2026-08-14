@@ -17,6 +17,7 @@ from core.db.postgres import get_async_session
 from .schemas import (
     SARModelAvailableResponse,
     SARModelCreate,
+    SARModelStatusUpdate,
     SARModelUnavailableResponse,
     SARModelUpdate,
 )
@@ -160,6 +161,21 @@ async def update_model(
         height=model.height,
         depth=model.depth,
         unit=model.unit,
+    )
+
+
+@router.patch(
+    "/{sku}/status",
+)
+async def update_model_status(
+    sku: str,
+    status_in: SARModelStatusUpdate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await service.update_status(
+        session=session,
+        sku=sku,
+        status_in=status_in,
     )
 
 

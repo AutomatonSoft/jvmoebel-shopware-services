@@ -26,6 +26,10 @@ class SARModelUpdate(SARModelBase):
     pass
 
 
+class SARModelStatusUpdate(BaseModel):
+    status: Literal["active", "not_active"]
+
+
 class SARModelAvailableResponse(SARModelBase):
     model_config = ConfigDict(
         from_attributes=True,

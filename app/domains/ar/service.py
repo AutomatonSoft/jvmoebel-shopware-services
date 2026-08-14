@@ -16,7 +16,11 @@ from .exceptions import (
 )
 from .models import ARModel
 from .repository import ARModelRepository
-from .schemas import SARModelCreate, SARModelUpdate
+from .schemas import (
+    SARModelCreate,
+    SARModelStatusUpdate,
+    SARModelUpdate,
+)
 from .storage import ARModelStorage
 
 #опасный импорт, так как файл сгенерированный гпт и непроверенный
@@ -229,6 +233,44 @@ class ARModelService:
             "AR model updated: sku=%s id=%s",
             sku,
             model.id,
+        )
+
+        return model
+
+    async def update_status(
+        self,
+        session: AsyncSession,
+        sku: str,
+        status_in: SARModelStatusUpdate,
+    ) -> ARModel:
+
+        logger.info(
+            "Updating AR model status: sku=%s status=%s",
+            sku,
+            status_in.status,
+        )
+
+        model = await self.repository.get_model_by_sku(
+            session=session,
+            sku=sku,
+        )
+
+        if model is None:
+            raise ARModelNotFoundException()
+
+        model.status = status_in.status
+
+        try:
+            await session.commit()
+
+        except Exception:
+            await session.rollback()
+            raise
+
+        logger.info(
+            "AR model status updated: sku=%s status=%s",
+            sku,
+            model.status,
         )
 
         return model

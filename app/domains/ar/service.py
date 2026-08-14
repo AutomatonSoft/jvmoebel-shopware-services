@@ -1,6 +1,7 @@
 # app/domains/ar/service.py
 
 import logging
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -37,6 +38,12 @@ FILE_CHECK_CHUNK_SIZE = 1024 * 1024
 SUPPORTED_FORMATS = {
     "glb",
     "usdz",
+}
+
+UNIT_TO_METERS = {
+    "m": Decimal("1"),
+    "cm": Decimal("0.01"),
+    "mm": Decimal("0.001"),
 }
 
 
@@ -123,6 +130,13 @@ class ARModelService:
             file_format=file_format,
         )
 
+        width, height, depth = self._convert_dimensions_to_meters(
+            width=model_in.width,
+            height=model_in.height,
+            depth=model_in.depth,
+            unit=model_in.unit,
+        )
+
         file_path = await self.storage.save(
             file=file,
             sku=sku,
@@ -135,10 +149,10 @@ class ARModelService:
                 sku=sku,
                 file_path=file_path,
                 file_format=file_format,
-                width=model_in.width,
-                height=model_in.height,
-                depth=model_in.depth,
-                unit=model_in.unit,
+                width=width,
+                height=height,
+                depth=depth,
+                unit="m",
                 status="active",
             )
 
@@ -202,6 +216,13 @@ class ARModelService:
             file_format=file_format,
         )
 
+        width, height, depth = self._convert_dimensions_to_meters(
+            width=model_in.width,
+            height=model_in.height,
+            depth=model_in.depth,
+            unit=model_in.unit,
+        )
+
         new_file_path = await self.storage.save(
             file=file,
             sku=sku,
@@ -214,10 +235,10 @@ class ARModelService:
                 obj=model,
                 file_path=new_file_path,
                 file_format=file_format,
-                width=model_in.width,
-                height=model_in.height,
-                depth=model_in.depth,
-                unit=model_in.unit,
+                width=width,
+                height=height,
+                depth=depth,
+                unit="m",
                 status="active",
             )
 
@@ -341,6 +362,25 @@ class ARModelService:
         logger.info(
             "AR model deleted: sku=%s",
             sku,
+        )
+
+    @staticmethod
+    def _convert_dimensions_to_meters(
+        width: Decimal,
+        height: Decimal,
+        depth: Decimal,
+        unit: str,
+    ) -> tuple[Decimal, Decimal, Decimal]:
+
+        multiplier = UNIT_TO_METERS.get(unit)
+
+        if multiplier is None:
+            raise InvalidARModelDimensionsException()
+
+        return (
+            width * multiplier,
+            height * multiplier,
+            depth * multiplier,
         )
 
     @staticmethod

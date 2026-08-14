@@ -7,14 +7,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SARModelBase(BaseModel):
-    # Уточнить по поводу decimal и метров по тз как лучше
+    # Входные значения могут быть переданы в m, cm или mm.
+    # Перед сохранением в БД сервис преобразует их в метры.
     width: Decimal = Field(gt=0, examples=[1.2])
     height: Decimal = Field(gt=0, examples=[0.8])
     depth: Decimal = Field(gt=0, examples=[0.6])
-    # юнит пока валидируем жестко, и в роутах  тоже!
-    unit: Literal["m"] = Field(
+    unit: Literal["m", "cm", "mm"] = Field(
         default="m",
-        description="Measurement unit. Currently only meters are supported.",
+        description="Input measurement unit. Supported units: m, cm, mm.",
     )
 
 
@@ -30,7 +30,7 @@ class SARModelStatusUpdate(BaseModel):
     status: Literal["active", "not_active"]
 
 
-class SARModelAvailableResponse(SARModelBase):
+class SARModelAvailableResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
@@ -39,6 +39,10 @@ class SARModelAvailableResponse(SARModelBase):
     available: Literal[True]
     format: str
     file_url: str
+    width: Decimal
+    height: Decimal
+    depth: Decimal
+    unit: Literal["m"] = "m"
 
 
 class SARModelUnavailableResponse(BaseModel):

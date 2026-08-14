@@ -20,7 +20,7 @@ from .schemas import (
     SARModelStatusUpdate,
     SARModelUnavailableResponse,
     SARModelUpdate,
-    SARModelStatusResponse
+    SARModelStatusResponse,
 )
 from .service import ARModelService
 
@@ -63,7 +63,7 @@ async def get_model(
         width=model.width,
         height=model.height,
         depth=model.depth,
-        unit=model.unit,
+        unit="m",
     )
 
 
@@ -95,8 +95,7 @@ async def create_model(
     width: Decimal = Form(...),
     height: Decimal = Form(...),
     depth: Decimal = Form(...),
-    # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
-    unit: Literal["m"] = Form(...),
+    unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     model_in = SARModelCreate(
@@ -121,7 +120,7 @@ async def create_model(
         width=model.width,
         height=model.height,
         depth=model.depth,
-        unit=model.unit,
+        unit="m",
     )
 
 
@@ -135,8 +134,7 @@ async def update_model(
     width: Decimal = Form(...),
     height: Decimal = Form(...),
     depth: Decimal = Form(...),
-    # Жестко валидируем, чтобы в схему попадали только метры. Согласовать с тз
-    unit: Literal["m"] = Form(...),
+    unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     model_in = SARModelUpdate(
@@ -161,7 +159,7 @@ async def update_model(
         width=model.width,
         height=model.height,
         depth=model.depth,
-        unit=model.unit,
+        unit="m",
     )
 
 

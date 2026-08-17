@@ -14,6 +14,7 @@ from typing import Literal
 
 from core.db.postgres import get_async_session
 
+from .dependencies import require_ar_write_access
 from .schemas import (
     SARModelAvailableResponse,
     SARModelCreate,
@@ -97,6 +98,7 @@ async def create_model(
     depth: Decimal = Form(...),
     unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
+    write_access=Depends(require_ar_write_access),
 ):
     model_in = SARModelCreate(
         width=width,
@@ -136,6 +138,7 @@ async def update_model(
     depth: Decimal = Form(...),
     unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
+    write_access=Depends(require_ar_write_access),
 ):
     model_in = SARModelUpdate(
         width=width,
@@ -171,6 +174,7 @@ async def update_model_status(
     sku: str,
     status_in: SARModelStatusUpdate,
     session: AsyncSession = Depends(get_async_session),
+    write_access=Depends(require_ar_write_access),
 ):
     model = await service.update_status(
         session=session,
@@ -191,6 +195,7 @@ async def update_model_status(
 async def delete_model(
     sku: str,
     session: AsyncSession = Depends(get_async_session),
+    write_access=Depends(require_ar_write_access),
 ):
     await service.delete_model(
         session=session,

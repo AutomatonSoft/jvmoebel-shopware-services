@@ -4,7 +4,7 @@ from pathlib import Path
 
 import os
 
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings
 
 
@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     ar_models_storage_path: Path = (
         BASE_DIR / "storage" / "ar_models"
     )
+
+    ar_write_api_key: SecretStr
 
     # db_echo: bool = True
 

@@ -17,6 +17,7 @@ from app.main import app
 from core.config import settings
 from core.db.postgres import Base, get_async_session
 from domains.ar.router import service
+from domains.ar.service import ARModelService
 
 
 TEST_ENGINE = create_async_engine(
@@ -71,16 +72,35 @@ async def client():
         app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture(autouse=True)
-# Важно, чтобы именно в отдельную директорию сохранялись файлы
-async def storage(tmp_path: Path):
-    service.storage.base_path = tmp_path / "ar_models"
-    service.storage.base_path.mkdir(
+@pytest.fixture(autouse=True)
+def storage(tmp_path: Path):
+    #base_path = tmp_path / "ar_models" # dev хранилище
+    base_path = tmp_path / "ar_models_test" # test хранилище (сразу удаляет сохраненные файлы)
+    #base_path = Path("app/storage/ar_models_test") # test хранилище (сохраняет все файлы)
+    base_path.mkdir(
         parents=True,
         exist_ok=True,
     )
 
+    service.storage.base_path = base_path
+
     yield service.storage
+
+
+@pytest.fixture
+def ar_service(tmp_path: Path):
+    ar_service = ARModelService()
+
+    base_path = tmp_path / "ar_models"
+
+    base_path.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    ar_service.storage.base_path = base_path
+
+    return ar_service
 
 
 @pytest.fixture

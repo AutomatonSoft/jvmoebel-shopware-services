@@ -163,3 +163,6 @@ certs/
 
 app/storage/ar_models/*
 !app/storage/ar_models/.keep
+
+app/storage/ar_models_test/*
+!app/storage/ar_models_test/.keep

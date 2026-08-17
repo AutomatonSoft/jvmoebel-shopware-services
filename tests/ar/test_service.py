@@ -21,6 +21,7 @@ from domains.ar.service import ARModelService
 
 async def create_test_model(
     db_session: AsyncSession,
+    service: ARModelService,
     sku: str = "ABC-123",
     filename: str = "model.glb",
     width: str = "120",
@@ -28,7 +29,6 @@ async def create_test_model(
     depth: str = "60",
     unit: str = "cm",
 ) -> ARModel:
-    service = ARModelService()
 
     file = UploadFile(
         file=BytesIO(b"test model content"),
@@ -53,10 +53,12 @@ async def create_test_model(
 @pytest.mark.asyncio
 async def test_create_model(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
     model = await create_test_model(
         db_session=db_session,
+        service=ar_service,
     )
 
     assert model.id is not None
@@ -84,6 +86,7 @@ async def test_create_model(
 @pytest.mark.asyncio
 async def test_create_model_converts_dimensions_to_meters(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
     unit: str,
     value: str,
@@ -91,6 +94,7 @@ async def test_create_model_converts_dimensions_to_meters(
 ):
     model = await create_test_model(
         db_session=db_session,
+        service=ar_service,
         width=value,
         height=value,
         depth=value,
@@ -106,16 +110,19 @@ async def test_create_model_converts_dimensions_to_meters(
 @pytest.mark.asyncio
 async def test_create_model_duplicate_sku(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
     await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
     with pytest.raises(ARModelAlreadyExistsException):
         await create_test_model(
             db_session=db_session,
+            service=ar_service,
             sku="ABC-123",
         )
 
@@ -123,16 +130,16 @@ async def test_create_model_duplicate_sku(
 @pytest.mark.asyncio
 async def test_get_model(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
-    model = await service.get_model(
+    model = await ar_service.get_model(
         session=db_session,
         sku="ABC-123",
     )
@@ -145,10 +152,9 @@ async def test_get_model(
 @pytest.mark.asyncio
 async def test_get_model_when_not_found(
     db_session: AsyncSession,
+    ar_service: ARModelService,
 ):
-    service = ARModelService()
-
-    model = await service.get_model(
+    model = await ar_service.get_model(
         session=db_session,
         sku="ABC-123",
     )
@@ -159,16 +165,16 @@ async def test_get_model_when_not_found(
 @pytest.mark.asyncio
 async def test_get_model_when_not_active(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
-    await service.update_status(
+    await ar_service.update_status(
         session=db_session,
         sku="ABC-123",
         status_in=SARModelStatusUpdate(
@@ -176,7 +182,7 @@ async def test_get_model_when_not_active(
         ),
     )
 
-    model = await service.get_model(
+    model = await ar_service.get_model(
         session=db_session,
         sku="ABC-123",
     )
@@ -187,12 +193,12 @@ async def test_get_model_when_not_active(
 @pytest.mark.asyncio
 async def test_update_model(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     original_model = await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
@@ -203,7 +209,7 @@ async def test_update_model(
         filename="updated.glb",
     )
 
-    model = await service.update_model(
+    model = await ar_service.update_model(
         session=db_session,
         sku="ABC-123",
         file=updated_file,
@@ -233,17 +239,16 @@ async def test_update_model(
 @pytest.mark.asyncio
 async def test_update_model_when_not_found(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     file = UploadFile(
         file=BytesIO(b"updated model content"),
         filename="updated.glb",
     )
 
     with pytest.raises(ARModelNotFoundException):
-        await service.update_model(
+        await ar_service.update_model(
             session=db_session,
             sku="ABC-123",
             file=file,
@@ -259,16 +264,16 @@ async def test_update_model_when_not_found(
 @pytest.mark.asyncio
 async def test_update_status(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
-    model = await service.update_status(
+    model = await ar_service.update_status(
         session=db_session,
         sku="ABC-123",
         status_in=SARModelStatusUpdate(
@@ -282,11 +287,10 @@ async def test_update_status(
 @pytest.mark.asyncio
 async def test_update_status_when_not_found(
     db_session: AsyncSession,
+    ar_service: ARModelService,
 ):
-    service = ARModelService()
-
     with pytest.raises(ARModelNotFoundException):
-        await service.update_status(
+        await ar_service.update_status(
             session=db_session,
             sku="ABC-123",
             status_in=SARModelStatusUpdate(
@@ -298,29 +302,29 @@ async def test_update_status_when_not_found(
 @pytest.mark.asyncio
 async def test_delete_model(
     db_session: AsyncSession,
+    ar_service: ARModelService,
     mock_validate_ar_model_file,
 ):
-    service = ARModelService()
-
     model = await create_test_model(
         db_session=db_session,
+        service=ar_service,
         sku="ABC-123",
     )
 
     file_path = model.file_path
 
-    await service.delete_model(
+    await ar_service.delete_model(
         session=db_session,
         sku="ABC-123",
     )
 
-    model = await service.get_model(
+    model = await ar_service.get_model(
         session=db_session,
         sku="ABC-123",
     )
 
     assert model is None
-    assert not await service.storage.exists(
+    assert not await ar_service.storage.exists(
         file_path=file_path,
     )
 
@@ -328,11 +332,10 @@ async def test_delete_model(
 @pytest.mark.asyncio
 async def test_delete_model_when_not_found(
     db_session: AsyncSession,
+    ar_service: ARModelService,
 ):
-    service = ARModelService()
-
     with pytest.raises(ARModelNotFoundException):
-        await service.delete_model(
+        await ar_service.delete_model(
             session=db_session,
             sku="ABC-123",
         )

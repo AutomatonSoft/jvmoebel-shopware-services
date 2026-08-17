@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(ar_models_router)
+app.include_router(ar_models_router, prefix="/api/v1")
 
 
 @app.get("/hello/")

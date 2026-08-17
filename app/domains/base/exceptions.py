@@ -12,6 +12,17 @@ class BadRequestException(HTTPException):
         )
 
 
+class UnauthorizedException(HTTPException):
+    def __init__(
+        self,
+        detail: str = "Unauthorized",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+        )
+
+
 class NotFoundException(HTTPException):
     def __init__(
         self,

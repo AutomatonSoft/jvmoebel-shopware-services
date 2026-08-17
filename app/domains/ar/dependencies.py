@@ -1,9 +1,10 @@
 from secrets import compare_digest
 
-from fastapi import HTTPException, Security, status
+from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.config import settings
+from domains.base.exceptions import UnauthorizedException
 
 
 bearer_scheme = HTTPBearer(
@@ -18,21 +19,13 @@ async def require_ar_write_access(
 ) -> None:
 
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        raise UnauthorizedException(
             detail="Authentication required",
-            headers={
-                "WWW-Authenticate": "Bearer",
-            },
         )
 
     if credentials.scheme.lower() != "bearer":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        raise UnauthorizedException(
             detail="Invalid authentication scheme",
-            headers={
-                "WWW-Authenticate": "Bearer",
-            },
         )
 
     expected_token = settings.ar_write_api_key.get_secret_value()
@@ -41,10 +34,6 @@ async def require_ar_write_access(
         credentials.credentials,
         expected_token,
     ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        raise UnauthorizedException(
             detail="Invalid authentication token",
-            headers={
-                "WWW-Authenticate": "Bearer",
-            },
         )

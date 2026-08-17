@@ -8,6 +8,7 @@ from fastapi import UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from .exceptions import (
     ARModelAlreadyExistsException,
     ARModelFileTooLargeException,
@@ -15,6 +16,7 @@ from .exceptions import (
     ARModelFileNotFoundException,
     InvalidARModelDimensionsException,
     UnsupportedARModelFormatException,
+    InvalidARModelFileException,
 )
 from .models import ARModel
 from .repository import ARModelRepository
@@ -24,15 +26,13 @@ from .schemas import (
     SARModelUpdate,
 )
 from .storage import ARModelStorage
-
-#опасный импорт, так как файл сгенерированный гпт и непроверенный
-from .validators import validate_model_file
+from .validators.factory import ValidatorFactory
 
 
 logger = logging.getLogger(__name__)
 
 
-MAX_FILE_SIZE = 15 * 1024 * 1024
+MAX_FILE_SIZE = settings.ar_max_file_size
 FILE_CHECK_CHUNK_SIZE = 1024 * 1024
 
 SUPPORTED_FORMATS = {
@@ -125,22 +125,27 @@ class ARModelService:
 
         await self._validate_file_size(file)
 
-        await validate_model_file(
+        # Сохраняем файл
+        file_path = await self.storage.save(
             file=file,
+            sku=sku,
             file_format=file_format,
         )
+
+        # Валидация сохраненного файла
+        try:
+            if not ValidatorFactory.validate(Path(file_path)):
+                raise InvalidARModelFileException()
+        except Exception:
+            # Если валидация не прошла, удаляем файл
+            await self.storage.delete(file_path=file_path)
+            raise
 
         width, height, depth = self._convert_dimensions_to_meters(
             width=model_in.width,
             height=model_in.height,
             depth=model_in.depth,
             unit=model_in.unit,
-        )
-
-        file_path = await self.storage.save(
-            file=file,
-            sku=sku,
-            file_format=file_format,
         )
 
         try:
@@ -211,22 +216,27 @@ class ARModelService:
 
         await self._validate_file_size(file)
 
-        await validate_model_file(
+        # Сохраняем новый файл
+        new_file_path = await self.storage.save(
             file=file,
+            sku=sku,
             file_format=file_format,
         )
+
+        # Валидация сохраненного файла
+        try:
+            if not ValidatorFactory.validate(Path(new_file_path)):
+                raise InvalidARModelFileException()
+        except Exception:
+            # Если валидация не прошла, удаляем файл
+            await self.storage.delete(file_path=new_file_path)
+            raise
 
         width, height, depth = self._convert_dimensions_to_meters(
             width=model_in.width,
             height=model_in.height,
             depth=model_in.depth,
             unit=model_in.unit,
-        )
-
-        new_file_path = await self.storage.save(
-            file=file,
-            sku=sku,
-            file_format=file_format,
         )
 
         try:

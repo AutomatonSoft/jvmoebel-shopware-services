@@ -72,6 +72,21 @@ async def client():
         app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def auth_headers():
+    return {
+        "Authorization": (
+            f"Bearer {settings.ar_write_api_key.get_secret_value()}"
+        ),
+    }
+
+@pytest.fixture
+def invalid_auth_headers() -> dict[str, str]:
+    return {
+        "Authorization": "Bearer invalid-token",
+    }
+
+
 @pytest.fixture(autouse=True)
 def storage(tmp_path: Path):
     #base_path = tmp_path / "ar_models" # dev хранилище
@@ -95,7 +110,7 @@ def ar_service(tmp_path: Path):
 
     base_path.mkdir(
         parents=True,
-        exist_ok=True,
+        exist_ok=True
     )
 
     ar_service.storage.base_path = base_path

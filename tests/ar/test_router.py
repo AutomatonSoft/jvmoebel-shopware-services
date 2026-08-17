@@ -6,6 +6,7 @@ from httpx import AsyncClient
 
 async def create_model(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     sku: str = "ABC-123",
     filename: str = "model.glb",
     width: str = "120",
@@ -28,6 +29,7 @@ async def create_model(
             "depth": depth,
             "unit": unit,
         },
+        headers=auth_headers,
     )
 
 
@@ -48,12 +50,25 @@ async def test_get_model_when_model_does_not_exist(
 
 
 @pytest.mark.asyncio
+async def test_get_model_is_public(
+    client: AsyncClient,
+):
+    response = await client.get(
+        "/api/v1/ar/models/ABC-123",
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_create_model(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     response = await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -73,12 +88,66 @@ async def test_create_model(
 
 
 @pytest.mark.asyncio
+async def test_create_model_without_authentication(
+    client: AsyncClient,
+    mock_validate_ar_model_file,
+):
+    response = await client.post(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "model.glb",
+                b"test model content",
+                "model/gltf-binary",
+            ),
+        },
+        data={
+            "width": "120",
+            "height": "80",
+            "depth": "60",
+            "unit": "cm",
+        },
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_create_model_with_invalid_token(
+    client: AsyncClient,
+    invalid_auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    response = await client.post(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "model.glb",
+                b"test model content",
+                "model/gltf-binary",
+            ),
+        },
+        data={
+            "width": "120",
+            "height": "80",
+            "depth": "60",
+            "unit": "cm",
+        },
+        headers=invalid_auth_headers,
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_get_model_when_model_exists(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     create_response = await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -106,10 +175,12 @@ async def test_get_model_when_model_exists(
 @pytest.mark.asyncio
 async def test_get_model_by_sku(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -128,10 +199,12 @@ async def test_get_model_by_sku(
 @pytest.mark.asyncio
 async def test_get_model_file(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -141,6 +214,25 @@ async def test_get_model_file(
 
     assert response.status_code == 200
     assert response.content == b"test model content"
+
+
+@pytest.mark.asyncio
+async def test_get_model_file_is_public(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    await create_model(
+        client=client,
+        auth_headers=auth_headers,
+        sku="ABC-123",
+    )
+
+    response = await client.get(
+        "/api/v1/ar/models/ABC-123/file",
+    )
+
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -157,10 +249,12 @@ async def test_get_model_file_when_model_does_not_exist(
 @pytest.mark.asyncio
 async def test_update_model(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -179,6 +273,7 @@ async def test_update_model(
             "depth": "90",
             "unit": "cm",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -195,7 +290,7 @@ async def test_update_model(
 
 
 @pytest.mark.asyncio
-async def test_update_model_when_model_does_not_exist(
+async def test_update_model_without_authentication(
     client: AsyncClient,
     mock_validate_ar_model_file,
 ):
@@ -216,16 +311,72 @@ async def test_update_model_when_model_does_not_exist(
         },
     )
 
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_update_model_with_invalid_token(
+    client: AsyncClient,
+    invalid_auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    response = await client.put(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "updated.glb",
+                b"updated model content",
+                "model/gltf-binary",
+            ),
+        },
+        data={
+            "width": "250",
+            "height": "180",
+            "depth": "90",
+            "unit": "cm",
+        },
+        headers=invalid_auth_headers,
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_update_model_when_model_does_not_exist(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    response = await client.put(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "updated.glb",
+                b"updated model content",
+                "model/gltf-binary",
+            ),
+        },
+        data={
+            "width": "250",
+            "height": "180",
+            "depth": "90",
+            "unit": "cm",
+        },
+        headers=auth_headers,
+    )
+
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_update_model_status(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -234,6 +385,7 @@ async def test_update_model_status(
         json={
             "status": "not_active",
         },
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -245,12 +397,14 @@ async def test_update_model_status(
 
 
 @pytest.mark.asyncio
-async def test_disabled_model_is_not_available(
+async def test_update_model_status_without_authentication(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
@@ -259,6 +413,53 @@ async def test_disabled_model_is_not_available(
         json={
             "status": "not_active",
         },
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_update_model_status_with_invalid_token(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    invalid_auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    await create_model(
+        client=client,
+        auth_headers=auth_headers,
+        sku="ABC-123",
+    )
+
+    response = await client.patch(
+        "/api/v1/ar/models/ABC-123/status",
+        json={
+            "status": "not_active",
+        },
+        headers=invalid_auth_headers,
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_disabled_model_is_not_available(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    mock_validate_ar_model_file,
+):
+    await create_model(
+        client=client,
+        auth_headers=auth_headers,
+        sku="ABC-123",
+    )
+
+    response = await client.patch(
+        "/api/v1/ar/models/ABC-123/status",
+        json={
+            "status": "not_active",
+        },
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -278,15 +479,18 @@ async def test_disabled_model_is_not_available(
 @pytest.mark.asyncio
 async def test_delete_model(
     client: AsyncClient,
+    auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
     await create_model(
         client=client,
+        auth_headers=auth_headers,
         sku="ABC-123",
     )
 
     response = await client.delete(
         "/api/v1/ar/models/ABC-123",
+        headers=auth_headers,
     )
 
     assert response.status_code == 204
@@ -304,11 +508,37 @@ async def test_delete_model(
 
 
 @pytest.mark.asyncio
-async def test_delete_model_when_model_does_not_exist(
+async def test_delete_model_without_authentication(
     client: AsyncClient,
 ):
     response = await client.delete(
         "/api/v1/ar/models/ABC-123",
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_model_with_invalid_token(
+    client: AsyncClient,
+    invalid_auth_headers: dict[str, str],
+):
+    response = await client.delete(
+        "/api/v1/ar/models/ABC-123",
+        headers=invalid_auth_headers,
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_model_when_model_does_not_exist(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+):
+    response = await client.delete(
+        "/api/v1/ar/models/ABC-123",
+        headers=auth_headers,
     )
 
     assert response.status_code == 404

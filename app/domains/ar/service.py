@@ -17,6 +17,7 @@ from .exceptions import (
     InvalidARModelDimensionsException,
     UnsupportedARModelFormatException,
     InvalidARModelFileException,
+    InvalidSKUException,
 )
 from .models import ARModel
 from .repository import ARModelRepository
@@ -27,6 +28,7 @@ from .schemas import (
 )
 from .storage import ARModelStorage
 from .validators.factory import ValidatorFactory
+from .validators.sku import validate_sku_or_raise
 
 
 logger = logging.getLogger(__name__)
@@ -53,11 +55,24 @@ class ARModelService:
         self.repository = ARModelRepository()
         self.storage = ARModelStorage()
 
+    @staticmethod
+    def _validate_sku(sku: str) -> None:
+        """
+        Validate SKU for filesystem safety.
+        Raises InvalidSKUException if SKU is invalid.
+        """
+        try:
+            validate_sku_or_raise(sku)
+        except ValueError as e:
+            raise InvalidSKUException() from e
+
     async def get_model(
         self,
         session: AsyncSession,
         sku: str,
     ) -> ARModel | None:
+
+        self._validate_sku(sku)
 
         model = await self.repository.get_model_by_sku(
             session=session,
@@ -83,6 +98,8 @@ class ARModelService:
         sku: str,
     ) -> str:
 
+        self._validate_sku(sku)
+
         model = await self.repository.get_model_by_sku(
             session=session,
             sku=sku,
@@ -105,6 +122,8 @@ class ARModelService:
         file: UploadFile,
         model_in: SARModelCreate,
     ) -> ARModel:
+
+        self._validate_sku(sku)
 
         logger.info(
             "Creating AR model: sku=%s",
@@ -197,6 +216,8 @@ class ARModelService:
         model_in: SARModelUpdate,
     ) -> ARModel:
 
+        self._validate_sku(sku)
+
         logger.info(
             "Updating AR model: sku=%s",
             sku,
@@ -285,6 +306,8 @@ class ARModelService:
         status_in: SARModelStatusUpdate,
     ) -> ARModel:
 
+        self._validate_sku(sku)
+
         logger.info(
             "Updating AR model status: sku=%s status=%s",
             sku,
@@ -328,6 +351,8 @@ class ARModelService:
         Сейчас это решается просто предупреждением в логировании. И такие файлы нужно удалять вручную.
         Потом можно вынести задачу в фон
         """
+        self._validate_sku(sku)
+
         logger.info(
             "Deleting AR model: sku=%s",
             sku,

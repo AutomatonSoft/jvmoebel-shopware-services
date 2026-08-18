@@ -10,6 +10,7 @@ from domains.ar.exceptions import (
     ARModelAlreadyExistsException,
     ARModelNotFoundException,
     InvalidARModelFileException,
+    InvalidSKUException,
 )
 from domains.ar.models import ARModel
 from domains.ar.schemas import (
@@ -536,4 +537,221 @@ async def test_delete_model_when_not_found(
         await ar_service.delete_model(
             session=db_session,
             sku="ABC-123",
+        )
+
+
+# =============================================================================
+# ТЕСТЫ SKU ВАЛИДАЦИИ
+# =============================================================================
+
+@pytest.mark.asyncio
+async def test_create_model_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        mock_validate_ar_model_file,
+):
+    """Создание модели с невалидным SKU должно вызывать InvalidSKUException"""
+
+    mock_validate_ar_model_file.return_value = True
+
+    invalid_skus = [
+        "-invalid-sku",      # начинается с -
+        "_invalid_sku",      # начинается с _
+        "../etc/passwd",     # path traversal
+        "sku/with/slash",    # содержит /
+        "sku\\with\\backslash",  # содержит \
+        "with..dots",        # содержит ..
+        "a" * 100,           # слишком длинный
+        "with\0null",        # содержит null byte
+        "with space",        # содержит пробел
+    ]
+
+    for invalid_sku in invalid_skus:
+        file = UploadFile(
+            file=BytesIO(b"test model content"),
+            filename="model.glb",
+        )
+
+        model_in = SARModelCreate(
+            width=Decimal("120"),
+            height=Decimal("80"),
+            depth=Decimal("60"),
+            unit="cm",
+        )
+
+        with pytest.raises(InvalidSKUException) as exc_info:
+            await ar_service.create_model(
+                session=db_session,
+                sku=invalid_sku,
+                file=file,
+                model_in=model_in,
+            )
+
+        assert "Invalid SKU format" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_get_model_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+):
+    """Получение модели с невалидным SKU должно вызывать InvalidSKUException"""
+
+    invalid_skus = [
+        "-invalid",
+        "_invalid",
+        "../etc/passwd",
+        "with/slash",
+        "with\\backslash",
+        "with..dots",
+    ]
+
+    for invalid_sku in invalid_skus:
+        with pytest.raises(InvalidSKUException):
+            await ar_service.get_model(
+                session=db_session,
+                sku=invalid_sku,
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_model_file_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+):
+    """Получение файла модели с невалидным SKU должно вызывать InvalidSKUException"""
+
+    with pytest.raises(InvalidSKUException):
+        await ar_service.get_model_file(
+            session=db_session,
+            sku="../etc/passwd",
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_model_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        mock_validate_ar_model_file,
+):
+    """Обновление модели с невалидным SKU должно вызывать InvalidSKUException"""
+
+    mock_validate_ar_model_file.return_value = True
+
+    file = UploadFile(
+        file=BytesIO(b"updated model content"),
+        filename="updated.glb",
+    )
+
+    model_in = SARModelUpdate(
+        width=Decimal("2.5"),
+        height=Decimal("1.8"),
+        depth=Decimal("0.9"),
+        unit="m",
+    )
+
+    with pytest.raises(InvalidSKUException):
+        await ar_service.update_model(
+            session=db_session,
+            sku="../etc/passwd",
+            file=file,
+            model_in=model_in,
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_status_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+):
+    """Обновление статуса с невалидным SKU должно вызывать InvalidSKUException"""
+
+    status_in = SARModelStatusUpdate(status="not_active")
+
+    with pytest.raises(InvalidSKUException):
+        await ar_service.update_status(
+            session=db_session,
+            sku="../etc/passwd",
+            status_in=status_in,
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_model_with_invalid_sku_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+):
+    """Удаление модели с невалидным SKU должно вызывать InvalidSKUException"""
+
+    with pytest.raises(InvalidSKUException):
+        await ar_service.delete_model(
+            session=db_session,
+            sku="../etc/passwd",
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_model_with_sku_max_length_valid(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        mock_validate_ar_model_file,
+):
+    """Создание модели с SKU максимальной длины (64 символа) должно работать"""
+
+    mock_validate_ar_model_file.return_value = True
+
+    sku_64 = "a" * 64  # ровно 64 символа
+
+    file = UploadFile(
+        file=BytesIO(b"test model content"),
+        filename="model.glb",
+    )
+
+    model_in = SARModelCreate(
+        width=Decimal("120"),
+        height=Decimal("80"),
+        depth=Decimal("60"),
+        unit="cm",
+    )
+
+    model = await ar_service.create_model(
+        session=db_session,
+        sku=sku_64,
+        file=file,
+        model_in=model_in,
+    )
+
+    assert model.sku == sku_64
+
+
+@pytest.mark.asyncio
+async def test_create_model_with_sku_too_long_raises_error(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        mock_validate_ar_model_file,
+):
+    """Создание модели с SKU длиннее 64 символов должно вызывать InvalidSKUException"""
+
+    mock_validate_ar_model_file.return_value = True
+
+    sku_65 = "a" * 65  # 65 символов
+
+    file = UploadFile(
+        file=BytesIO(b"test model content"),
+        filename="model.glb",
+    )
+
+    model_in = SARModelCreate(
+        width=Decimal("120"),
+        height=Decimal("80"),
+        depth=Decimal("60"),
+        unit="cm",
+    )
+
+    with pytest.raises(InvalidSKUException):
+        await ar_service.create_model(
+            session=db_session,
+            sku=sku_65,
+            file=file,
+            model_in=model_in,
         )

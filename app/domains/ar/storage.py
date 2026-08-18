@@ -1,9 +1,11 @@
+import hashlib
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import UploadFile
 
 from core.config import settings
+from .validators.sku import is_valid_sku
 
 
 class ARModelStorage:
@@ -18,14 +20,25 @@ class ARModelStorage:
             exist_ok=True,
         )
 
+    @staticmethod
+    def _sku_to_storage_key(sku: str) -> str:
+        return hashlib.sha256(
+            sku.encode("utf-8"),
+        ).hexdigest()
+
     async def save(
-        self,
-        file: UploadFile,
-        sku: str,
-        file_format: str,
+            self,
+            file: UploadFile,
+            sku: str,
+            file_format: str,
     ) -> str:
 
-        sku_path = self.base_path / sku
+        # Дополнительная проверка (defense in depth)
+        if not is_valid_sku(sku):
+            raise ValueError(f"Invalid SKU: {sku}")
+
+        storage_key = self._sku_to_storage_key(sku)
+        sku_path = self.base_path / storage_key
 
         sku_path.mkdir(
             parents=True,
@@ -46,8 +59,8 @@ class ARModelStorage:
         return str(file_path)
 
     async def delete(
-        self,
-        file_path: str,
+            self,
+            file_path: str,
     ) -> None:
 
         path = Path(file_path)
@@ -56,8 +69,8 @@ class ARModelStorage:
             path.unlink()
 
     async def exists(
-        self,
-        file_path: str,
+            self,
+            file_path: str,
     ) -> bool:
 
         return Path(file_path).is_file()

@@ -64,3 +64,9 @@ class InvalidARModelDimensionsException(
         super().__init__(
             detail="AR model dimensions must be greater than zero",
         )
+
+class InvalidSKUException(BadRequestException):
+    def __init__(self) -> None:
+        super().__init__(
+            detail="Invalid SKU format",
+        )

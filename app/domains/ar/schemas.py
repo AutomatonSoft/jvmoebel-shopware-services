@@ -3,15 +3,17 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from domains.ar.validators.sku import SKU_PATTERN, SKU_MAX_LENGTH
 
-SKU_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
 
 SKU = Annotated[
     str,
     Field(
         min_length=1,
-        max_length=64,
+        max_length=SKU_MAX_LENGTH,
         pattern=SKU_PATTERN,
+        description="SKU must contain only alphanumeric characters, underscore and hyphen. "
+                    "Must not contain path separators, path traversal (..), or null bytes.",
     ),
 ]
 

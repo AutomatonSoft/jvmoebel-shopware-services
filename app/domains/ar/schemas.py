@@ -1,9 +1,19 @@
-# app/domains/ar/schemas.py
-
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+SKU_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+
+SKU = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=64,
+        pattern=SKU_PATTERN,
+    ),
+]
 
 
 class SARModelBase(BaseModel):
@@ -35,7 +45,7 @@ class SARModelAvailableResponse(BaseModel):
         from_attributes=True,
     )
 
-    sku: str
+    sku: SKU
     available: Literal[True]
     format: str
     file_url: str
@@ -46,10 +56,10 @@ class SARModelAvailableResponse(BaseModel):
 
 
 class SARModelUnavailableResponse(BaseModel):
-    sku: str
+    sku: SKU
     available: Literal[False]
 
 
 class SARModelStatusResponse(BaseModel):
-    sku: str
+    sku: SKU
     status: Literal["active", "not_active"]

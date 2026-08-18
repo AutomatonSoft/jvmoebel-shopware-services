@@ -1,4 +1,5 @@
 from decimal import Decimal
+from urllib.parse import quote
 
 import pytest
 from httpx import AsyncClient
@@ -542,3 +543,45 @@ async def test_delete_model_when_model_does_not_exist(
     )
 
     assert response.status_code == 404
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "sku",
+    [
+        "ABC-123",
+        "sku_001",
+        "A1",
+        "model-v2_01",
+    ],
+)
+async def test_valid_sku(
+    client: AsyncClient,
+    sku: str,
+):
+    response = await client.get(
+        f"/api/v1/ar/models/{sku}",
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "sku",
+    [
+        r"foo\bar",
+        "foo bar",
+        "foo@bar",
+        "foo.bar",
+        "a" * 65,
+    ],
+)
+async def test_invalid_sku(
+    client: AsyncClient,
+    sku: str,
+):
+    response = await client.get(
+        f"/api/v1/ar/models/{sku}",
+    )
+
+    assert response.status_code == 422

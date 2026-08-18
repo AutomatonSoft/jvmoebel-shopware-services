@@ -22,6 +22,7 @@ from .schemas import (
     SARModelUnavailableResponse,
     SARModelUpdate,
     SARModelStatusResponse,
+    SKU,
 )
 from .service import ARModelService
 
@@ -42,7 +43,7 @@ service = ARModelService()
     ),
 )
 async def get_model(
-    sku: str,
+    sku: SKU,
     session: AsyncSession = Depends(get_async_session),
 ):
     model = await service.get_model(
@@ -72,7 +73,7 @@ async def get_model(
     "/{sku}/file",
 )
 async def get_model_file(
-    sku: str,
+    sku: SKU,
     session: AsyncSession = Depends(get_async_session),
 ):
     file_path = await service.get_model_file(
@@ -91,7 +92,7 @@ async def get_model_file(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_model(
-    sku: str,
+    sku: SKU,
     file: UploadFile = File(...),
     width: Decimal = Form(...),
     height: Decimal = Form(...),
@@ -131,7 +132,7 @@ async def create_model(
     response_model=SARModelAvailableResponse,
 )
 async def update_model(
-    sku: str,
+    sku: SKU,
     file: UploadFile = File(...),
     width: Decimal = Form(...),
     height: Decimal = Form(...),
@@ -171,8 +172,8 @@ async def update_model(
     response_model=SARModelStatusResponse,
 )
 async def update_model_status(
-    sku: str,
     status_in: SARModelStatusUpdate,
+    sku: SKU,
     session: AsyncSession = Depends(get_async_session),
     write_access=Depends(require_ar_write_access),
 ):
@@ -193,11 +194,11 @@ async def update_model_status(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_model(
-    sku: str,
+    sku: SKU,
     session: AsyncSession = Depends(get_async_session),
     write_access=Depends(require_ar_write_access),
 ):
     await service.delete_model(
-        session=session,
+    session=session,
         sku=sku,
     )

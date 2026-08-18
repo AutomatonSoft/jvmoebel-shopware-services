@@ -11,7 +11,7 @@ class ARModelStorage:
     def __init__(self):
         self.base_path = Path(
             settings.ar_models_storage_path
-        )
+        ).resolve()
 
         self.base_path.mkdir(
             parents=True,
@@ -35,6 +35,9 @@ class ARModelStorage:
         filename = f"{uuid4().hex}.{file_format}"
 
         file_path = sku_path / filename
+
+        if self.base_path not in file_path.resolve().parents:
+            raise ValueError("Invalid storage path")
 
         with file_path.open("wb") as destination:
             while chunk := await file.read(1024 * 1024):

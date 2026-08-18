@@ -1,11 +1,10 @@
-import hashlib
 from pathlib import Path
 from uuid import uuid4
+import hashlib
 
 from fastapi import UploadFile
 
 from core.config import settings
-from .validators.sku import is_valid_sku
 
 
 class ARModelStorage:
@@ -22,9 +21,8 @@ class ARModelStorage:
 
     @staticmethod
     def _sku_to_storage_key(sku: str) -> str:
-        return hashlib.sha256(
-            sku.encode("utf-8"),
-        ).hexdigest()
+        # Используем первые 16 символов SHA256 для краткости
+        return hashlib.sha256(sku.encode('utf-8')).hexdigest()[:16]
 
     async def save(
             self,
@@ -32,10 +30,6 @@ class ARModelStorage:
             sku: str,
             file_format: str,
     ) -> str:
-
-        # Дополнительная проверка (defense in depth)
-        if not is_valid_sku(sku):
-            raise ValueError(f"Invalid SKU: {sku}")
 
         storage_key = self._sku_to_storage_key(sku)
         sku_path = self.base_path / storage_key

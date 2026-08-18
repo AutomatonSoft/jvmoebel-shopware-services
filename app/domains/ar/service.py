@@ -380,18 +380,36 @@ class ARModelService:
             await session.rollback()
             raise
 
-        await self.storage.delete(
-            file_path=file_path,
-        )
-
-        if await self.storage.exists(
+        try:
+            await self.storage.delete(
                 file_path=file_path,
-        ):
+            )
+
+            if await self.storage.exists(
+                    file_path=file_path,
+            ):
+                logger.error(
+                    "AR model file still exists after deletion: "
+                    "sku=%s file_path=%s. Manual deletion required.",
+                    sku,
+                    file_path,
+                )
+            else:
+                logger.info(
+                    "AR model file deleted successfully: "
+                    "sku=%s file_path=%s",
+                    sku,
+                    file_path,
+                )
+
+        except Exception as e:
             logger.error(
-                "AR model file still exists after deletion: "
-                "sku=%s file_path=%s. Manual deletion required.",
+                "Failed to delete AR model file after DB deletion: "
+                "sku=%s file_path=%s, error=%s. Manual deletion required.",
                 sku,
                 file_path,
+                e,
+                exc_info=True,
             )
 
         logger.info(

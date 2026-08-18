@@ -120,13 +120,15 @@ def ar_service(tmp_path: Path):
 
 @pytest.fixture
 def mock_validate_ar_model_file(monkeypatch):
-    async def validate_ar_model_file(
-        file: UploadFile,
-        file_format: str,
-    ) -> None:
-        pass
+    """Мок для валидатора AR моделей."""
+
+    def mock_validate(*args, **kwargs) -> bool:
+        """Всегда возвращает True — валидация всегда проходит."""
+        return True
 
     monkeypatch.setattr(
-        "domains.ar.service.validate_model_file",
-        validate_ar_model_file,
+        "domains.ar.validators.factory.ValidatorFactory.validate",
+        mock_validate,
     )
+
+    return mock_validate

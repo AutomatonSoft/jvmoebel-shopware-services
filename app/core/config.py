@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     ar_write_api_key: SecretStr
 
-    # db_echo: bool = True
+    ar_max_file_size: int = 15 * 1024 * 1024
 
 
 # single instance

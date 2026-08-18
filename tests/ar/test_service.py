@@ -96,7 +96,9 @@ async def create_test_model_with_mock(
     )
 
 
-# ============ ТЕСТЫ С РЕАЛЬНЫМ ВАЛИДАТОРОМ ============
+# =============================================================================
+# ТЕСТЫ С РЕАЛЬНЫМ ВАЛИДАТОРОМ (используют реальные файлы из fixtures)
+# =============================================================================
 
 @pytest.mark.asyncio
 async def test_create_model_with_real_valid_glb(
@@ -104,7 +106,10 @@ async def test_create_model_with_real_valid_glb(
         ar_service: ARModelService,
         fixtures_dir,
 ):
-    """Создание модели с реальным валидным GLB файлом"""
+    """
+    РЕАЛЬНЫЙ ВАЛИДАТОР
+    Создание модели с реальным валидным GLB файлом из fixtures/valid/glb/
+    """
 
     glb_files = list((fixtures_dir / "valid" / "glb").glob("*.glb"))
     if not glb_files:
@@ -132,7 +137,10 @@ async def test_create_model_with_real_valid_usdz(
         ar_service: ARModelService,
         fixtures_dir,
 ):
-    """Создание модели с реальным валидным USDZ файлом"""
+    """
+    РЕАЛЬНЫЙ ВАЛИДАТОР
+    Создание модели с реальным валидным USDZ файлом из fixtures/valid/usdz/
+    """
 
     usdz_files = list((fixtures_dir / "valid" / "usdz").glob("*.usdz"))
     if not usdz_files:
@@ -160,7 +168,10 @@ async def test_create_model_with_invalid_glb_rejected(
         ar_service: ARModelService,
         fixtures_dir,
 ):
-    """Создание модели с невалидным GLB файлом - rejected"""
+    """
+    РЕАЛЬНЫЙ ВАЛИДАТОР
+    Создание модели с невалидным GLB файлом из fixtures/invalid/glb/ - rejected
+    """
 
     glb_files = list((fixtures_dir / "invalid" / "glb").glob("*.glb"))
     if not glb_files:
@@ -183,7 +194,10 @@ async def test_create_model_with_fake_text_glb_rejected(
         ar_service: ARModelService,
         tmp_path,
 ):
-    """Создание модели с текстовым файлом .glb - rejected"""
+    """
+    РЕАЛЬНЫЙ ВАЛИДАТОР
+    Создание модели с текстовым файлом .glb (создается на лету) - rejected
+    """
 
     fake_glb = tmp_path / "fake.glb"
     fake_glb.write_text("This is not a real GLB file")
@@ -197,9 +211,10 @@ async def test_create_model_with_fake_text_glb_rejected(
         )
 
 
-# ============ ТЕСТЫ С МОКОМ (для тестов, где валидация не важна) ============
+# =============================================================================
+# ТЕСТЫ С МОКОМ (валидация НЕ проверяется, используется mock)
+# =============================================================================
 
-# ПРИМЕР: Только этот тест использует мок, остальные - реальный валидатор
 @pytest.mark.asyncio
 async def test_create_model_converts_dimensions_to_meters(
         db_session: AsyncSession,

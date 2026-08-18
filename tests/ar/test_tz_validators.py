@@ -19,11 +19,11 @@ class TestARValidatorsWithRealFiles:
         """Путь к директории с фикстурами"""
         return Path(__file__).parent.parent / "fixtures" / "ar"
 
-    # ============ 1. valid GLB → accepted ============
+    # ============ ТЗ: valid GLB → accepted ============
 
     def test_valid_glb_accepted(self, fixtures_dir):
         """
-        valid GLB → accepted
+        ТЗ: valid GLB → accepted
 
         Берем все GLB файлы из папки fixtures/ar/valid/glb/
         и проверяем, что валидатор пропускает их как корректные.
@@ -39,11 +39,11 @@ class TestARValidatorsWithRealFiles:
             result = ValidatorFactory.validate(glb_file)
             assert result is True, f"Valid GLB should pass: {glb_file.name}"
 
-    # ============ 2. valid USDZ → accepted ============
+    # ============ ТЗ: valid USDZ → accepted ============
 
     def test_valid_usdz_accepted(self, fixtures_dir):
         """
-        valid USDZ → accepted
+        ТЗ: valid USDZ → accepted
 
         Берем все USDZ файлы из папки fixtures/ar/valid/usdz/
         и проверяем, что валидатор пропускает их как корректные.
@@ -57,10 +57,11 @@ class TestARValidatorsWithRealFiles:
             result = ValidatorFactory.validate(usdz_file)
             assert result is True, f"Valid USDZ should pass: {usdz_file.name}"
 
-    # ============ 3. corrupted GLB → rejected ============
+    # ============ ТЗ: corrupted GLB → rejected ============
 
     def test_corrupted_glb_rejected(self, fixtures_dir):
-        """corrupted GLB → rejected"""
+        """ТЗ: corrupted GLB → rejected"""
+
         glb_files = list((fixtures_dir / "invalid" / "glb").glob("*.glb"))
 
         # Если нет файлов, пропускаем тест
@@ -71,13 +72,12 @@ class TestARValidatorsWithRealFiles:
             result = ValidatorFactory.validate(glb_file)
             assert result is False, f"Corrupted GLB should fail: {glb_file.name}"
 
-    # ============ 6. corrupted USDZ → rejected ============
+    # ============ ТЗ: corrupted USDZ → rejected ============
 
     def test_corrupted_usdz_rejected(self, fixtures_dir):
-        """corrupted USDZ → rejected"""
+        """ТЗ: corrupted USDZ → rejected"""
         usdz_files = list((fixtures_dir / "invalid" / "usdz").glob("*.usdz"))
 
-        # Если нет файлов, пропускаем тест
         if not usdz_files:
             pytest.skip("No corrupted USDZ files found in fixtures")
 
@@ -97,10 +97,13 @@ class TestARValidatorsWithGeneratedFiles:
         """Путь к директории с фикстурами"""
         return Path(__file__).parent.parent / "fixtures" / "ar"
 
-    # ============ ВАЛИДНЫЕ ФАЙЛЫ (создаем сами) ============
+    # ============ ЛИЧНОЕ: валидный GLB (создаем сами) ============
 
     def test_valid_glb_generated_accepted(self, tmp_path):
-        """Создаем валидный GLB и проверяем, что он проходит"""
+        """
+        ЛИЧНОЕ: создаем валидный GLB и проверяем, что он проходит
+        (не из ТЗ, добавлено для независимости от fixtures)
+        """
         glb_path = tmp_path / "valid.glb"
 
         # Минимальный валидный GLB
@@ -131,8 +134,13 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(glb_path)
         assert result is True, "Generated valid GLB should pass"
 
+    # ============ ЛИЧНОЕ: валидный USDZ (создаем сами) ============
+
     def test_valid_usdz_generated_accepted(self, tmp_path):
-        """Создаем валидный USDZ и проверяем, что он проходит"""
+        """
+        ЛИЧНОЕ: создаем валидный USDZ и проверяем, что он проходит
+        (не из ТЗ, добавлено для независимости от fixtures)
+        """
         usdz_path = tmp_path / "valid.usdz"
 
         # Минимальный валидный USDA контент
@@ -145,28 +153,20 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(usdz_path)
         assert result is True, "Generated valid USDZ should pass"
 
-    # ============ 4. fake text file named .glb → rejected ============
-
-
-
-
-
-
-
-
+    # ============ ТЗ: fake text file named .glb → rejected ============
 
     def test_fake_text_file_glb_rejected(self, tmp_path):
-        """fake text file named .glb → rejected"""
+        """ТЗ: fake text file named .glb → rejected"""
         fake_glb = tmp_path / "fake.glb"
         fake_glb.write_text("This is not a real GLB file")
 
         result = ValidatorFactory.validate(fake_glb)
         assert result is False
 
-    # ============ 5. malformed GLB length/chunk → rejected ============
+    # ============ ТЗ: malformed GLB length/chunk → rejected ============
 
     def test_malformed_glb_rejected(self, fixtures_dir, tmp_path):
-        """malformed GLB length/chunk → rejected"""
+        """ТЗ: malformed GLB length/chunk → rejected"""
         # Берем валидный GLB из fixtures
         glb_files = list((fixtures_dir / "valid" / "glb").glob("*.glb"))
         if not glb_files:
@@ -191,10 +191,10 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(malformed_path)
         assert result is False
 
-    # ============ 7. fake ZIP named .usdz → rejected ============
+    # ============ ТЗ: fake ZIP named .usdz → rejected ============
 
     def test_fake_zip_usdz_rejected(self, tmp_path):
-        """fake ZIP named .usdz → rejected"""
+        """ТЗ: fake ZIP named .usdz → rejected"""
         fake_usdz = tmp_path / "fake.usdz"
 
         # Создаем обычный ZIP без USD контента
@@ -204,10 +204,11 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(fake_usdz)
         assert result is False
 
-    # ============ 8. unsafe archive path ../ → rejected ============
+    # ============ ТЗ: unsafe archive path ../ → rejected ============
 
     def test_unsafe_archive_path_rejected(self, tmp_path):
         """
+        ТЗ: unsafe archive path ../ → rejected
         Проверяет, что USDZ файл не содержит пути с directory traversal (../)
         """
         unsafe_usdz = tmp_path / "unsafe.usdz"
@@ -221,11 +222,11 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(unsafe_usdz)
         assert result is False
 
-    # ============ 9. encrypted/compressed USDZ → rejected ============
+    # ============ ТЗ: encrypted USDZ → rejected ============
 
     def test_encrypted_usdz_rejected(self, tmp_path):
         """
-        encrypted USDZ → rejected
+        ТЗ: encrypted USDZ → rejected
 
         Создаем зашифрованный USDZ с помощью pyzipper (AES-256)
         и проверяем, что валидатор отклоняет его.
@@ -253,28 +254,30 @@ class TestARValidatorsWithGeneratedFiles:
         result = ValidatorFactory.validate(encrypted_path)
         assert result is False, "Encrypted USDZ should be rejected"
 
-    # ============ 10. unsupported .obj/.fbx → rejected ============
+    # ============ ТЗ: unsupported .obj → rejected ============
 
     def test_unsupported_obj_rejected(self, tmp_path):
-        """unsupported .obj → rejected"""
+        """ТЗ: unsupported .obj → rejected"""
         obj_file = tmp_path / "model.obj"
         obj_file.write_text("v 0.0 0.0 0.0")
 
         with pytest.raises(UnsupportedARModelFormatException):
             ValidatorFactory.validate(obj_file)
 
+    # ============ ТЗ: unsupported .fbx → rejected ============
+
     def test_unsupported_fbx_rejected(self, tmp_path):
-        """unsupported .fbx → rejected"""
+        """ТЗ: unsupported .fbx → rejected"""
         fbx_file = tmp_path / "model.fbx"
         fbx_file.write_text("Fake FBX content")
 
         with pytest.raises(UnsupportedARModelFormatException):
             ValidatorFactory.validate(fbx_file)
 
-    # ============ 11. oversized file → rejected ============
+    # ============ ТЗ: oversized file → rejected ============
 
     def test_oversized_file_rejected(self, tmp_path):
-        """oversized file → rejected"""
+        """ТЗ: oversized file → rejected"""
         from app.core.config import settings
 
         oversized_file = tmp_path / "oversized.glb"
@@ -286,8 +289,10 @@ class TestARValidatorsWithGeneratedFiles:
         with pytest.raises(ARModelFileTooLargeException):
             ValidatorFactory.validate(oversized_file)
 
+    # ============ ТЗ: compressed USDZ → rejected ============
+
     def test_compressed_usdz_rejected(self, tmp_path):
-        """compressed USDZ → rejected"""
+        """ТЗ: compressed USDZ → rejected (из пункта encrypted/compressed invalid USDZ)"""
         compressed_path = tmp_path / "compressed.usdz"
 
         # Создаем USDZ со сжатием (нарушает спецификацию)

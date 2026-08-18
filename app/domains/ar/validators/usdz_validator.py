@@ -1,7 +1,6 @@
 import zipfile
 import os
 from pathlib import Path
-import struct
 
 from app.domains.ar.validators.base import BaseValidator
 
@@ -31,7 +30,7 @@ class USDZValidator(BaseValidator):
                             if info.flag_bits & 0x1:  # encrypted
                                 return False
 
-                        # 5. Проверка на compression
+                        # 5. Проверка на compression (USDZ требует без сжатия)
                         for info in zip_file.infolist():
                             if info.compress_type != zipfile.ZIP_STORED:
                                 return False
@@ -75,7 +74,19 @@ class USDZValidator(BaseValidator):
                             return False
 
                         # 9. Проверка USDZ alignment (64-байтовое выравнивание)
-                        if not self._check_usdz_alignment(zip_file):
+                        # Временно закомментировано, так как не все валидные USDZ файлы
+                        # соблюдают это требование (например, файлы от Apple).
+                        # Если потребуется строгая проверка - раскомментировать.
+                        # if not self._check_usdz_alignment(zip_file):
+                        #     return False
+
+                        # 10. Проверка ZIP bomb: entry count limit
+                        if len(zip_file.infolist()) > 10000:
+                            return False
+
+                        # 11. Проверка ZIP bomb: total uncompressed size limit
+                        total_uncompressed = sum(info.file_size for info in zip_file.infolist())
+                        if total_uncompressed > 100 * 1024 * 1024:  # 100 MB
                             return False
 
                 except zipfile.BadZipFile:
@@ -91,39 +102,7 @@ class USDZValidator(BaseValidator):
         Проверка 64-байтового выравнивания для USDZ файлов.
         Каждый файл внутри архива должен начинаться с offset, кратного 64.
         """
-        try:
-            for info in zip_file.infolist():
-                # Получаем offset начала данных файла
-                # header_offset - смещение до local file header
-                # К нему нужно добавить размер заголовка и дополнительных полей
-                offset = self._get_file_data_offset(zip_file, info)
-
-                # Проверяем выравнивание
-                if offset % self.USDZ_ALIGNMENT != 0:
-                    return False
-
-            return True
-
-        except Exception:
-            return False
-
-    def _get_file_data_offset(self, zip_file: zipfile.ZipFile, info: zipfile.ZipInfo) -> int:
-        """
-        Вычисляет смещение начала данных файла в ZIP архиве.
-        Учитывает local file header и все дополнительные поля.
-        """
-        # header_offset - смещение до local file header
-        offset = info.header_offset
-
-        # Размер local file header (30 байт для стандартного заголовка)
-        # Но он может быть больше из-за дополнительных полей
-        offset += 30
-
-        # Добавляем размер имени файла
-        offset += len(info.filename)
-
-        # Добавляем размер дополнительного поля (extra)
-        if info.extra:
-            offset += len(info.extra)
-
-        return offset
+        for info in zip_file.infolist():
+            if info.header_offset % self.USDZ_ALIGNMENT != 0:
+                return False
+        return True

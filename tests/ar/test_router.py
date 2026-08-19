@@ -38,6 +38,8 @@ async def create_model(
 async def test_get_model_when_model_does_not_exist(
     client: AsyncClient,
 ):
+    """Получение несуществующей модели должно возвращать available: false"""
+
     response = await client.get(
         "/api/v1/ar/models/ABC-123",
     )
@@ -54,6 +56,8 @@ async def test_get_model_when_model_does_not_exist(
 async def test_get_model_is_public(
     client: AsyncClient,
 ):
+    """GET эндпоинт получения модели должен быть публичным (доступен без аутентификации)"""
+
     response = await client.get(
         "/api/v1/ar/models/ABC-123",
     )
@@ -67,6 +71,8 @@ async def test_create_model(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Создание модели должно возвращать 201 и корректные данные с конвертацией размеров в метры"""
+
     response = await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -93,6 +99,8 @@ async def test_create_model_without_authentication(
     client: AsyncClient,
     mock_validate_ar_model_file,
 ):
+    """Создание модели без аутентификации должно возвращать 401"""
+
     response = await client.post(
         "/api/v1/ar/models/ABC-123",
         files={
@@ -119,6 +127,8 @@ async def test_create_model_with_invalid_token(
     invalid_auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Создание модели с невалидным токеном должно возвращать 401"""
+
     response = await client.post(
         "/api/v1/ar/models/ABC-123",
         files={
@@ -146,6 +156,8 @@ async def test_get_model_when_model_exists(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Получение существующей модели должно возвращать 200 и корректные данные"""
+
     create_response = await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -179,6 +191,8 @@ async def test_get_model_by_sku(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Получение модели по несуществующему SKU должно возвращать available: false"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -203,6 +217,8 @@ async def test_get_model_file(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Получение файла модели должно возвращать 200 и содержимое файла"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -223,6 +239,8 @@ async def test_get_model_file_is_public(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """GET эндпоинт получения файла модели должен быть публичным (доступен без аутентификации)"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -240,6 +258,8 @@ async def test_get_model_file_is_public(
 async def test_get_model_file_when_model_does_not_exist(
     client: AsyncClient,
 ):
+    """Получение файла несуществующей модели должно возвращать 404"""
+
     response = await client.get(
         "/api/v1/ar/models/ABC-123/file",
     )
@@ -253,6 +273,8 @@ async def test_update_model(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление модели должно возвращать 200 и обновленные данные"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -295,6 +317,8 @@ async def test_update_model_without_authentication(
     client: AsyncClient,
     mock_validate_ar_model_file,
 ):
+    """Обновление модели без аутентификации должно возвращать 401"""
+
     response = await client.put(
         "/api/v1/ar/models/ABC-123",
         files={
@@ -321,6 +345,8 @@ async def test_update_model_with_invalid_token(
     invalid_auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление модели с невалидным токеном должно возвращать 401"""
+
     response = await client.put(
         "/api/v1/ar/models/ABC-123",
         files={
@@ -348,6 +374,8 @@ async def test_update_model_when_model_does_not_exist(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление несуществующей модели должно возвращать 404"""
+
     response = await client.put(
         "/api/v1/ar/models/ABC-123",
         files={
@@ -375,6 +403,8 @@ async def test_update_model_status(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление статуса модели должно возвращать 200 и обновленный статус"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -403,6 +433,8 @@ async def test_update_model_status_without_authentication(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление статуса без аутентификации должно возвращать 401"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -426,6 +458,8 @@ async def test_update_model_status_with_invalid_token(
     invalid_auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Обновление статуса с невалидным токеном должно возвращать 401"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -449,6 +483,8 @@ async def test_disabled_model_is_not_available(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Отключенная модель должна быть недоступна (available: false)"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -483,6 +519,8 @@ async def test_delete_model(
     auth_headers: dict[str, str],
     mock_validate_ar_model_file,
 ):
+    """Удаление модели должно возвращать 204, после чего модель недоступна"""
+
     await create_model(
         client=client,
         auth_headers=auth_headers,
@@ -512,6 +550,8 @@ async def test_delete_model(
 async def test_delete_model_without_authentication(
     client: AsyncClient,
 ):
+    """Удаление модели без аутентификации должно возвращать 401"""
+
     response = await client.delete(
         "/api/v1/ar/models/ABC-123",
     )
@@ -524,6 +564,8 @@ async def test_delete_model_with_invalid_token(
     client: AsyncClient,
     invalid_auth_headers: dict[str, str],
 ):
+    """Удаление модели с невалидным токеном должно возвращать 401"""
+
     response = await client.delete(
         "/api/v1/ar/models/ABC-123",
         headers=invalid_auth_headers,
@@ -537,12 +579,15 @@ async def test_delete_model_when_model_does_not_exist(
     client: AsyncClient,
     auth_headers: dict[str, str],
 ):
+    """Удаление несуществующей модели должно возвращать 404"""
+
     response = await client.delete(
         "/api/v1/ar/models/ABC-123",
         headers=auth_headers,
     )
 
     assert response.status_code == 404
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -558,6 +603,8 @@ async def test_valid_sku(
     client: AsyncClient,
     sku: str,
 ):
+    """Валидные SKU должны приниматься и возвращать 200"""
+
     response = await client.get(
         f"/api/v1/ar/models/{sku}",
     )
@@ -580,6 +627,8 @@ async def test_invalid_sku(
     client: AsyncClient,
     sku: str,
 ):
+    """Невалидные SKU должны возвращать 422 Validation Error"""
+
     response = await client.get(
         f"/api/v1/ar/models/{sku}",
     )

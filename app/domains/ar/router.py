@@ -41,6 +41,11 @@ service = ARModelService()
         SARModelAvailableResponse
         | SARModelUnavailableResponse
     ),
+    responses={
+        400: {
+            "description": "Invalid SKU",
+        },
+    },
 )
 async def get_model(
     sku: SKU,
@@ -71,6 +76,14 @@ async def get_model(
 
 @router.get(
     "/{sku}/file",
+    responses={
+        400: {
+            "description": "Invalid SKU",
+        },
+        404: {
+            "description": "AR model or model file not found",
+        },
+    },
 )
 async def get_model_file(
     sku: SKU,
@@ -90,10 +103,30 @@ async def get_model_file(
     "/{sku}",
     response_model=SARModelAvailableResponse,
     status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {
+            "description": (
+                "Invalid SKU, unsupported file format, "
+                "file too large, invalid file or dimensions"
+            ),
+        },
+        401: {
+            "description": "Authentication required or invalid token",
+        },
+        409: {
+            "description": "AR model with this SKU already exists",
+        },
+    },
 )
 async def create_model(
     sku: SKU,
-    file: UploadFile = File(...),
+    file: UploadFile = File(
+        ...,
+        description=(
+            "AR model file. Supported formats: GLB, USDZ. "
+            "Maximum size: 15 MB."
+        ),
+    ),
     width: Decimal = Form(...),
     height: Decimal = Form(...),
     depth: Decimal = Form(...),
@@ -130,10 +163,30 @@ async def create_model(
 @router.put(
     "/{sku}",
     response_model=SARModelAvailableResponse,
+    responses={
+        400: {
+            "description": (
+                "Invalid SKU, unsupported file format, "
+                "file too large, invalid file or dimensions"
+            ),
+        },
+        401: {
+            "description": "Authentication required or invalid token",
+        },
+        404: {
+            "description": "AR model not found",
+        },
+    },
 )
 async def update_model(
     sku: SKU,
-    file: UploadFile = File(...),
+    file: UploadFile = File(
+        ...,
+        description=(
+            "AR model file. Supported formats: GLB, USDZ. "
+            "Maximum size: 15 MB."
+        ),
+    ),
     width: Decimal = Form(...),
     height: Decimal = Form(...),
     depth: Decimal = Form(...),
@@ -170,6 +223,14 @@ async def update_model(
 @router.patch(
     "/{sku}/status",
     response_model=SARModelStatusResponse,
+    responses={
+        401: {
+            "description": "Authentication required or invalid token",
+        },
+        404: {
+            "description": "AR model not found",
+        },
+    },
 )
 async def update_model_status(
     status_in: SARModelStatusUpdate,
@@ -192,6 +253,14 @@ async def update_model_status(
 @router.delete(
     "/{sku}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {
+            "description": "Authentication required or invalid token",
+        },
+        404: {
+            "description": "AR model not found",
+        },
+    },
 )
 async def delete_model(
     sku: SKU,
@@ -199,6 +268,6 @@ async def delete_model(
     write_access=Depends(require_ar_write_access),
 ):
     await service.delete_model(
-    session=session,
+        session=session,
         sku=sku,
     )

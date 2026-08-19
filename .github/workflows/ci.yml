@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches:
       - D02-1
@@ -33,6 +32,7 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       AR_WRITE_API_KEY: ci-test-token
+      PYTHONPATH: app
 
     steps:
       - name: Checkout

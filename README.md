@@ -40,13 +40,13 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml up
 Применить все миграции:
 
 ```bash
-docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend uv run alembic upgrade head
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv run alembic upgrade head
 ```
 
 Создать новую migration:
 
 ```bash
-docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend uv run alembic revision --autogenerate -m "description"
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv run alembic revision --autogenerate -m "description"
 ```
 
 # Production

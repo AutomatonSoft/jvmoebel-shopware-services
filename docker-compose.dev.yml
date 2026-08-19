@@ -1,12 +1,12 @@
 version: '3.9'
 
 services:
-  postgres_db:
+  postgres_db_dev:
     image: postgres:16
     container_name: jvmoebel_postgres_dev
     restart: always
     env_file:
-      - .env
+      - .env.dev
     ports:
       - "${POSTGRES_DEV_EXTERNAL_PORT:-5436}:5432"
     volumes:
@@ -18,18 +18,18 @@ services:
       retries: 5
       start_period: 5s
 
-  backend:
+  backend_dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
     container_name: jvmoebel_backend_dev
     restart: always
     env_file:
-      - .env
+      - .env.dev
     ports:
       - "${PORT_DEV:-8001}:8000"
     depends_on:
-      postgres_db:
+      postgres_db_dev:
         condition: service_healthy
     volumes:
       - .:/app

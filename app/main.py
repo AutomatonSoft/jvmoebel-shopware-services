@@ -3,8 +3,10 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from core.config import settings
 from core.errors_handlers import register_errors_handlers
 from core.logger import configure_logging
+from core.middleware import MaxBodySizeMiddleware
 from domains.ar.router import router as ar_models_router
 
 
@@ -17,6 +19,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    MaxBodySizeMiddleware,
+    max_size=settings.ar_max_body_size
+)
 
 register_errors_handlers(app)
 

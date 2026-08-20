@@ -4,7 +4,7 @@ from pathlib import Path
 
 import os
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, Field
 from pydantic_settings import BaseSettings
 
 
@@ -45,9 +45,24 @@ class Settings(BaseSettings):
         BASE_DIR / "storage" / "ar_models"
     )
 
-    ar_write_api_key: SecretStr
+    ar_write_api_key: SecretStr = Field(
+        description="API key for write operations on AR models",
+    )
 
-    ar_max_file_size: int = 15 * 1024 * 1024
+    ar_max_file_size: int = Field(
+        default=15 * 1024 * 1024,
+        description="Maximum file size in bytes for AR models",
+        ge=1,
+    )
+    ar_max_body_size: int = Field(
+        default=16 * 1024 * 1024,
+        description=(
+            "Maximum HTTP request body size for AR model uploads. "
+            "This limit is slightly higher than the 15 MB maximum model file size "
+            "to account for multipart/form-data overhead."
+        ),
+        ge=1,
+    )
 
 
 # single instance

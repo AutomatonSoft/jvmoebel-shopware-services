@@ -1,3 +1,4 @@
+# tests/conftest.py
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,6 @@ from core.config import settings
 from core.db.postgres import Base, get_async_session
 from domains.ar.router import service
 from domains.ar.service import ARModelService
-
 
 TEST_ENGINE = create_async_engine(
     settings.db.url,
@@ -80,6 +80,7 @@ def auth_headers():
         ),
     }
 
+
 @pytest.fixture
 def invalid_auth_headers() -> dict[str, str]:
     return {
@@ -89,9 +90,9 @@ def invalid_auth_headers() -> dict[str, str]:
 
 @pytest.fixture(autouse=True)
 def storage(tmp_path: Path):
-    #base_path = tmp_path / "ar_models" # dev хранилище
-    base_path = tmp_path / "ar_models_test" # test хранилище (сразу удаляет сохраненные файлы)
-    #base_path = Path("app/storage/ar_models_test") # test хранилище (сохраняет все файлы)
+    # base_path = tmp_path / "ar_models" # dev хранилище
+    base_path = tmp_path / "ar_models_test"  # test хранилище (сразу удаляет сохраненные файлы)
+    # base_path = Path("app/storage/ar_models_test") # test хранилище (сохраняет все файлы)
     base_path.mkdir(
         parents=True,
         exist_ok=True,

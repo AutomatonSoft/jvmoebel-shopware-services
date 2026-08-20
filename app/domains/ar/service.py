@@ -284,12 +284,36 @@ class ARModelService:
 
             raise
 
-        # Эту проверку оставляем на случай, если изменим логику формирования пути на ту,
-        # которая потенциально может создавать одинаковые пути
+        # Удаляем старый файл с обработкой ошибок (best effort)
+        # Не даем ошибке удаления старого файла сломать успешное обновление
         if old_file_path != new_file_path:
-            await self.storage.delete(
-                file_path=old_file_path,
-            )
+            try:
+                await self.storage.delete(file_path=old_file_path)
+
+                if await self.storage.exists(file_path=old_file_path):
+                    logger.error(
+                        "Old AR model file still exists after update: "
+                        "sku=%s old_file_path=%s. Manual cleanup may be required.",
+                        sku,
+                        old_file_path,
+                    )
+                else:
+                    logger.info(
+                        "Old AR model file deleted successfully: "
+                        "sku=%s old_file_path=%s",
+                        sku,
+                        old_file_path,
+                    )
+
+            except Exception as e:
+                logger.error(
+                    "Failed to delete old AR model file after successful update: "
+                    "sku=%s old_file_path=%s, error=%s. Manual cleanup may be required.",
+                    sku,
+                    old_file_path,
+                    e,
+                    exc_info=True,
+                )
 
         logger.info(
             "AR model updated: sku=%s id=%s",

@@ -34,7 +34,7 @@ services:
     volumes:
       - .:/app
       - backend_venv_dev:/app/.venv
-      - ar_models_data_dev:/app/app/storage/ar_models
+      - ./app/storage/ar_models:/app/app/storage/ar_models
     working_dir: /app
     environment:
       PYTHONPATH: /app/app
@@ -47,4 +47,4 @@ services:
 volumes:
   postgres_data_dev:
   backend_venv_dev:
-  ar_models_data_dev:
+#  ar_models_data_dev:

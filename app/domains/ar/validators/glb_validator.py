@@ -114,7 +114,8 @@ class GLBValidator(BaseValidator):
             for buffer in gltf_data['buffers']:
                 if 'uri' in buffer:
                     uri = buffer['uri']
-                    if not uri.startswith('data:') and not uri.startswith('blob:'):
+                    # Разрешаем только data: URI, запрещаем blob: и все остальные
+                    if not uri.startswith('data:'):
                         return False
 
         # Проверка изображений
@@ -122,7 +123,8 @@ class GLBValidator(BaseValidator):
             for image in gltf_data['images']:
                 if 'uri' in image:
                     uri = image['uri']
-                    if not uri.startswith('data:') and not uri.startswith('blob:'):
+                    # Разрешаем только data: URI, запрещаем blob: и все остальные
+                    if not uri.startswith('data:'):
                         return False
 
         return True

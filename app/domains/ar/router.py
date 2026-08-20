@@ -42,8 +42,8 @@ service = ARModelService()
         | SARModelUnavailableResponse
     ),
     responses={
-        400: {
-            "description": "Invalid SKU",
+        422: {
+            "description": "Invalid SKU format",
         },
     },
 )
@@ -77,8 +77,8 @@ async def get_model(
 @router.get(
     "/{sku}/file",
     responses={
-        400: {
-            "description": "Invalid SKU",
+        422: {
+            "description": "Invalid SKU format",
         },
         404: {
             "description": "AR model or model file not found",
@@ -104,9 +104,12 @@ async def get_model_file(
     response_model=SARModelAvailableResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
+        422: {
+            "description": "Invalid SKU format",
+        },
         400: {
             "description": (
-                "Invalid SKU, unsupported file format, "
+                "Unsupported file format, "
                 "file too large, invalid file or dimensions"
             ),
         },
@@ -124,7 +127,7 @@ async def create_model(
         ...,
         description=(
             "AR model file. Supported formats: GLB, USDZ. "
-            "Maximum size: 15 MB."
+            "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
         ),
     ),
     width: Decimal = Form(...),
@@ -164,9 +167,12 @@ async def create_model(
     "/{sku}",
     response_model=SARModelAvailableResponse,
     responses={
+        422: {
+            "description": "Invalid SKU format",
+        },
         400: {
             "description": (
-                "Invalid SKU, unsupported file format, "
+                "Unsupported file format, "
                 "file too large, invalid file or dimensions"
             ),
         },
@@ -184,7 +190,7 @@ async def update_model(
         ...,
         description=(
             "AR model file. Supported formats: GLB, USDZ. "
-            "Maximum size: 15 MB."
+            "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
         ),
     ),
     width: Decimal = Form(...),
@@ -224,6 +230,9 @@ async def update_model(
     "/{sku}/status",
     response_model=SARModelStatusResponse,
     responses={
+        422: {  # Изменено с 400 на 422
+            "description": "Invalid SKU format",
+        },
         401: {
             "description": "Authentication required or invalid token",
         },
@@ -254,6 +263,9 @@ async def update_model_status(
     "/{sku}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
+        422: {
+            "description": "Invalid SKU format",
+        },
         401: {
             "description": "Authentication required or invalid token",
         },

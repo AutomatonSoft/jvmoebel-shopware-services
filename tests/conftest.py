@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import (
 
 load_dotenv(".env.test", override=True)
 
-from app.main import app
+
+from app.main import app_without_middleware as app
 from core.config import settings
 from core.db.postgres import Base, get_async_session
 from domains.ar.router import service

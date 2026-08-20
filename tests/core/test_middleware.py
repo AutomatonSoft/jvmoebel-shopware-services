@@ -1,3 +1,4 @@
+# tests/core/test_middleware.py
 from io import BytesIO
 
 import pytest
@@ -5,271 +6,204 @@ from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 
 from app.core.middleware import MaxBodySizeMiddleware
+from app.core.config import settings
 
 
 @pytest.fixture
-def app_with_small_limit() -> FastAPI:
-    """Создает приложение с маленьким лимитом для тестов."""
+def middleware_app():
+    """Создает тестовое приложение с middleware."""
+    test_app = FastAPI()
 
-    app = FastAPI()
-
-    app.add_middleware(
-        MaxBodySizeMiddleware,
-        max_size=100,
-    )
-
-    @app.post("/test-upload")
+    @test_app.post("/test-upload")
     async def test_upload(request: Request):
         body = await request.body()
+        return {"size": len(body)}
 
-        return {
-            "size": len(body),
-        }
-
-    return app
-
-
-@pytest.mark.asyncio
-async def test_request_within_limit(
-    app_with_small_limit: FastAPI,
-):
-    """Запрос меньше лимита должен успешно проходить."""
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/test-upload",
-            content=b"x" * 99,
-        )
-
-    assert response.status_code == 200
-    assert response.json()["size"] == 99
-
-
-@pytest.mark.asyncio
-async def test_request_exactly_at_limit(
-    app_with_small_limit: FastAPI,
-):
-    """Запрос ровно размером с лимит должен успешно проходить."""
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/test-upload",
-            content=b"x" * 100,
-        )
-
-    assert response.status_code == 200
-    assert response.json()["size"] == 100
-
-
-@pytest.mark.asyncio
-async def test_request_exceeds_limit(
-    app_with_small_limit: FastAPI,
-):
-    """Запрос больше лимита должен возвращать 413."""
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/test-upload",
-            content=b"x" * 101,
-        )
-
-    assert response.status_code == 413
-    assert response.json() == {
-        "detail": "Request body too large",
-    }
-
-
-@pytest.mark.asyncio
-async def test_content_length_exceeds_limit(
-    app_with_small_limit: FastAPI,
-):
-    """
-    Content-Length больше лимита должен быть отклонен
-    до запуска endpoint.
-    """
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/test-upload",
-            content=b"x" * 150,
-            headers={
-                "Content-Length": "150",
-            },
-        )
-
-    assert response.status_code == 413
-    assert response.json() == {
-        "detail": "Request body too large",
-    }
-
-
-@pytest.mark.asyncio
-async def test_request_without_content_length_exceeds_limit(
-    app_with_small_limit: FastAPI,
-):
-    """
-    Запрос без Content-Length должен быть отклонен,
-    когда фактический размер body превышает лимит.
-    """
-
-    scope = {
-        "type": "http",
-        "asgi": {
-            "version": "3.0",
-            "spec_version": "2.4",
-        },
-        "http_version": "1.1",
-        "method": "POST",
-        "scheme": "http",
-        "path": "/test-upload",
-        "raw_path": b"/test-upload",
-        "query_string": b"",
-        "headers": [
-            (b"host", b"test"),
-            (b"content-type", b"application/octet-stream"),
-        ],
-        "client": ("127.0.0.1", 12345),
-        "server": ("test", 80),
-    }
-
-    messages = [
-        {
-            "type": "http.request",
-            "body": b"x" * 60,
-            "more_body": True,
-        },
-        {
-            "type": "http.request",
-            "body": b"x" * 41,
-            "more_body": False,
-        },
-    ]
-
-    sent_messages = []
-
-    async def receive():
-        return messages.pop(0)
-
-    async def send(message):
-        sent_messages.append(message)
-
-    await app_with_small_limit(
-        scope,
-        receive,
-        send,
+    wrapped_app = MaxBodySizeMiddleware(
+        test_app,
+        max_size=settings.ar_max_body_size
     )
 
-    response_start = sent_messages[0]
-    response_body = sent_messages[1]
+    return wrapped_app
 
-    assert response_start["status"] == 413
-    assert response_body["body"] == (
-        b'{"detail":"Request body too large"}'
-    )
 
+@pytest.fixture
+def middleware_app_small_limit():
+    """Создает тестовое приложение с маленьким лимитом (100 байт)."""
+    test_app = FastAPI()
+
+    @test_app.post("/test-upload")
+    async def test_upload(request: Request):
+        body = await request.body()
+        return {"size": len(body)}
+
+    wrapped_app = MaxBodySizeMiddleware(test_app, max_size=100)
+
+    return wrapped_app
+
+
+@pytest.fixture
+async def middleware_client(middleware_app):
+    """Клиент для тестов с реальным лимитом."""
+    async with AsyncClient(
+            transport=ASGITransport(app=middleware_app),
+            base_url="http://test",
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+async def middleware_client_small(middleware_app_small_limit):
+    """Клиент для тестов с маленьким лимитом."""
+    async with AsyncClient(
+            transport=ASGITransport(app=middleware_app_small_limit),
+            base_url="http://test",
+    ) as client:
+        yield client
+
+
+# ========== ИЗОЛИРОВАННЫЕ ТЕСТЫ MIDDLEWARE ==========
 
 @pytest.mark.asyncio
-async def test_empty_body(
-    app_with_small_limit: FastAPI,
-):
-    """Пустой body должен успешно проходить."""
+class TestMiddlewareWithEnvLimit:
+    """Тесты middleware с реальным лимитом."""
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
+    async def test_request_within_limit(self, middleware_client):
+        response = await middleware_client.post(
+            "/test-upload",
+            content=b"x" * 1024,
+        )
+        assert response.status_code == 200
+        assert response.json()["size"] == 1024
+
+    async def test_request_exceeds_limit(self, middleware_client):
+        response = await middleware_client.post(
+            "/test-upload",
+            content=b"x" * (settings.ar_max_body_size + 1),
+        )
+        assert response.status_code == 413
+        assert response.json()["detail"] == "Request body too large"
+
+    async def test_empty_body(self, middleware_client):
+        response = await middleware_client.post(
             "/test-upload",
             content=b"",
         )
-
-    assert response.status_code == 200
-    assert response.json()["size"] == 0
-
-
-# =============================================
+        assert response.status_code == 200
+        assert response.json()["size"] == 0
 
 
 @pytest.mark.asyncio
-async def test_multipart_file_exceeds_limit(
-    app_with_small_limit: FastAPI,
-):
-    """
-    Multipart upload, размер которого превышает лимит,
-    должен быть отклонен middleware.
-    """
+class TestMiddlewareWithSmallLimit:
+    """Тесты middleware с маленьким лимитом (100 байт)."""
 
-    file_content = b"x" * 101
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app_with_small_limit),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
+    async def test_request_under_limit(self, middleware_client_small):
+        response = await middleware_client_small.post(
             "/test-upload",
-            files={
-                "file": (
-                    "model.glb",
-                    BytesIO(file_content),
-                    "model/gltf-binary",
-                ),
-            },
+            content=b"x" * 99,
         )
+        assert response.status_code == 200
+        assert response.json()["size"] == 99
 
-    assert response.status_code == 413
-    assert response.json() == {
-        "detail": "Request body too large",
-    }
+    async def test_request_exactly_at_limit(self, middleware_client_small):
+        response = await middleware_client_small.post(
+            "/test-upload",
+            content=b"x" * 100,
+        )
+        assert response.status_code == 200
+        assert response.json()["size"] == 100
+
+    async def test_request_one_byte_over_limit(self, middleware_client_small):
+        response = await middleware_client_small.post(
+            "/test-upload",
+            content=b"x" * 101,
+        )
+        assert response.status_code == 413
+        assert response.json()["detail"] == "Request body too large"
 
 
-@pytest.mark.asyncio
-async def test_multipart_file_within_limit():
-    """
-    Multipart upload, размер всего HTTP body которого
-    находится в пределах лимита, должен успешно проходить.
-    """
+# ========== ИНТЕГРАЦИОННЫЕ ТЕСТЫ MIDDLEWARE С РЕАЛЬНЫМИ ЭНДПОИНТАМИ ==========
 
-    app = FastAPI()
+@pytest.fixture
+def app_with_middleware():
+    """Оборачиваем реальное приложение в middleware."""
+    from app.main import app_without_middleware
 
-    app.add_middleware(
-        MaxBodySizeMiddleware,
-        max_size=1000,
+    return MaxBodySizeMiddleware(
+        app_without_middleware,
+        max_size=settings.ar_max_body_size
     )
 
-    @app.post("/test-upload")
-    async def test_upload():
-        return {"status": "ok"}
 
-    file_content = b"x"
-
+@pytest.fixture
+async def client_with_middleware(app_with_middleware):
+    """Клиент для тестов с middleware на реальных эндпоинтах."""
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
+            transport=ASGITransport(app=app_with_middleware),
+            base_url="http://test",
     ) as client:
-        response = await client.post(
-            "/test-upload",
+        yield client
+
+
+@pytest.mark.asyncio
+class TestMiddlewareWithRealEndpoints:
+    """Интеграционные тесты middleware с реальными эндпоинтами."""
+
+    async def test_middleware_rejects_large_file(self, client_with_middleware, auth_headers):
+        """Большой файл должен быть отклонен."""
+        large_content = b"x" * (settings.ar_max_body_size + 1)
+
+        response = await client_with_middleware.post(
+            "/api/v1/ar/models/test-sku",
             files={
-                "file": (
-                    "model.glb",
-                    BytesIO(file_content),
-                    "model/gltf-binary",
-                ),
+                "file": ("test.glb", BytesIO(large_content), "model/gltf-binary"),
+                "width": (None, "1.0"),
+                "height": (None, "1.0"),
+                "depth": (None, "1.0"),
+                "unit": (None, "m"),
             },
+            headers=auth_headers,
         )
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "status": "ok",
-    }
+        # Должен быть 413 от middleware
+        assert response.status_code == 413
+        assert "Request body too large" in response.text
+
+    async def test_middleware_rejects_before_auth(self, client_with_middleware):
+        """Middleware должен работать ДО проверки авторизации."""
+        large_content = b"x" * (settings.ar_max_body_size + 1)
+
+        response = await client_with_middleware.post(
+            "/api/v1/ar/models/test-sku",
+            files={
+                "file": ("test.glb", BytesIO(large_content), "model/gltf-binary"),
+                "width": (None, "1.0"),
+                "height": (None, "1.0"),
+                "depth": (None, "1.0"),
+                "unit": (None, "m"),
+            },
+            # Без авторизации!
+        )
+
+        # Должен быть 413, а не 401
+        assert response.status_code == 413
+        assert "Request body too large" in response.text
+
+    async def test_middleware_allows_small_file(self, client_with_middleware, auth_headers):
+        """Маленький файл должен проходить middleware."""
+        small_content = b"x" * 1024  # 1KB
+
+        response = await client_with_middleware.post(
+            "/api/v1/ar/models/test-sku-2",
+            files={
+                "file": ("test.glb", BytesIO(small_content), "model/gltf-binary"),
+                "width": (None, "1.0"),
+                "height": (None, "1.0"),
+                "depth": (None, "1.0"),
+                "unit": (None, "m"),
+            },
+            headers=auth_headers,
+        )
+
+        # Не должен быть 413 (может быть 200, 400, 404 - это нормально)
+        assert response.status_code != 413

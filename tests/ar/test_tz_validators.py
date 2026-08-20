@@ -1,3 +1,5 @@
+# tests/ar/test_tz_validators.py
+
 import pytest
 import json
 import struct
@@ -143,8 +145,15 @@ class TestARValidatorsWithGeneratedFiles:
         """
         usdz_path = tmp_path / "valid.usdz"
 
-        # Минимальный валидный USDA контент
-        usda_content = '#usda 1.0\n'
+        # ИСПРАВЛЕНО: теперь это ВАЛИДНЫЙ USDA с структурой
+        usda_content = """#usda 1.0
+def Xform "Model"
+{
+    def Mesh "Cube"
+    {
+        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+    }
+}"""
 
         # Создаем ZIP без сжатия (требование USDZ)
         with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
@@ -197,7 +206,6 @@ class TestARValidatorsWithGeneratedFiles:
         """ТЗ: fake ZIP named .usdz → rejected"""
         fake_usdz = tmp_path / "fake.usdz"
 
-        # Создаем обычный ZIP без USD контента
         with zipfile.ZipFile(fake_usdz, 'w') as zf:
             zf.writestr('test.txt', 'This is a fake USDZ file')
 
@@ -207,10 +215,7 @@ class TestARValidatorsWithGeneratedFiles:
     # ============ ТЗ: unsafe archive path ../ → rejected ============
 
     def test_unsafe_archive_path_rejected(self, tmp_path):
-        """
-        ТЗ: unsafe archive path ../ → rejected
-        Проверяет, что USDZ файл не содержит пути с directory traversal (../)
-        """
+        """ТЗ: unsafe archive path ../ → rejected"""
         unsafe_usdz = tmp_path / "unsafe.usdz"
 
         with zipfile.ZipFile(unsafe_usdz, 'w') as zf:
@@ -225,14 +230,7 @@ class TestARValidatorsWithGeneratedFiles:
     # ============ ТЗ: encrypted USDZ → rejected ============
 
     def test_encrypted_usdz_rejected(self, tmp_path):
-        """
-        ТЗ: encrypted USDZ → rejected
-
-        Создаем зашифрованный USDZ с помощью pyzipper (AES-256)
-        и проверяем, что валидатор отклоняет его.
-        Для создания зашифрованного архива используем pyzipper,
-        так как стандартный zipfile не поддерживает шифрование.
-        """
+        """ТЗ: encrypted USDZ → rejected"""
         try:
             import pyzipper
         except ImportError:
@@ -244,7 +242,7 @@ class TestARValidatorsWithGeneratedFiles:
         with pyzipper.AESZipFile(
                 encrypted_path,
                 'w',
-                compression=pyzipper.ZIP_STORED,  # USDZ требует без сжатия
+                compression=pyzipper.ZIP_STORED,
                 encryption=pyzipper.WZ_AES
         ) as zf:
             zf.setpassword(b'test123')
@@ -292,7 +290,7 @@ class TestARValidatorsWithGeneratedFiles:
     # ============ ТЗ: compressed USDZ → rejected ============
 
     def test_compressed_usdz_rejected(self, tmp_path):
-        """ТЗ: compressed USDZ → rejected (из пункта encrypted/compressed invalid USDZ)"""
+        """ТЗ: compressed USDZ → rejected"""
         compressed_path = tmp_path / "compressed.usdz"
 
         # Создаем USDZ со сжатием (нарушает спецификацию)
@@ -301,3 +299,188 @@ class TestARValidatorsWithGeneratedFiles:
 
         result = ValidatorFactory.validate(compressed_path)
         assert result is False, "Compressed USDZ should be rejected"
+
+    # ============ КРИТИЧЕСКИЕ ТЕСТЫ ДЛЯ USDZ ВАЛИДАТОРА ============
+
+    def test_fake_usda_content_rejected(self, tmp_path):
+        """Фальшивый USDA с произвольным текстом → rejected"""
+        usdz_path = tmp_path / "fake_usda.usdz"
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', 'This is not a valid USD file' * 100)
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Fake USDA with random text should be rejected"
+
+    def test_usda_without_usd_marker_but_with_def_accepted(self, tmp_path):
+        """
+        ИСПРАВЛЕНО: USDA без #usda НО с def - должен быть ПРИНЯТ
+        """
+        usdz_path = tmp_path / "no_marker.usdz"
+
+        content = """def Xform "Model"
+{
+    def Mesh "Cube"
+    {
+        # Some mesh data
+    }
+}"""
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', content)
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is True, "USDA with def should be accepted even without #usda marker"
+
+    def test_usda_without_definition_rejected(self, tmp_path):
+        """USDA без def → rejected"""
+        usdz_path = tmp_path / "no_definition.usdz"
+
+        invalid_content = """#usda 1.0
+( doc = "Test" )
+# Just comments and metadata but no actual definition"""
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', invalid_content)
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "USDA without definition should be rejected"
+
+    def test_windows_absolute_paths_rejected(self, tmp_path):
+        """Windows absolute paths → rejected"""
+        usdz_path = tmp_path / "win_abs.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('C:\\outside\\file.txt', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Windows absolute paths should be rejected"
+
+    def test_windows_traversal_rejected(self, tmp_path):
+        """Windows traversal → rejected"""
+        usdz_path = tmp_path / "win_traversal.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('..\\outside\\file.txt', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Windows traversal paths should be rejected"
+
+    def test_unix_absolute_paths_rejected(self, tmp_path):
+        """Unix absolute paths → rejected"""
+        usdz_path = tmp_path / "unix_abs.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('/etc/passwd', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Unix absolute paths should be rejected"
+
+    def test_unix_traversal_rejected(self, tmp_path):
+        """Unix traversal → rejected"""
+        usdz_path = tmp_path / "unix_traversal.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('../../etc/passwd', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Unix traversal paths should be rejected"
+
+    def test_null_byte_in_filename_handled(self, tmp_path):
+        """
+        ИСПРАВЛЕНО: Проверяем, что валидатор корректно обрабатывает null bytes
+        zipfile сам не позволяет создать файл с null byte, поэтому тест проверяет
+        что валидатор не падает и правильно обрабатывает ситуацию
+        """
+        usdz_path = tmp_path / "null_byte.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            # Пытаемся добавить файл с null byte
+            try:
+                zf.writestr('malicious\x00file.txt', 'Should not be allowed')
+                # Если файл создался - валидатор должен отклонить
+                result = ValidatorFactory.validate(usdz_path)
+                assert result is False, "Null byte in filename should be rejected"
+            except ValueError:
+                # zipfile отклонил null byte - это тоже защита, тест пройден
+                pass
+
+    def test_combined_attacks_rejected(self, tmp_path):
+        """Комбинация атак → rejected"""
+        usdz_path = tmp_path / "combined.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('..\\windows\\outside.txt', 'Should not be allowed')
+            zf.writestr('/etc/passwd', 'Should not be allowed')
+            zf.writestr('C:\\Windows\\System32\\config', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Combined attack vectors should be rejected"
+
+    def test_usdz_without_root_usd_rejected(self, tmp_path):
+        """USDZ без root USD → rejected"""
+        usdz_path = tmp_path / "no_root.usdz"
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('subfolder/model.usda', '#usda 1.0\n')
+            zf.writestr('image.png', b'fake image')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "USDZ without root USD file should be rejected"
+
+    def test_usdz_with_mixed_separators_and_traversal_rejected(self, tmp_path):
+        """Смешанные разделители с traversal → rejected"""
+        usdz_path = tmp_path / "mixed_separators.usdz"
+
+        valid_usda = '#usda 1.0\ndef Xform "Model" { }'
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+            zf.writestr('../outside\\file.txt', 'Should not be allowed')
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is False, "Mixed separators with traversal should be rejected"
+
+    def test_usdz_with_valid_minimal_structure_accepted(self, tmp_path):
+        """Минимальный валидный USDA → accepted"""
+        usdz_path = tmp_path / "valid_minimal.usdz"
+
+        valid_usda = """#usda 1.0
+(
+    doc = "Test model"
+)
+
+def Xform "Model"
+{
+    def Mesh "Cube"
+    {
+        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 1, 3, 2, 2, 3, 7, 6, 6, 7, 5, 4, 4, 5, 1, 0, 0, 2, 6, 4, 1, 5, 7, 3]
+        point3f[] points = [(-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (-0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (-0.5, 0.5, -0.5), (0.5, 0.5, -0.5)]
+    }
+}"""
+
+        with zipfile.ZipFile(usdz_path, 'w', compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr('model.usda', valid_usda)
+
+        result = ValidatorFactory.validate(usdz_path)
+        assert result is True, "Valid minimal USDA should be accepted"

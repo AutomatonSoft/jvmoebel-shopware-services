@@ -5,6 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi import UploadFile
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -231,8 +232,6 @@ class ARModelService:
         if model is None:
             raise ARModelNotFoundException()
 
-        old_file_path = model.file_path
-
         file_format = self._get_file_extension(file)
 
         await self._validate_file_size(file)
@@ -261,6 +260,20 @@ class ARModelService:
         )
 
         try:
+            result = await session.execute(
+                select(ARModel)
+                .where(ARModel.sku == sku)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
+            model = result.scalar_one_or_none()
+
+            if model is None:
+                await self.storage.delete(file_path=new_file_path)
+                raise ARModelNotFoundException()
+
+            old_file_path = model.file_path
+
             model = await self.repository.update(
                 session=session,
                 obj=model,

@@ -1,6 +1,7 @@
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+import asyncio
 
 import pytest
 from fastapi import UploadFile
@@ -19,6 +20,7 @@ from domains.ar.schemas import (
     SARModelUpdate,
 )
 from domains.ar.service import ARModelService
+from tests.conftest import TestSessionLocal
 
 
 @pytest.fixture
@@ -419,6 +421,62 @@ async def test_update_model(
     assert model.file_path != original_file_path
     assert Path(model.file_path).is_file()
     assert not Path(original_file_path).is_file()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_updates_leave_only_current_file(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        mock_validate_ar_model_file,
+):
+    """Два параллельных PUT не должны оставлять orphan-файлы."""
+
+    original_model = await create_test_model_with_mock(
+        db_session=db_session,
+        service=ar_service,
+        mock_validate=mock_validate_ar_model_file,
+        sku="ABC-123",
+    )
+    original_file_path = original_model.file_path
+
+    async def update_with_new_session(content: bytes) -> None:
+        async with TestSessionLocal() as session:
+            await ar_service.update_model(
+                session=session,
+                sku="ABC-123",
+                file=UploadFile(
+                    file=BytesIO(content),
+                    filename="updated.glb",
+                ),
+                model_in=SARModelUpdate(
+                    width=Decimal("2.5"),
+                    height=Decimal("1.8"),
+                    depth=Decimal("0.9"),
+                    unit="m",
+                ),
+            )
+
+    await asyncio.gather(
+        update_with_new_session(b"first concurrent update"),
+        update_with_new_session(b"second concurrent update"),
+    )
+
+    async with TestSessionLocal() as session:
+        current = await ar_service.repository.get_model_by_sku(
+            session=session,
+            sku="ABC-123",
+        )
+
+    assert current is not None
+    assert Path(current.file_path).is_file()
+    assert not Path(original_file_path).is_file()
+
+    leftover_files = {
+        path.resolve()
+        for path in Path(current.file_path).parent.iterdir()
+        if path.is_file()
+    }
+    assert leftover_files == {Path(current.file_path).resolve()}
 
 
 @pytest.mark.asyncio

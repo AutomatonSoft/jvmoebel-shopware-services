@@ -2,6 +2,7 @@ from pathlib import Path
 from uuid import uuid4
 import hashlib
 
+from anyio import open_file
 from fastapi import UploadFile
 
 from core.config import settings
@@ -46,9 +47,9 @@ class ARModelStorage:
         if self.base_path not in file_path.resolve().parents:
             raise ValueError("Invalid storage path")
 
-        with file_path.open("wb") as destination:
+        async with await open_file(file_path, "wb") as destination:
             while chunk := await file.read(1024 * 1024):
-                destination.write(chunk)
+                await destination.write(chunk)
 
         return str(file_path)
 

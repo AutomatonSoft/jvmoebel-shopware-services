@@ -2,13 +2,13 @@ import zipfile
 
 import pytest
 
-from app.core.config import settings
-from app.domains.ar.exceptions import (
+from core.config import settings
+from domains.ar.exceptions import (
     ARModelFileTooLargeException,
     UnsupportedARModelFormatException,
 )
-from app.domains.ar.validators.factory import ValidatorFactory
-from app.domains.ar.validators.usdz_validator import USDZValidator
+from domains.ar.validators.factory import ValidatorFactory
+from domains.ar.validators.usdz_validator import USDZValidator
 from scripts.validators.build_dice_usdz import build_dice_usdz
 from scripts.validators.pack_glb import pack_glb
 from scripts.validators.pack_usdz import USDC_MAGIC, pack_usdz

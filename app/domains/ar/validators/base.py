@@ -1,8 +1,8 @@
 # app/domains/ar/validators/base.py
 from abc import ABC, abstractmethod
 from pathlib import Path
-from app.core.config import settings
-from app.domains.ar.exceptions import ARModelFileTooLargeException
+from core.config import settings
+from domains.ar.exceptions import ARModelFileTooLargeException
 
 
 class BaseValidator(ABC):

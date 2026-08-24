@@ -5,9 +5,9 @@ import pytest
 from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 
-from app.core.middleware import MaxBodySizeMiddleware
-from app.core.config import settings
-from app.core.errors_handlers import register_errors_handlers
+from core.middleware import MaxBodySizeMiddleware
+from core.config import settings
+from core.errors_handlers import register_errors_handlers
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ class TestMiddlewareWithSmallLimit:
 @pytest.fixture
 def app_with_middleware():
     """Оборачиваем реальное приложение в middleware."""
-    from app.main import app_without_middleware
+    from main import app_without_middleware
 
     return MaxBodySizeMiddleware(
         app_without_middleware,

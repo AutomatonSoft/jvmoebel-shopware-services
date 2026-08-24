@@ -3,7 +3,7 @@ import struct
 from pathlib import Path
 from typing import Any
 
-from app.domains.ar.validators.base import BaseValidator
+from domains.ar.validators.base import BaseValidator
 
 
 class GLBValidator(BaseValidator):

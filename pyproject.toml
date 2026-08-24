@@ -23,3 +23,6 @@ dev = [
     "python-dotenv>=1.2.2",
     "pyzipper>=0.4.0",
 ]
+
+[tool.pyright]
+extraPaths = ["app"]

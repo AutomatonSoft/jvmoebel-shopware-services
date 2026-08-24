@@ -1,7 +1,7 @@
 from pathlib import Path
-from app.domains.ar.validators.glb_validator import GLBValidator
-from app.domains.ar.validators.usdz_validator import USDZValidator
-from app.domains.ar.exceptions import (
+from domains.ar.validators.glb_validator import GLBValidator
+from domains.ar.validators.usdz_validator import USDZValidator
+from domains.ar.exceptions import (
     UnsupportedARModelFormatException,
 )
 

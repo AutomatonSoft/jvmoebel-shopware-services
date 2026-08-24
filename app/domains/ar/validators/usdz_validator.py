@@ -5,7 +5,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
-from app.domains.ar.validators.base import BaseValidator
+from domains.ar.validators.base import BaseValidator
 
 
 class USDZValidator(BaseValidator):

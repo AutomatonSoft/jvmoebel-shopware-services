@@ -20,13 +20,8 @@ from domains.ar.schemas import (
     SARModelUpdate,
 )
 from domains.ar.service import ARModelService
+from tests.validators.ar_files import dice_glb_bytes, dice_usdz_bytes
 from tests.conftest import TestSessionLocal
-
-
-@pytest.fixture
-def fixtures_dir() -> Path:
-    """Путь к директории с фикстурами"""
-    return Path(__file__).parent.parent / "fixtures" / "ar"
 
 
 async def create_test_model_with_file(
@@ -100,25 +95,17 @@ async def create_test_model_with_mock(
 
 
 # =============================================================================
-# ТЕСТЫ С РЕАЛЬНЫМ ВАЛИДАТОРОМ (используют реальные файлы из fixtures)
+# ТЕСТЫ С РЕАЛЬНЫМ ВАЛИДАТОРОМ (кубик в tests/validators/generated/)
 # =============================================================================
 
 @pytest.mark.asyncio
 async def test_create_model_with_real_valid_glb(
         db_session: AsyncSession,
         ar_service: ARModelService,
-        fixtures_dir,
+        generated_ar,
 ):
-    """
-    РЕАЛЬНЫЙ ВАЛИДАТОР
-    Создание модели с реальным валидным GLB файлом из fixtures/valid/glb/
-    """
-
-    glb_files = list((fixtures_dir / "valid" / "glb").glob("*.glb"))
-    if not glb_files:
-        pytest.skip("No valid GLB files found in fixtures")
-
-    glb_file = glb_files[0]  # Берем первый валидный GLB
+    # ТЗ service-1: Создание с валидным GLB → создана
+    glb_file = generated_ar("valid.glb", dice_glb_bytes())
 
     model = await create_test_model_with_file(
         db_session=db_session,
@@ -138,18 +125,13 @@ async def test_create_model_with_real_valid_glb(
 async def test_create_model_with_real_valid_usdz(
         db_session: AsyncSession,
         ar_service: ARModelService,
-        fixtures_dir,
+        generated_ar,
 ):
-    """
-    РЕАЛЬНЫЙ ВАЛИДАТОР
-    Создание модели с реальным валидным USDZ файлом из fixtures/valid/usdz/
-    """
-
-    usdz_files = list((fixtures_dir / "valid" / "usdz").glob("*.usdz"))
-    if not usdz_files:
-        pytest.skip("No valid USDZ files found in fixtures")
-
-    usdz_file = usdz_files[0]  # Берем первый валидный USDZ
+    # ТЗ service-2: Создание с валидным USDZ → создана
+    usdz_file = generated_ar(
+        "valid.usdz",
+        dice_usdz_bytes(align=True),
+    )
 
     model = await create_test_model_with_file(
         db_session=db_session,
@@ -169,18 +151,13 @@ async def test_create_model_with_real_valid_usdz(
 async def test_create_model_with_invalid_glb_rejected(
         db_session: AsyncSession,
         ar_service: ARModelService,
-        fixtures_dir,
+        generated_ar,
 ):
-    """
-    РЕАЛЬНЫЙ ВАЛИДАТОР
-    Создание модели с невалидным GLB файлом из fixtures/invalid/glb/ - rejected
-    """
-
-    glb_files = list((fixtures_dir / "invalid" / "glb").glob("*.glb"))
-    if not glb_files:
-        pytest.skip("No invalid GLB files found in fixtures")
-
-    glb_file = glb_files[0]  # Берем первый невалидный GLB
+    # ТЗ service-3: Создание с невалидным GLB → Exception
+    glb_file = generated_ar(
+        "invalid.glb",
+        dice_glb_bytes(version=1),
+    )
 
     with pytest.raises(InvalidARModelFileException):
         await create_test_model_with_file(
@@ -195,15 +172,13 @@ async def test_create_model_with_invalid_glb_rejected(
 async def test_create_model_with_fake_text_glb_rejected(
         db_session: AsyncSession,
         ar_service: ARModelService,
-        tmp_path,
+        generated_ar,
 ):
-    """
-    РЕАЛЬНЫЙ ВАЛИДАТОР
-    Создание модели с текстовым файлом .glb (создается на лету) - rejected
-    """
-
-    fake_glb = tmp_path / "fake.glb"
-    fake_glb.write_text("This is not a real GLB file")
+    # ТЗ service-3: Создание с невалидным GLB → Exception
+    fake_glb = generated_ar(
+        "fake.glb",
+        b"This is not a real GLB file",
+    )
 
     with pytest.raises(InvalidARModelFileException):
         await create_test_model_with_file(
@@ -211,6 +186,84 @@ async def test_create_model_with_fake_text_glb_rejected(
             service=ar_service,
             file_path=fake_glb,
             sku="TEST-FAKE-GLB",
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_model_with_valid_glb(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        generated_ar,
+):
+    # ТЗ service-4: Обновление с валидным GLB → обновлена
+    create_file = generated_ar("create.glb", dice_glb_bytes())
+    original = await create_test_model_with_file(
+        db_session=db_session,
+        service=ar_service,
+        file_path=create_file,
+        sku="TEST-UPD-001",
+    )
+    original_path = original.file_path
+
+    update_file = generated_ar("updated.glb", dice_glb_bytes())
+
+    updated = await ar_service.update_model(
+        session=db_session,
+        sku="TEST-UPD-001",
+        file=UploadFile(
+            file=BytesIO(update_file.read_bytes()),
+            filename="updated.glb",
+        ),
+        model_in=SARModelUpdate(
+            width=Decimal("2.5"),
+            height=Decimal("1.8"),
+            depth=Decimal("0.9"),
+            unit="m",
+        ),
+    )
+
+    assert updated.id == original.id
+    assert updated.sku == "TEST-UPD-001"
+    assert updated.file_format == "glb"
+    assert updated.width == Decimal("2.500")
+    assert Path(updated.file_path).is_file()
+    assert updated.file_path != original_path
+
+
+@pytest.mark.asyncio
+async def test_update_model_with_invalid_glb_rejected(
+        db_session: AsyncSession,
+        ar_service: ARModelService,
+        generated_ar,
+):
+    # ТЗ service-5: Обновление с невалидным GLB → Exception
+    create_file = generated_ar("create.glb", dice_glb_bytes())
+    await create_test_model_with_file(
+        db_session=db_session,
+        service=ar_service,
+        file_path=create_file,
+        sku="TEST-UPD-002",
+    )
+
+    invalid_file = generated_ar(
+        "invalid.glb",
+        dice_glb_bytes(declared_length=100),
+    )
+
+    with pytest.raises(InvalidARModelFileException):
+        await ar_service.update_model(
+            session=db_session,
+            sku="TEST-UPD-002",
+            file=UploadFile(
+                file=BytesIO(invalid_file.read_bytes()),
+                filename="invalid.glb",
+            ),
+            model_in=SARModelUpdate(
+                width=Decimal("2.5"),
+                height=Decimal("1.8"),
+                depth=Decimal("0.9"),
+                unit="m",
+            ),
         )
 
 

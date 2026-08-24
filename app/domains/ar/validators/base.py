@@ -12,11 +12,10 @@ class BaseValidator(ABC):
         pass
 
     def _check_size(self, file_path: Path) -> None:
-        """Проверка размера файла"""
+        # ТЗ GLB-10 / USDZ-11: Файл <= AR_MAX_FILE_SIZE
         try:
             size = file_path.stat().st_size
             if size > settings.ar_max_file_size:
                 raise ARModelFileTooLargeException()
         except OSError:
-            # Если не можем получить размер - считаем файл невалидным
             raise ARModelFileTooLargeException()

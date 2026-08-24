@@ -19,4 +19,7 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv
 cp .env.test.example .env.test
 docker compose --env-file .env.test -f docker-compose.test.yml up --build
 uv run pytest
+
+```bash
+rm -f tests/validators/generated/*
 ```

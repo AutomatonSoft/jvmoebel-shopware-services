@@ -20,6 +20,7 @@ from core.config import settings
 from core.db.postgres import Base, get_async_session
 from domains.ar.router import service
 from domains.ar.service import ARModelService
+from tests.validators.ar_files import cleanup_generated, write_generated
 
 TEST_ENGINE = create_async_engine(
     settings.db.url,
@@ -134,3 +135,18 @@ def mock_validate_ar_model_file(monkeypatch):
     )
 
     return mock_validate
+
+
+@pytest.fixture
+def generated_ar():
+    created: list = []
+
+    def _write(name: str, data: bytes):
+        path = write_generated(name, data)
+        created.append(path)
+        return path
+
+    yield _write
+
+    for path in created:
+        cleanup_generated(path)

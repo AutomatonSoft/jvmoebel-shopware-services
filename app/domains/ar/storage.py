@@ -25,6 +25,9 @@ class ARModelStorage:
         # Используем первые 16 символов SHA256 для краткости
         return hashlib.sha256(sku.encode('utf-8')).hexdigest()[:16]
 
+    def _is_within_base_path(self, path: Path) -> bool:
+        return self.base_path.resolve() in path.resolve().parents
+
     async def save(
             self,
             file: UploadFile,
@@ -44,7 +47,7 @@ class ARModelStorage:
 
         file_path = sku_path / filename
 
-        if self.base_path not in file_path.resolve().parents:
+        if not self._is_within_base_path(file_path):
             raise ValueError("Invalid storage path")
 
         async with await open_file(file_path, "wb") as destination:
@@ -60,6 +63,9 @@ class ARModelStorage:
 
         path = Path(file_path)
 
+        if not self._is_within_base_path(path):
+            raise ValueError("Invalid storage path")
+
         if path.is_file():
             path.unlink()
 
@@ -68,4 +74,5 @@ class ARModelStorage:
             file_path: str,
     ) -> bool:
 
-        return Path(file_path).is_file()
+        path = Path(file_path)
+        return self._is_within_base_path(path) and path.is_file()

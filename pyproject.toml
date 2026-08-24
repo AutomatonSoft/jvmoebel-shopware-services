@@ -26,3 +26,7 @@ dev = [
 
 [tool.pyright]
 extraPaths = ["app"]
+
+[[tool.pyright.executionEnvironments]]
+root = "app"
+extraPaths = []

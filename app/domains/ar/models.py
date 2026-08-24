@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from sqlalchemy import CheckConstraint, DateTime, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,7 +18,7 @@ class ARModel(Base):
     height: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     depth: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
     unit: Mapped[str] = mapped_column(String(1), nullable=False, default="m", server_default="m")
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    status: Mapped[Literal["active", "not_active"]] = mapped_column(String(20), nullable=False, default="active")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

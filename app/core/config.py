@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     )
 
     ar_write_api_key: SecretStr = Field(
+        default=SecretStr("your-secret-token"),
         description="API key for write operations on AR models",
     )
 
@@ -72,6 +73,4 @@ class Settings(BaseSettings):
         return f"{max_size_mb:.2f} MB"
 
 
-# single instance
-
-settings = Settings()
+settings: Settings = Settings()

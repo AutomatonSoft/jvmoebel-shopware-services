@@ -1,6 +1,7 @@
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+from typing import Literal
 import asyncio
 
 import pytest
@@ -32,7 +33,7 @@ async def create_test_model_with_file(
         width: str = "120",
         height: str = "80",
         depth: str = "60",
-        unit: str = "cm",
+        unit: Literal["m", "cm", "mm"] = "cm",
 ) -> ARModel:
     """Создает тестовую модель с реальным файлом из fixtures"""
 
@@ -68,7 +69,7 @@ async def create_test_model_with_mock(
         width: str = "120",
         height: str = "80",
         depth: str = "60",
-        unit: str = "cm",
+        unit: Literal["m", "cm", "mm"] = "cm",
 ) -> ARModel:
     """Создает тестовую модель с моком (для тестов, где валидация не важна)"""
 
@@ -308,7 +309,7 @@ async def test_create_model_converts_dimensions_to_meters_parametrized(
         db_session: AsyncSession,
         ar_service: ARModelService,
         mock_validate_ar_model_file,
-        unit: str,
+        unit: Literal["m", "cm", "mm"],
         value: str,
         expected: Decimal,
 ):

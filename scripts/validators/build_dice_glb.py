@@ -352,16 +352,16 @@ def build_dice_glb() -> tuple[dict[str, Any], bytes]:
         return data + b"\x00" * ((4 - len(data) % 4) % 4)
 
 
-    bin_data = bytearray()
+    bin_chunk = bytearray()
 
 
     def append(data):
-        offset = len(bin_data)
+        offset = len(bin_chunk)
 
-        bin_data.extend(data)
+        bin_chunk.extend(data)
 
-        while len(bin_data) % 4:
-            bin_data.append(0)
+        while len(bin_chunk) % 4:
+            bin_chunk.append(0)
 
         return offset
 
@@ -371,7 +371,7 @@ def build_dice_glb() -> tuple[dict[str, Any], bytes]:
     white_index_offset = append(white_index_data)
     black_index_offset = append(black_index_data)
 
-    bin_data = bytes(bin_data)
+    bin_data = bytes(bin_chunk)
 
 
     # ============================================================

@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.middleware import MaxBodySizeMiddleware
 from app.core.config import settings
+from app.core.errors_handlers import register_errors_handlers
 
 
 @pytest.fixture
@@ -207,3 +208,100 @@ class TestMiddlewareWithRealEndpoints:
 
         # Не должен быть 413 (может быть 200, 400, 404 - это нормально)
         assert response.status_code != 413
+
+
+@pytest.fixture
+def middleware_app_small_limit_with_error_handler():
+    """Приложение с глобальным Exception handler, как в проде."""
+    test_app = FastAPI()
+    register_errors_handlers(test_app)
+
+    @test_app.post("/test-upload")
+    async def test_upload(request: Request):
+        body = await request.body()
+        return {"size": len(body)}
+
+    return MaxBodySizeMiddleware(test_app, max_size=100)
+
+
+async def _asgi_post_chunked_without_content_length(
+    app,
+    path: str,
+    chunks: list[bytes],
+) -> list[dict]:
+    messages: list[dict] = []
+    state = {"i": 0}
+
+    async def receive():
+        index = state["i"]
+        if index >= len(chunks):
+            return {"type": "http.disconnect"}
+
+        chunk = chunks[index]
+        state["i"] += 1
+        return {
+            "type": "http.request",
+            "body": chunk,
+            "more_body": state["i"] < len(chunks),
+        }
+
+    async def send(message):
+        messages.append(message)
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "root_path": "",
+        "query_string": b"",
+        "headers": [(b"content-type", b"application/octet-stream")],
+        "client": ("127.0.0.1", 123),
+        "server": ("test", 80),
+    }
+    await app(scope, receive, send)
+    return messages
+
+
+def _response_starts(messages: list[dict]) -> list[dict]:
+    return [
+        message
+        for message in messages
+        if message.get("type") == "http.response.start"
+    ]
+
+
+@pytest.mark.asyncio
+class TestMiddlewareChunkedWithoutContentLength:
+    """Несколько http.request чанков без Content-Length — ровно один 413."""
+
+    async def test_multiple_chunks_over_limit_sends_single_413(
+        self,
+        middleware_app_small_limit,
+    ):
+        messages = await _asgi_post_chunked_without_content_length(
+            middleware_app_small_limit,
+            "/test-upload",
+            [b"x" * 40, b"x" * 40, b"x" * 40],
+        )
+        starts = _response_starts(messages)
+
+        assert len(starts) == 1
+        assert starts[0]["status"] == 413
+
+    async def test_multiple_chunks_with_global_exception_handler_sends_single_413(
+        self,
+        middleware_app_small_limit_with_error_handler,
+    ):
+        messages = await _asgi_post_chunked_without_content_length(
+            middleware_app_small_limit_with_error_handler,
+            "/test-upload",
+            [b"x" * 40, b"x" * 40, b"x" * 40],
+        )
+        starts = _response_starts(messages)
+
+        assert len(starts) == 1
+        assert starts[0]["status"] == 413

@@ -105,7 +105,7 @@ async def get_model_file(
     status_code=status.HTTP_201_CREATED,
     responses={
         422: {
-            "description": "Invalid SKU format",
+            "description": "Invalid SKU format or non-positive dimensions",
         },
         400: {
             "description": (
@@ -130,9 +130,9 @@ async def create_model(
             "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
         ),
     ),
-    width: Decimal = Form(...),
-    height: Decimal = Form(...),
-    depth: Decimal = Form(...),
+    width: Decimal = Form(..., gt=0),
+    height: Decimal = Form(..., gt=0),
+    depth: Decimal = Form(..., gt=0),
     unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
     write_access=Depends(require_ar_write_access),
@@ -168,7 +168,7 @@ async def create_model(
     response_model=SARModelAvailableResponse,
     responses={
         422: {
-            "description": "Invalid SKU format",
+            "description": "Invalid SKU format or non-positive dimensions",
         },
         400: {
             "description": (
@@ -193,9 +193,9 @@ async def update_model(
             "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
         ),
     ),
-    width: Decimal = Form(...),
-    height: Decimal = Form(...),
-    depth: Decimal = Form(...),
+    width: Decimal = Form(..., gt=0),
+    height: Decimal = Form(..., gt=0),
+    depth: Decimal = Form(..., gt=0),
     unit: Literal["m", "cm", "mm"] = Form(...),
     session: AsyncSession = Depends(get_async_session),
     write_access=Depends(require_ar_write_access),

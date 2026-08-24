@@ -634,3 +634,90 @@ async def test_invalid_sku(
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("width", "0"),
+        ("height", "0"),
+        ("depth", "0"),
+        ("width", "-1"),
+        ("height", "-0.1"),
+        ("depth", "-10"),
+    ],
+)
+async def test_create_model_rejects_non_positive_dimensions(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    field: str,
+    value: str,
+):
+    """Нулевые и отрицательные размеры должны давать 422 на Form, не 500."""
+
+    data = {
+        "width": "1",
+        "height": "1",
+        "depth": "1",
+        "unit": "m",
+        field: value,
+    }
+
+    response = await client.post(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "model.glb",
+                b"test model content",
+                "model/gltf-binary",
+            ),
+        },
+        data=data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+    assert field in str(response.json())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("width", "0"),
+        ("height", "0"),
+        ("depth", "-1"),
+    ],
+)
+async def test_update_model_rejects_non_positive_dimensions(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    field: str,
+    value: str,
+):
+    """Нулевые и отрицательные размеры на PUT должны давать 422."""
+
+    data = {
+        "width": "1",
+        "height": "1",
+        "depth": "1",
+        "unit": "m",
+        field: value,
+    }
+
+    response = await client.put(
+        "/api/v1/ar/models/ABC-123",
+        files={
+            "file": (
+                "model.glb",
+                b"test model content",
+                "model/gltf-binary",
+            ),
+        },
+        data=data,
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+    assert field in str(response.json())

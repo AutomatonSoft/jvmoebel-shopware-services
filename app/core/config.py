@@ -64,6 +64,13 @@ class Settings(BaseSettings):
         ge=1,
     )
 
+    @property
+    def ar_max_file_size_label(self) -> str:
+        max_size_mb = self.ar_max_file_size / (1024 * 1024)
+        if max_size_mb.is_integer():
+            return f"{int(max_size_mb)} MB"
+        return f"{max_size_mb:.2f} MB"
+
 
 # single instance
 

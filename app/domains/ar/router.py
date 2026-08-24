@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Literal
 
+from core.config import settings
 from core.db.postgres import get_async_session
 
 from .dependencies import require_ar_write_access
@@ -33,6 +34,11 @@ router = APIRouter(
 )
 
 service = ARModelService()
+
+AR_MODEL_FILE_DESCRIPTION = (
+    "AR model file. Supported formats: GLB, USDZ. "
+    f"Maximum size is {settings.ar_max_file_size_label}."
+)
 
 
 @router.get(
@@ -125,10 +131,7 @@ async def create_model(
     sku: SKU,
     file: UploadFile = File(
         ...,
-        description=(
-            "AR model file. Supported formats: GLB, USDZ. "
-            "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
-        ),
+        description=AR_MODEL_FILE_DESCRIPTION,
     ),
     width: Decimal = Form(..., gt=0),
     height: Decimal = Form(..., gt=0),
@@ -188,10 +191,7 @@ async def update_model(
     sku: SKU,
     file: UploadFile = File(
         ...,
-        description=(
-            "AR model file. Supported formats: GLB, USDZ. "
-            "Maximum size is configurable via AR_MAX_FILE_SIZE environment variable."
-        ),
+        description=AR_MODEL_FILE_DESCRIPTION,
     ),
     width: Decimal = Form(..., gt=0),
     height: Decimal = Form(..., gt=0),

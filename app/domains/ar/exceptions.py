@@ -1,5 +1,6 @@
 # app/domains/ar/exceptions.py
 
+from core.config import settings
 from domains.base.exceptions import (
     AlreadyExistsException,
     BadRequestException,
@@ -44,7 +45,10 @@ class ARModelFileTooLargeException(
 ):
     def __init__(self) -> None:
         super().__init__(
-            detail="AR model file is too large. Maximum file size is 15 MB",
+            detail=(
+                "AR model file is too large. "
+                f"Maximum file size is {settings.ar_max_file_size_label}"
+            ),
         )
 
 

@@ -1,0 +1,31 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import Literal
+
+from sqlalchemy import CheckConstraint, DateTime, Numeric, String, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from core.db.postgres import Base
+
+
+class ARModel(Base):
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_format: Mapped[str] = mapped_column(String(20), nullable=False)
+    width: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    height: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    depth: Mapped[Decimal] = mapped_column(Numeric(10, 3), nullable=False)
+    unit: Mapped[str] = mapped_column(String(1), nullable=False, default="m", server_default="m")
+    status: Mapped[Literal["active", "not_active"]] = mapped_column(String(20), nullable=False, default="active")
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("width > 0", name="ck_ar_models_width_positive"),
+        CheckConstraint("height > 0", name="ck_ar_models_height_positive"),
+        CheckConstraint("depth > 0", name="ck_ar_models_depth_positive"),
+        CheckConstraint("status IN ('active', 'not_active')", name="ck_ar_models_status"),
+    )

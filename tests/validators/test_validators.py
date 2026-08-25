@@ -170,8 +170,7 @@ class TestARValidator:
         assert result is False
 
     def test_usda_without_definition_rejected(self, generated_ar):
-        # ТЗ тесты-12: USDA без def/over/class → rejected
-        # ТЗ USDZ-6.1: .usda: есть def/over/class или #usda + {}
+        # USDA: header без prim def/over/class + {} → rejected
         invalid_content = """#usda 1.0
 ( doc = "Test" )
 # Just comments and metadata but no actual definition"""
@@ -300,8 +299,7 @@ class TestARValidator:
         )
         assert result is True
 
-    def test_usda_with_def_without_marker_accepted(self, generated_ar):
-        # ТЗ USDZ-6.1: .usda: есть def/over/class или #usda + {}
+    def test_usda_without_header_rejected(self, generated_ar):
         content = """def Xform "Model"
 {
     def Mesh "Cube"
@@ -310,10 +308,32 @@ class TestARValidator:
 }"""
         result = _validate(
             generated_ar,
-            "def_only.usdz",
+            "no_header.usdz",
             pack_usdz([("model.usda", content)], align=True),
         )
-        assert result is True
+        assert result is False
+
+    def test_malformed_usda_bare_def_rejected(self, generated_ar):
+        result = _validate(
+            generated_ar,
+            "bare_def.usdz",
+            pack_usdz(
+                [("model.usda", "def definitely-not-valid-usda")],
+                align=True,
+            ),
+        )
+        assert result is False
+
+    def test_malformed_textual_usd_rejected(self, generated_ar):
+        result = _validate(
+            generated_ar,
+            "bare_def.usd.usdz",
+            pack_usdz(
+                [("model.usd", "def definitely-not-valid-usda")],
+                align=True,
+            ),
+        )
+        assert result is False
 
     def test_usdz_without_root_usd_rejected(self, generated_ar):
         # ТЗ USDZ-6: Root USD модель в корне

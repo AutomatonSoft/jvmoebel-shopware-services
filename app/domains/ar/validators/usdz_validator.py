@@ -11,6 +11,11 @@ from domains.ar.validators.base import BaseValidator
 class USDZValidator(BaseValidator):
     USD_EXTENSIONS = {".usd", ".usda", ".usdc"}
     USDC_MAGIC = b"PXR-USDC"
+    USDA_HEADER = re.compile(r"^#usda\s+\d+(?:\.\d+)?\b")
+    PRIM_OPEN = re.compile(
+        r"\b(?:def|over|class)\s+\S+(?:\s+\S+)*\s*\{",
+        re.DOTALL,
+    )
     MAX_ENTRIES = 10000
     MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100 MB
 
@@ -166,7 +171,7 @@ class USDZValidator(BaseValidator):
                     return False
 
                 if ext == ".usda":
-                    # ТЗ USDZ-6.1: .usda: есть def/over/class или #usda + {}
+                    # USDA: #usda header + prim (def/over/class) with braces
                     if not self._validate_usda_content(content):
                         return False
                 elif ext == ".usdc":
@@ -186,25 +191,20 @@ class USDZValidator(BaseValidator):
 
     def _validate_usda_content(self, content: bytes) -> bool:
         try:
-            text = content.decode("utf-8", errors="ignore")
-            lines = [line.strip() for line in text.split("\n") if line.strip()]
+            text = content.decode("utf-8").lstrip("\ufeff")
+            lines = [line.strip() for line in text.splitlines() if line.strip()]
 
             if not lines:
                 return False
 
-            full_text = " ".join(lines)
+            if not self.USDA_HEADER.match(lines[0]):
+                return False
 
-            has_usd_marker = "#usda" in full_text or "#usd" in full_text
-            has_definition = bool(re.search(r"\b(def|over|class)\s+", full_text))
-            has_braces = "{" in full_text and "}" in full_text
+            full_text = "\n".join(lines)
+            if not self.PRIM_OPEN.search(full_text):
+                return False
 
-            if has_definition:
-                return True
-
-            if has_usd_marker and has_braces:
-                return True
-
-            return False
+            return "}" in full_text
 
         except Exception:
             return False

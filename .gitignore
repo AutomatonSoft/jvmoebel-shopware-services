@@ -163,13 +163,13 @@ cython_debug/
 .vscode/
 certs/
 
-app/storage/ar_models/*
-!app/storage/ar_models/.keep
+ar/app/storage/ar_models/*
+!ar/app/storage/ar_models/.keep
 
-app/storage/ar_models_test/*
-!app/storage/ar_models_test/.keep
+ar/app/storage/ar_models_test/*
+!ar/app/storage/ar_models_test/.keep
 
 /dice.glb
 /dice.usdz
 
-tests/validators/generated/
+ar/tests/validators/generated/

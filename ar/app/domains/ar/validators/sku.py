@@ -34,7 +34,7 @@ def is_valid_sku(sku: str) -> bool:
     unsafe_patterns = [
         r"\.\.",  # path traversal
         r"[/\\]",  # path separators
-        r"\0",  # null byte
+        r"\x00",  # null byte
     ]
 
     for pattern in unsafe_patterns:

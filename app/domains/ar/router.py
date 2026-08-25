@@ -125,6 +125,9 @@ async def get_model_file(
         409: {
             "description": "AR model with this SKU already exists",
         },
+        413: {
+            "description": "HTTP request body exceeds AR_MAX_BODY_SIZE",
+        },
     },
 )
 async def create_model(
@@ -184,6 +187,9 @@ async def create_model(
         },
         404: {
             "description": "AR model not found",
+        },
+        413: {
+            "description": "HTTP request body exceeds AR_MAX_BODY_SIZE",
         },
     },
 )

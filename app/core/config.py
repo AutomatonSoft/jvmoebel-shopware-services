@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     )
 
     ar_write_api_key: SecretStr = Field(
-        default=SecretStr("your-secret-token"),
+        min_length=1,
         description="API key for write operations on AR models",
     )
 
@@ -73,4 +73,4 @@ class Settings(BaseSettings):
         return f"{max_size_mb:.2f} MB"
 
 
-settings: Settings = Settings()
+settings: Settings = Settings()  # type: ignore[call-arg]

@@ -6,6 +6,7 @@ on:
       - develop
     paths:
       - .github/workflows/deploy-stage.yml
+      - ar/**
 
   push:
     branches:
@@ -41,6 +42,11 @@ jobs:
 
           if [[ "${actual_compose_sha}" != "${EXPECTED_COMPOSE_SHA256}" ]]; then
             echo "::error::compose.deploy.yml differs from the canonical Server5 deployment contract"
+            exit 1
+          fi
+
+          if find ar -type l -print -quit | grep -q .; then
+            echo "::error::deployment source contains symbolic links"
             exit 1
           fi
 
@@ -105,11 +111,20 @@ jobs:
       SSH_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-deploy-key
       KNOWN_HOSTS_FILE: ${{ runner.temp }}/jvmoebel-stage-known-hosts
 
+      SIGNING_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact-signing-key
+      SIGNING_PUBLIC_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact-signing.pub
+      LOCAL_ALLOWED_SIGNERS_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact.allowed_signers
+
+      SIGNER_IDENTITY: jvmoebel-stage-services@automatonsoft
+      SIGNATURE_NAMESPACE: jvmoebel-stage-services@automatonsoft
+
+      EXPECTED_DEPLOY_HOST: 85.215.147.19
       EXPECTED_COMPOSE_SHA256: 56cc60b22259998f6f8053fc4a966c10dc1eef79c988704294d451a4d41e423e
-      EXPECTED_HELPER_SHA256: 9e70c7bd5731e8b46edb340903adb2ce0b148582974f10d80971a6d8ffe4ab8e
+      EXPECTED_HELPER_SHA256: 885eb33a3020cc6a2a1d436fd17fe4516a846395d74182ad2edca93f7bc39679
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
       EXPECTED_HOST_KEY_FINGERPRINT: SHA256:6BHoasAuc7ptnN/HhXaP3C/BtklHPtP85WZ2fAXcAzI
+      EXPECTED_SIGNING_KEY_FINGERPRINT: SHA256:VJH4kKjscTHZ28m19tpgli2soTwJnZN1JlsHsvcRbfU
 
     steps:
       - name: Checkout exact stage commit
@@ -128,13 +143,27 @@ jobs:
             DEPLOY_KNOWN_HOSTS
           do
             if [[ -z "${!variable:-}" ]]; then
-              echo "::error::GitHub environment variable ${variable} is missing"
+              echo "::error::GitHub stage environment variable ${variable} is missing"
               exit 1
             fi
           done
 
           if [[ ! "${GITHUB_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::GITHUB_SHA is not a lowercase 40-character Git SHA"
+            exit 1
+          fi
+
+          checkout_sha="$(
+            git rev-parse HEAD
+          )"
+
+          if [[ "${checkout_sha}" != "${GITHUB_SHA}" ]]; then
+            echo "::error::checked-out commit does not equal GITHUB_SHA"
+            exit 1
+          fi
+
+          if [[ "${DEPLOY_HOST}" != "${EXPECTED_DEPLOY_HOST}" ]]; then
+            echo "::error::unexpected deployment host"
             exit 1
           fi
 
@@ -165,12 +194,18 @@ jobs:
             exit 1
           fi
 
+          if find ar -type l -print -quit | grep -q .; then
+            echo "::error::deployment source contains symbolic links"
+            exit 1
+          fi
+
           echo "Deployment configuration validation passed."
 
-      - name: Configure pinned SSH identity
+      - name: Configure pinned deployment identities
         shell: bash
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_ARTIFACT_SIGNING_KEY: ${{ secrets.DEPLOY_ARTIFACT_SIGNING_KEY }}
         run: |
           set -Eeuo pipefail
 
@@ -179,22 +214,27 @@ jobs:
             exit 1
           fi
 
-          install \
-            -d \
-            -m 0700 \
-            "${HOME}/.ssh"
+          if [[ -z "${DEPLOY_ARTIFACT_SIGNING_KEY:-}" ]]; then
+            echo "::error::DEPLOY_ARTIFACT_SIGNING_KEY is missing from stage environment"
+            exit 1
+          fi
 
           printf '%s\n' "${DEPLOY_SSH_KEY}" |
             tr -d '\r' \
             > "${SSH_KEY_FILE}"
 
-          chmod 0600 "${SSH_KEY_FILE}"
+          printf '%s\n' "${DEPLOY_ARTIFACT_SIGNING_KEY}" |
+            tr -d '\r' \
+            > "${SIGNING_KEY_FILE}"
 
           printf '%s\n' "${DEPLOY_KNOWN_HOSTS}" |
             tr -d '\r' \
             > "${KNOWN_HOSTS_FILE}"
 
-          chmod 0600 "${KNOWN_HOSTS_FILE}"
+          chmod 0600 \
+            "${SSH_KEY_FILE}" \
+            "${SIGNING_KEY_FILE}" \
+            "${KNOWN_HOSTS_FILE}"
 
           if ! ssh-keygen \
               -y \
@@ -221,6 +261,47 @@ jobs:
           fi
 
           if ! ssh-keygen \
+              -y \
+              -P "" \
+              -f "${SIGNING_KEY_FILE}" \
+              > "${SIGNING_PUBLIC_KEY_FILE}"
+          then
+            echo "::error::artifact signing key is invalid or encrypted"
+            exit 1
+          fi
+
+          signing_key_fingerprint="$(
+            ssh-keygen \
+              -lf "${SIGNING_PUBLIC_KEY_FILE}" \
+              -E sha256 |
+              awk '{print $2}'
+          )"
+
+          echo "signing key fingerprint: ${signing_key_fingerprint}"
+
+          if [[ "${signing_key_fingerprint}" != "${EXPECTED_SIGNING_KEY_FINGERPRINT}" ]]; then
+            echo "::error::unexpected artifact signing key"
+            exit 1
+          fi
+
+          read -r signer_key_type signer_key_data _ \
+            < "${SIGNING_PUBLIC_KEY_FILE}"
+
+          if [[ "${signer_key_type}" != "ssh-ed25519" ]]; then
+            echo "::error::unexpected artifact signing key type"
+            exit 1
+          fi
+
+          printf '%s namespaces="%s" %s %s\n' \
+            "${SIGNER_IDENTITY}" \
+            "${SIGNATURE_NAMESPACE}" \
+            "${signer_key_type}" \
+            "${signer_key_data}" \
+            > "${LOCAL_ALLOWED_SIGNERS_FILE}"
+
+          chmod 0600 "${LOCAL_ALLOWED_SIGNERS_FILE}"
+
+          if ! ssh-keygen \
               -F "${DEPLOY_HOST}" \
               -f "${KNOWN_HOSTS_FILE}" \
               >/dev/null
@@ -239,15 +320,20 @@ jobs:
             exit 1
           fi
 
-          echo "Pinned SSH identity validation passed."
+          echo "Pinned deployment identities validated."
 
-      - name: Build exact release archive
+      - name: Build and sign exact release artifact
         shell: bash
         run: |
           set -Eeuo pipefail
 
           archive_name="services-${GITHUB_SHA}.tar.gz"
+          manifest_name="services-${GITHUB_SHA}.manifest"
+          signature_name="services-${GITHUB_SHA}.manifest.sig"
+
           archive_path="${RUNNER_TEMP}/${archive_name}"
+          manifest_path="${RUNNER_TEMP}/${manifest_name}"
+          signature_path="${RUNNER_TEMP}/${signature_name}"
 
           tar \
             -C ar \
@@ -270,14 +356,64 @@ jobs:
               awk '{print $1}'
           )"
 
+          printf 'version=1\nsha=%s\narchive=%s\nsha256=%s\n' \
+            "${GITHUB_SHA}" \
+            "${archive_name}" \
+            "${archive_sha}" \
+            > "${manifest_path}"
+
+          if [[ "$(
+            wc -l < "${manifest_path}" |
+              tr -d '[:space:]'
+          )" != "4" ]]; then
+            echo "::error::release manifest does not contain exactly four lines"
+            exit 1
+          fi
+
+          ssh-keygen \
+            -Y sign \
+            -f "${SIGNING_KEY_FILE}" \
+            -n "${SIGNATURE_NAMESPACE}" \
+            "${manifest_path}"
+
+          test -s "${signature_path}"
+
+          if ! ssh-keygen \
+              -Y verify \
+              -f "${LOCAL_ALLOWED_SIGNERS_FILE}" \
+              -I "${SIGNER_IDENTITY}" \
+              -n "${SIGNATURE_NAMESPACE}" \
+              -s "${signature_path}" \
+              < "${manifest_path}" \
+              >/dev/null
+          then
+            echo "::error::locally generated artifact signature did not verify"
+            exit 1
+          fi
+
           echo "archive=${archive_name}"
           echo "size=${archive_size}"
           echo "sha256=${archive_sha}"
+          echo "manifest=${manifest_name}"
+          echo "signature=${signature_name}"
 
           {
             echo "ARCHIVE_NAME=${archive_name}"
+            echo "MANIFEST_NAME=${manifest_name}"
+            echo "SIGNATURE_NAME=${signature_name}"
+
             echo "ARCHIVE_PATH=${archive_path}"
+            echo "MANIFEST_PATH=${manifest_path}"
+            echo "SIGNATURE_PATH=${signature_path}"
+
+            echo "ARCHIVE_SHA256=${archive_sha}"
           } >> "${GITHUB_ENV}"
+
+          # The signing private key is no longer needed after the detached
+          # signature has been generated and verified locally.
+          rm -f -- "${SIGNING_KEY_FILE}"
+
+          echo "Signed release artifact created."
 
       - name: Verify Server5 deployment boundary
         shell: bash
@@ -301,7 +437,9 @@ jobs:
           ssh \
             "${ssh_options[@]}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "test -d '${DEPLOY_PATH}' && test ! -L '${DEPLOY_PATH}' && test -w '${DEPLOY_PATH}'"
+            "test -d '${DEPLOY_PATH}' &&
+             test ! -L '${DEPLOY_PATH}' &&
+             test -w '${DEPLOY_PATH}'"
 
           helper_sha="$(
             ssh \
@@ -317,15 +455,38 @@ jobs:
             exit 1
           fi
 
+          server_signing_fingerprint="$(
+            ssh \
+              "${ssh_options[@]}" \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "awk '{print \$3, \$4}' /usr/local/lib/jvmoebel/services/artifact-signing.allowed_signers" |
+            ssh-keygen -lf - -E sha256 |
+            awk '{print $2}'
+          )"
+
+          echo "Server5 signing key fingerprint: ${server_signing_fingerprint}"
+
+          if [[ "${server_signing_fingerprint}" != "${EXPECTED_SIGNING_KEY_FINGERPRINT}" ]]; then
+            echo "::error::Server5 artifact-signing trust root mismatch"
+            exit 1
+          fi
+
           echo "Server5 deployment boundary validation passed."
 
-      - name: Upload release atomically
+      - name: Upload signed release atomically
         shell: bash
         run: |
           set -Eeuo pipefail
 
-          remote_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
-          remote_tmp="${DEPLOY_PATH}/.${ARCHIVE_NAME}.uploading"
+          archive_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
+          manifest_final="${DEPLOY_PATH}/${MANIFEST_NAME}"
+          signature_final="${DEPLOY_PATH}/${SIGNATURE_NAME}"
+
+          suffix="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.uploading"
+
+          archive_tmp="${DEPLOY_PATH}/.${ARCHIVE_NAME}.${suffix}"
+          manifest_tmp="${DEPLOY_PATH}/.${MANIFEST_NAME}.${suffix}"
+          signature_tmp="${DEPLOY_PATH}/.${SIGNATURE_NAME}.${suffix}"
 
           ssh_options=(
             -p "${DEPLOY_PORT}"
@@ -356,24 +517,59 @@ jobs:
           ssh \
             "${ssh_options[@]}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "rm -f -- '${remote_tmp}' '${remote_final}'"
+            "rm -f -- '${archive_tmp}' '${manifest_tmp}' '${signature_tmp}'"
 
           scp \
             "${scp_options[@]}" \
             "${ARCHIVE_PATH}" \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_tmp}"
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${archive_tmp}"
+
+          scp \
+            "${scp_options[@]}" \
+            "${MANIFEST_PATH}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${manifest_tmp}"
+
+          scp \
+            "${scp_options[@]}" \
+            "${SIGNATURE_PATH}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${signature_tmp}"
 
           ssh \
             "${ssh_options[@]}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "chmod 0640 -- '${remote_tmp}' && mv -f -- '${remote_tmp}' '${remote_final}'"
+            "chmod 0640 -- \
+                '${archive_tmp}' \
+                '${manifest_tmp}' \
+                '${signature_tmp}' &&
+             mv -f -- '${archive_tmp}' '${archive_final}' &&
+             mv -f -- '${manifest_tmp}' '${manifest_final}' &&
+             mv -f -- '${signature_tmp}' '${signature_final}'"
+
+          remote_archive_sha="$(
+            ssh \
+              "${ssh_options[@]}" \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "sha256sum '${archive_final}' | awk '{print \$1}'"
+          )"
+
+          echo "remote archive SHA256: ${remote_archive_sha}"
+
+          if [[ "${remote_archive_sha}" != "${ARCHIVE_SHA256}" ]]; then
+            echo "::error::uploaded archive SHA256 mismatch"
+            exit 1
+          fi
 
           ssh \
             "${ssh_options[@]}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "stat -c '%U:%G %a %s %n' '${remote_final}'"
+            "stat -c '%U:%G %a %s %n' \
+                '${archive_final}' \
+                '${manifest_final}' \
+                '${signature_final}'"
 
-      - name: Deploy exact stage SHA
+          echo "Signed release upload completed."
+
+      - name: Deploy exact signed stage SHA
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -397,20 +593,67 @@ jobs:
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "sudo -n /usr/local/sbin/deploy-jvmoebel-stage-services '${GITHUB_SHA}'"
 
-          remote_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
+          archive_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
+          manifest_final="${DEPLOY_PATH}/${MANIFEST_NAME}"
+          signature_final="${DEPLOY_PATH}/${SIGNATURE_NAME}"
 
           ssh \
             "${ssh_options[@]}" \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "test ! -e '${remote_final}'"
+            "test ! -e '${archive_final}' &&
+             test ! -e '${manifest_final}' &&
+             test ! -e '${signature_final}'"
 
-          echo "Deployment completed for ${GITHUB_SHA}"
+          echo "Signed deployment completed for ${GITHUB_SHA}"
 
-      - name: Remove runner SSH material
+      - name: Clean failed remote upload
+        if: failure()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${ARCHIVE_NAME:-}" ]]; then
+            exit 0
+          fi
+
+          if [[ ! -f "${SSH_KEY_FILE}" || ! -f "${KNOWN_HOSTS_FILE}" ]]; then
+            exit 0
+          fi
+
+          ssh_options=(
+            -p "${DEPLOY_PORT}"
+            -i "${SSH_KEY_FILE}"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}"
+            -o ConnectTimeout=10
+            -o ForwardAgent=no
+            -o ClearAllForwardings=yes
+          )
+
+          suffix="${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}.uploading"
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "rm -f -- \
+                '${DEPLOY_PATH}/${ARCHIVE_NAME}' \
+                '${DEPLOY_PATH}/${MANIFEST_NAME}' \
+                '${DEPLOY_PATH}/${SIGNATURE_NAME}' \
+                '${DEPLOY_PATH}/.${ARCHIVE_NAME}.${suffix}' \
+                '${DEPLOY_PATH}/.${MANIFEST_NAME}.${suffix}' \
+                '${DEPLOY_PATH}/.${SIGNATURE_NAME}.${suffix}'"
+
+      - name: Remove runner deployment material
         if: always()
         shell: bash
         run: |
           rm -f -- \
             "${SSH_KEY_FILE}" \
             "${KNOWN_HOSTS_FILE}" \
+            "${SIGNING_KEY_FILE}" \
+            "${SIGNING_PUBLIC_KEY_FILE}" \
+            "${LOCAL_ALLOWED_SIGNERS_FILE}" \
             "${RUNNER_TEMP}/deploy-stage.pub"

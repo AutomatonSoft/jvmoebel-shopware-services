@@ -1,0 +1,416 @@
+name: Deploy stage
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - .github/workflows/deploy-stage.yml
+
+  push:
+    branches:
+      - stage
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: stage deployment validation
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment artifact contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          readonly EXPECTED_COMPOSE_SHA256="56cc60b22259998f6f8053fc4a966c10dc1eef79c988704294d451a4d41e423e"
+
+          actual_compose_sha="$(
+            sha256sum ar/compose.deploy.yml |
+              awk '{print $1}'
+          )"
+
+          echo "compose SHA256: ${actual_compose_sha}"
+
+          if [[ "${actual_compose_sha}" != "${EXPECTED_COMPOSE_SHA256}" ]]; then
+            echo "::error::compose.deploy.yml differs from the canonical Server5 deployment contract"
+            exit 1
+          fi
+
+          archive="${RUNNER_TEMP}/services-validation.tar.gz"
+          archive_list="${RUNNER_TEMP}/services-validation.list"
+
+          tar \
+            -C ar \
+            -czf "${archive}" \
+            .
+
+          test -s "${archive}"
+
+          archive_size="$(
+            stat -c '%s' "${archive}"
+          )"
+
+          echo "archive size: ${archive_size}"
+
+          if (( archive_size > 536870912 )); then
+            echo "::error::deployment archive exceeds the server-side 512 MiB limit"
+            exit 1
+          fi
+
+          tar -tzf "${archive}" > "${archive_list}"
+
+          for required in \
+            "./Dockerfile" \
+            "./pyproject.toml" \
+            "./uv.lock" \
+            "./alembic.ini" \
+            "./app/main.py"
+          do
+            if ! grep -Fxq "${required}" "${archive_list}"; then
+              echo "::error::deployment archive is missing ${required}"
+              exit 1
+            fi
+          done
+
+          echo "Deployment artifact validation passed."
+
+  deploy:
+    name: deploy services to stage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    environment:
+      name: stage
+
+    concurrency:
+      group: jvmoebel-services-stage
+      queue: max
+
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+
+      SSH_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-deploy-key
+      KNOWN_HOSTS_FILE: ${{ runner.temp }}/jvmoebel-stage-known-hosts
+
+      EXPECTED_COMPOSE_SHA256: 56cc60b22259998f6f8053fc4a966c10dc1eef79c988704294d451a4d41e423e
+      EXPECTED_HELPER_SHA256: 9e70c7bd5731e8b46edb340903adb2ce0b148582974f10d80971a6d8ffe4ab8e
+
+      EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
+      EXPECTED_HOST_KEY_FINGERPRINT: SHA256:6BHoasAuc7ptnN/HhXaP3C/BtklHPtP85WZ2fAXcAzI
+
+    steps:
+      - name: Checkout exact stage commit
+        uses: actions/checkout@v4
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          for variable in \
+            DEPLOY_HOST \
+            DEPLOY_PORT \
+            DEPLOY_USER \
+            DEPLOY_PATH \
+            DEPLOY_KNOWN_HOSTS
+          do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "::error::GitHub environment variable ${variable} is missing"
+              exit 1
+            fi
+          done
+
+          if [[ ! "${GITHUB_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::GITHUB_SHA is not a lowercase 40-character Git SHA"
+            exit 1
+          fi
+
+          if [[ "${DEPLOY_PORT}" != "22" ]]; then
+            echo "::error::unexpected deployment SSH port"
+            exit 1
+          fi
+
+          if [[ "${DEPLOY_USER}" != "jvmoebel-stage-deploy" ]]; then
+            echo "::error::unexpected deployment user"
+            exit 1
+          fi
+
+          if [[ "${DEPLOY_PATH}" != "/var/spool/jvmoebel/stage/services/incoming" ]]; then
+            echo "::error::unexpected deployment spool path"
+            exit 1
+          fi
+
+          actual_compose_sha="$(
+            sha256sum ar/compose.deploy.yml |
+              awk '{print $1}'
+          )"
+
+          echo "compose SHA256: ${actual_compose_sha}"
+
+          if [[ "${actual_compose_sha}" != "${EXPECTED_COMPOSE_SHA256}" ]]; then
+            echo "::error::repository Compose contract does not match Server5 canonical contract"
+            exit 1
+          fi
+
+          echo "Deployment configuration validation passed."
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "${DEPLOY_SSH_KEY:-}" ]]; then
+            echo "::error::DEPLOY_SSH_KEY is missing from stage environment"
+            exit 1
+          fi
+
+          install \
+            -d \
+            -m 0700 \
+            "${HOME}/.ssh"
+
+          printf '%s\n' "${DEPLOY_SSH_KEY}" |
+            tr -d '\r' \
+            > "${SSH_KEY_FILE}"
+
+          chmod 0600 "${SSH_KEY_FILE}"
+
+          printf '%s\n' "${DEPLOY_KNOWN_HOSTS}" |
+            tr -d '\r' \
+            > "${KNOWN_HOSTS_FILE}"
+
+          chmod 0600 "${KNOWN_HOSTS_FILE}"
+
+          if ! ssh-keygen \
+              -y \
+              -P "" \
+              -f "${SSH_KEY_FILE}" \
+              > "${RUNNER_TEMP}/deploy-stage.pub"
+          then
+            echo "::error::stage deployment SSH key is invalid or encrypted"
+            exit 1
+          fi
+
+          deploy_key_fingerprint="$(
+            ssh-keygen \
+              -lf "${RUNNER_TEMP}/deploy-stage.pub" \
+              -E sha256 |
+              awk '{print $2}'
+          )"
+
+          echo "deployment key fingerprint: ${deploy_key_fingerprint}"
+
+          if [[ "${deploy_key_fingerprint}" != "${EXPECTED_DEPLOY_KEY_FINGERPRINT}" ]]; then
+            echo "::error::unexpected stage deployment SSH key"
+            exit 1
+          fi
+
+          if ! ssh-keygen \
+              -F "${DEPLOY_HOST}" \
+              -f "${KNOWN_HOSTS_FILE}" \
+              >/dev/null
+          then
+            echo "::error::DEPLOY_KNOWN_HOSTS does not contain DEPLOY_HOST"
+            exit 1
+          fi
+
+          if ! ssh-keygen \
+              -lf "${KNOWN_HOSTS_FILE}" \
+              -E sha256 |
+              awk '{print $2}' |
+              grep -Fxq "${EXPECTED_HOST_KEY_FINGERPRINT}"
+          then
+            echo "::error::unexpected Server5 SSH host key fingerprint"
+            exit 1
+          fi
+
+          echo "Pinned SSH identity validation passed."
+
+      - name: Build exact release archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          archive_name="services-${GITHUB_SHA}.tar.gz"
+          archive_path="${RUNNER_TEMP}/${archive_name}"
+
+          tar \
+            -C ar \
+            -czf "${archive_path}" \
+            .
+
+          test -s "${archive_path}"
+
+          archive_size="$(
+            stat -c '%s' "${archive_path}"
+          )"
+
+          if (( archive_size > 536870912 )); then
+            echo "::error::deployment archive exceeds 512 MiB"
+            exit 1
+          fi
+
+          archive_sha="$(
+            sha256sum "${archive_path}" |
+              awk '{print $1}'
+          )"
+
+          echo "archive=${archive_name}"
+          echo "size=${archive_size}"
+          echo "sha256=${archive_sha}"
+
+          {
+            echo "ARCHIVE_NAME=${archive_name}"
+            echo "ARCHIVE_PATH=${archive_path}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Verify Server5 deployment boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          ssh_options=(
+            -p "${DEPLOY_PORT}"
+            -i "${SSH_KEY_FILE}"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}"
+            -o ConnectTimeout=10
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=3
+            -o ForwardAgent=no
+            -o ClearAllForwardings=yes
+          )
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "test -d '${DEPLOY_PATH}' && test ! -L '${DEPLOY_PATH}' && test -w '${DEPLOY_PATH}'"
+
+          helper_sha="$(
+            ssh \
+              "${ssh_options[@]}" \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "sha256sum /usr/local/sbin/deploy-jvmoebel-stage-services | awk '{print \$1}'"
+          )"
+
+          echo "remote helper SHA256: ${helper_sha}"
+
+          if [[ "${helper_sha}" != "${EXPECTED_HELPER_SHA256}" ]]; then
+            echo "::error::Server5 deployment helper checksum mismatch"
+            exit 1
+          fi
+
+          echo "Server5 deployment boundary validation passed."
+
+      - name: Upload release atomically
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          remote_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
+          remote_tmp="${DEPLOY_PATH}/.${ARCHIVE_NAME}.uploading"
+
+          ssh_options=(
+            -p "${DEPLOY_PORT}"
+            -i "${SSH_KEY_FILE}"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}"
+            -o ConnectTimeout=10
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=3
+            -o ForwardAgent=no
+            -o ClearAllForwardings=yes
+          )
+
+          scp_options=(
+            -P "${DEPLOY_PORT}"
+            -i "${SSH_KEY_FILE}"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}"
+            -o ConnectTimeout=10
+            -o ForwardAgent=no
+            -o ClearAllForwardings=yes
+          )
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "rm -f -- '${remote_tmp}' '${remote_final}'"
+
+          scp \
+            "${scp_options[@]}" \
+            "${ARCHIVE_PATH}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${remote_tmp}"
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "chmod 0640 -- '${remote_tmp}' && mv -f -- '${remote_tmp}' '${remote_final}'"
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "stat -c '%U:%G %a %s %n' '${remote_final}'"
+
+      - name: Deploy exact stage SHA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          ssh_options=(
+            -p "${DEPLOY_PORT}"
+            -i "${SSH_KEY_FILE}"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}"
+            -o ConnectTimeout=10
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=3
+            -o ForwardAgent=no
+            -o ClearAllForwardings=yes
+          )
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "sudo -n /usr/local/sbin/deploy-jvmoebel-stage-services '${GITHUB_SHA}'"
+
+          remote_final="${DEPLOY_PATH}/${ARCHIVE_NAME}"
+
+          ssh \
+            "${ssh_options[@]}" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "test ! -e '${remote_final}'"
+
+          echo "Deployment completed for ${GITHUB_SHA}"
+
+      - name: Remove runner SSH material
+        if: always()
+        shell: bash
+        run: |
+          rm -f -- \
+            "${SSH_KEY_FILE}" \
+            "${KNOWN_HOSTS_FILE}" \
+            "${RUNNER_TEMP}/deploy-stage.pub"

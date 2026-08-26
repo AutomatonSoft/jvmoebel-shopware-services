@@ -2,10 +2,13 @@ name: CI
 
 on:
   pull_request:
-  push:
     branches:
-      - D02-1
+      - develop
+      - stage
       - main
+
+permissions:
+  contents: read
 
 jobs:
   test:

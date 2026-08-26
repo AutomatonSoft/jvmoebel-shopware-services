@@ -99,7 +99,7 @@ jobs:
 
     concurrency:
       group: jvmoebel-services-stage
-      queue: max
+      cancel-in-progress: false
 
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}

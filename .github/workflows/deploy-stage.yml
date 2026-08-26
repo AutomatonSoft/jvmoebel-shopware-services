@@ -108,13 +108,6 @@ jobs:
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
       DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
 
-      SSH_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-deploy-key
-      KNOWN_HOSTS_FILE: ${{ runner.temp }}/jvmoebel-stage-known-hosts
-
-      SIGNING_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact-signing-key
-      SIGNING_PUBLIC_KEY_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact-signing.pub
-      LOCAL_ALLOWED_SIGNERS_FILE: ${{ runner.temp }}/jvmoebel-stage-artifact.allowed_signers
-
       SIGNER_IDENTITY: jvmoebel-stage-services@automatonsoft
       SIGNATURE_NAMESPACE: jvmoebel-stage-services@automatonsoft
 
@@ -129,6 +122,19 @@ jobs:
     steps:
       - name: Checkout exact stage commit
         uses: actions/checkout@v4
+
+      - name: Initialize runner paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          {
+            echo "SSH_KEY_FILE=${RUNNER_TEMP}/jvmoebel-stage-deploy-key"
+            echo "KNOWN_HOSTS_FILE=${RUNNER_TEMP}/jvmoebel-stage-known-hosts"
+            echo "SIGNING_KEY_FILE=${RUNNER_TEMP}/jvmoebel-stage-artifact-signing-key"
+            echo "SIGNING_PUBLIC_KEY_FILE=${RUNNER_TEMP}/jvmoebel-stage-artifact-signing.pub"
+            echo "LOCAL_ALLOWED_SIGNERS_FILE=${RUNNER_TEMP}/jvmoebel-stage-artifact.allowed_signers"
+          } >> "${GITHUB_ENV}"
 
       - name: Validate deployment configuration
         shell: bash

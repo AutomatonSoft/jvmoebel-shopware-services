@@ -47,6 +47,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate deployment Compose
+        env:
+          APP_NETWORK: jvmoebel_ci
+        run: docker compose -f compose.deploy.yml config --quiet
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

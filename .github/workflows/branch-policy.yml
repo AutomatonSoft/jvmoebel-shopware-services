@@ -1,0 +1,57 @@
+name: Branch policy
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - stage
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  branch-policy:
+    name: branch policy
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Validate PR direction
+        shell: bash
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          echo "PR direction: ${HEAD_REF} -> ${BASE_REF}"
+
+          case "${BASE_REF}" in
+            develop)
+              case "${HEAD_REF}" in
+                develop|stage|main)
+                  echo "::error::Release branches cannot be merged into develop."
+                  exit 1
+                  ;;
+              esac
+              ;;
+
+            stage)
+              if [[ "${HEAD_REF}" != "develop" ]]; then
+                echo "::error::Only develop may be merged into stage."
+                exit 1
+              fi
+              ;;
+
+            main)
+              if [[ "${HEAD_REF}" != "stage" ]]; then
+                echo "::error::Only stage may be merged into main."
+                exit 1
+              fi
+              ;;
+
+            *)
+              echo "::error::Unsupported target branch: ${BASE_REF}"
+              exit 1
+              ;;
+          esac
+
+          echo "Allowed PR direction: ${HEAD_REF} -> ${BASE_REF}"

@@ -121,7 +121,9 @@ jobs:
 
     steps:
       - name: Checkout exact stage commit
-        uses: actions/checkout@v4`n        with:`n          persist-credentials: false
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Initialize runner paths
         shell: bash

@@ -99,7 +99,7 @@ jobs:
 
     concurrency:
       group: jvmoebel-services-stage
-      cancel-in-progress: false
+      queue: max
 
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
@@ -121,7 +121,7 @@ jobs:
 
     steps:
       - name: Checkout exact stage commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4`n        with:`n          persist-credentials: false
 
       - name: Initialize runner paths
         shell: bash

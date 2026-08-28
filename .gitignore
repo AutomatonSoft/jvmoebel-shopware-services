@@ -173,3 +173,5 @@ ar/app/storage/ar_models_test/*
 /dice.usdz
 
 ar/tests/validators/generated/
+
+/_scratch/

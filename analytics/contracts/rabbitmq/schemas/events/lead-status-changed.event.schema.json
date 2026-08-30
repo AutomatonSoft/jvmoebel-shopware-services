@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lead_status_changed event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "lead_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "lead_status_changed"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "lead"
+        },
+        "payload": {
+          "$ref": "../payloads/lead-status-changed.payload.schema.json"
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "payload": {
+            "properties": {
+              "new_status": {
+                "const": "won"
+              }
+            },
+            "required": [
+              "new_status"
+            ]
+          }
+        },
+        "required": [
+          "payload"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "order_id"
+            ]
+          },
+          {
+            "required": [
+              "manual_sale_id"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal lead_id."
+}

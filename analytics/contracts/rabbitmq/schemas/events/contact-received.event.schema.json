@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "contact_received event v1",
+  "description": "A confirmed Contact persisted by Shopware. aggregate_id MUST equal contact_id. Contact is always linked to a Lead before publication.",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "contact_id",
+        "lead_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "contact_received"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "contact"
+        },
+        "payload": {
+          "$ref": "../payloads/contact-received.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,400 @@
+asyncapi: 3.0.0
+info:
+  title: Shopware 6.7 → Analytics Service Events
+  version: 3.0.0-contract-draft
+  description: Strict v1 event schemas plus agreed RabbitMQ topology requirements.
+defaultContentType: application/json
+servers:
+  rabbitmq:
+    host: '{host}:{port}'
+    protocol: amqp
+    description: Dedicated interservice RabbitMQ; Shopware internal queues remain
+      on Redis.
+    variables:
+      host:
+        default: rabbitmq
+      port:
+        default: '5672'
+channels:
+  leadCreated:
+    address: shopware.lead.created
+    messages:
+      leadCreatedMessage:
+        $ref: '#/components/messages/leadCreatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  leadStatusChanged:
+    address: shopware.lead.status_changed
+    messages:
+      leadStatusChangedMessage:
+        $ref: '#/components/messages/leadStatusChangedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  customerLinked:
+    address: shopware.customer.linked
+    messages:
+      customerLinkedMessage:
+        $ref: '#/components/messages/customerLinkedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  orderCreated:
+    address: shopware.order.created
+    messages:
+      orderCreatedMessage:
+        $ref: '#/components/messages/orderCreatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  orderUpdated:
+    address: shopware.order.updated
+    messages:
+      orderUpdatedMessage:
+        $ref: '#/components/messages/orderUpdatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  orderPaid:
+    address: shopware.order.paid
+    messages:
+      orderPaidMessage:
+        $ref: '#/components/messages/orderPaidMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  orderCancelled:
+    address: shopware.order.cancelled
+    messages:
+      orderCancelledMessage:
+        $ref: '#/components/messages/orderCancelledMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  manualSaleCreated:
+    address: shopware.manual_sale.created
+    messages:
+      manualSaleCreatedMessage:
+        $ref: '#/components/messages/manualSaleCreatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  manualSaleUpdated:
+    address: shopware.manual_sale.updated
+    messages:
+      manualSaleUpdatedMessage:
+        $ref: '#/components/messages/manualSaleUpdatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  manualSaleCancelled:
+    address: shopware.manual_sale.cancelled
+    messages:
+      manualSaleCancelledMessage:
+        $ref: '#/components/messages/manualSaleCancelledMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  refundCreated:
+    address: shopware.refund.created
+    messages:
+      refundCreatedMessage:
+        $ref: '#/components/messages/refundCreatedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+  contactReceived:
+    address: shopware.contact.received
+    messages:
+      contactReceivedMessage:
+        $ref: '#/components/messages/contactReceivedMessage'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: shopware.analytics.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /shopware-analytics
+        bindingVersion: 0.3.0
+operations:
+  sendLeadCreated:
+    action: send
+    channel:
+      $ref: '#/channels/leadCreated'
+    messages:
+    - $ref: '#/channels/leadCreated/messages/leadCreatedMessage'
+  sendLeadStatusChanged:
+    action: send
+    channel:
+      $ref: '#/channels/leadStatusChanged'
+    messages:
+    - $ref: '#/channels/leadStatusChanged/messages/leadStatusChangedMessage'
+  sendCustomerLinked:
+    action: send
+    channel:
+      $ref: '#/channels/customerLinked'
+    messages:
+    - $ref: '#/channels/customerLinked/messages/customerLinkedMessage'
+  sendOrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/orderCreated'
+    messages:
+    - $ref: '#/channels/orderCreated/messages/orderCreatedMessage'
+  sendOrderUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/orderUpdated'
+    messages:
+    - $ref: '#/channels/orderUpdated/messages/orderUpdatedMessage'
+  sendOrderPaid:
+    action: send
+    channel:
+      $ref: '#/channels/orderPaid'
+    messages:
+    - $ref: '#/channels/orderPaid/messages/orderPaidMessage'
+  sendOrderCancelled:
+    action: send
+    channel:
+      $ref: '#/channels/orderCancelled'
+    messages:
+    - $ref: '#/channels/orderCancelled/messages/orderCancelledMessage'
+  sendManualSaleCreated:
+    action: send
+    channel:
+      $ref: '#/channels/manualSaleCreated'
+    messages:
+    - $ref: '#/channels/manualSaleCreated/messages/manualSaleCreatedMessage'
+  sendManualSaleUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/manualSaleUpdated'
+    messages:
+    - $ref: '#/channels/manualSaleUpdated/messages/manualSaleUpdatedMessage'
+  sendManualSaleCancelled:
+    action: send
+    channel:
+      $ref: '#/channels/manualSaleCancelled'
+    messages:
+    - $ref: '#/channels/manualSaleCancelled/messages/manualSaleCancelledMessage'
+  sendRefundCreated:
+    action: send
+    channel:
+      $ref: '#/channels/refundCreated'
+    messages:
+    - $ref: '#/channels/refundCreated/messages/refundCreatedMessage'
+  sendContactReceived:
+    action: send
+    channel:
+      $ref: '#/channels/contactReceived'
+    messages:
+    - $ref: '#/channels/contactReceived/messages/contactReceivedMessage'
+components:
+  messages:
+    leadCreatedMessage:
+      name: lead_created
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/lead-created.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: lead_created
+          bindingVersion: 0.3.0
+    leadStatusChangedMessage:
+      name: lead_status_changed
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/lead-status-changed.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: lead_status_changed
+          bindingVersion: 0.3.0
+    customerLinkedMessage:
+      name: customer_linked
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/customer-linked.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: customer_linked
+          bindingVersion: 0.3.0
+    orderCreatedMessage:
+      name: order_created
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/order-created.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_created
+          bindingVersion: 0.3.0
+    orderUpdatedMessage:
+      name: order_updated
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/order-updated.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_updated
+          bindingVersion: 0.3.0
+    orderPaidMessage:
+      name: order_paid
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/order-paid.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_paid
+          bindingVersion: 0.3.0
+    orderCancelledMessage:
+      name: order_cancelled
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/order-cancelled.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_cancelled
+          bindingVersion: 0.3.0
+    manualSaleCreatedMessage:
+      name: manual_sale_created
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/manual-sale-created.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: manual_sale_created
+          bindingVersion: 0.3.0
+    manualSaleUpdatedMessage:
+      name: manual_sale_updated
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/manual-sale-updated.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: manual_sale_updated
+          bindingVersion: 0.3.0
+    manualSaleCancelledMessage:
+      name: manual_sale_cancelled
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/manual-sale-cancelled.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: manual_sale_cancelled
+          bindingVersion: 0.3.0
+    refundCreatedMessage:
+      name: refund_created
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/refund-created.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: refund_created
+          bindingVersion: 0.3.0
+    contactReceivedMessage:
+      name: contact_received
+      contentType: application/json
+      payload:
+        $ref: ./schemas/events/contact-received.event.schema.json
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: contact_received
+          bindingVersion: 0.3.0
+x-rabbitmq-topology:
+  $ref: ./infrastructure/rabbitmq-topology.yaml
+  analytics_queue: analytics.shopware.events
+  retry_queue: analytics.shopware.events.retry
+  dlq: analytics.shopware.events.dlq
+  publisher_delivery_mode: 2
+  consumer_ack_mode: manual

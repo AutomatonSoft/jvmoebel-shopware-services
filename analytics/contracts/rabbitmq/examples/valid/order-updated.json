@@ -1,0 +1,45 @@
+{
+  "event_id": "2f1c3a50-fd24-4f2d-8dd4-42e82b5e9101",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:00:00Z",
+  "source": "shopware",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "domain": "jvmoebel.de",
+  "language": "de-DE",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "cart_id": "161ac41f-6684-4757-b9ec-47e107f7b04e",
+  "correlation_id": "8fbf6d3c-7d55-49d2-8442-7be5fcad934e",
+  "aggregate_version": 1,
+  "event_type": "order_updated",
+  "lead_id": "018f1111111111111111111111111111",
+  "customer_id": "018f2222222222222222222222222222",
+  "order_id": "018f3333333333333333333333333333",
+  "aggregate_type": "order",
+  "aggregate_id": "018f3333333333333333333333333333",
+  "payload": {
+    "order_number": "100245",
+    "line_items": [
+      {
+        "line_item_id": "018f4444444444444444444444444444",
+        "product_number": "SOFA-001",
+        "item_type": "product",
+        "quantity": 1,
+        "unit_price": "2499.00",
+        "total_price": "2499.00"
+      }
+    ],
+    "total_amount": "2499.00",
+    "currency": "EUR",
+    "payment_method": "paypal",
+    "order_state": "in_progress",
+    "payment_state": "authorized",
+    "change_reasons": [
+      "payment_state_changed",
+      "amount_changed"
+    ],
+    "previous_payment_state": "open",
+    "previous_order_state": "open"
+  }
+}

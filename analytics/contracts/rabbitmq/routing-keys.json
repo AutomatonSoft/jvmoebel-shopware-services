@@ -1,0 +1,19 @@
+{
+  "exchange": "shopware.analytics.events",
+  "exchange_type": "topic",
+  "vhost": "/shopware-analytics",
+  "routing_keys": {
+    "lead_created": "shopware.lead.created",
+    "contact_received": "shopware.contact.received",
+    "lead_status_changed": "shopware.lead.status_changed",
+    "customer_linked": "shopware.customer.linked",
+    "order_created": "shopware.order.created",
+    "order_updated": "shopware.order.updated",
+    "order_paid": "shopware.order.paid",
+    "order_cancelled": "shopware.order.cancelled",
+    "manual_sale_created": "shopware.manual_sale.created",
+    "manual_sale_updated": "shopware.manual_sale.updated",
+    "manual_sale_cancelled": "shopware.manual_sale.cancelled",
+    "refund_created": "shopware.refund.created"
+  }
+}

@@ -1,0 +1,83 @@
+version: 1
+vhost: /shopware-analytics
+delivery:
+  publisher_delivery_mode: 2
+  publisher_delivery_mode_meaning: persistent
+  consumer_ack_mode: manual
+  prefetch: environment-specific
+  delivery_semantics: at-least-once
+exchanges:
+  events:
+    name: shopware.analytics.events
+    type: topic
+    durable: true
+    auto_delete: false
+  retry:
+    name: shopware.analytics.retry
+    type: topic
+    durable: true
+    auto_delete: false
+  dlx:
+    name: shopware.analytics.dlx
+    type: topic
+    durable: true
+    auto_delete: false
+queues:
+  analytics:
+    name: analytics.shopware.events
+    durable: true
+    exclusive: false
+    auto_delete: false
+    bindings:
+    - exchange: shopware.analytics.events
+      routing_key: shopware.lead.created
+    - exchange: shopware.analytics.events
+      routing_key: shopware.contact.received
+    - exchange: shopware.analytics.events
+      routing_key: shopware.lead.status_changed
+    - exchange: shopware.analytics.events
+      routing_key: shopware.customer.linked
+    - exchange: shopware.analytics.events
+      routing_key: shopware.order.created
+    - exchange: shopware.analytics.events
+      routing_key: shopware.order.updated
+    - exchange: shopware.analytics.events
+      routing_key: shopware.order.paid
+    - exchange: shopware.analytics.events
+      routing_key: shopware.order.cancelled
+    - exchange: shopware.analytics.events
+      routing_key: shopware.manual_sale.created
+    - exchange: shopware.analytics.events
+      routing_key: shopware.manual_sale.updated
+    - exchange: shopware.analytics.events
+      routing_key: shopware.manual_sale.cancelled
+    - exchange: shopware.analytics.events
+      routing_key: shopware.refund.created
+    dead_letter_exchange: shopware.analytics.dlx
+  retry:
+    name: analytics.shopware.events.retry
+    durable: true
+    exclusive: false
+    auto_delete: false
+    binding:
+      exchange: shopware.analytics.retry
+      routing_key: shopware.#
+    purpose: Analytics republishes transient failures here with retry-attempt metadata.
+      TTL/backoff is environment policy; expired messages return to the events exchange
+      or are re-published by retry worker.
+  dlq:
+    name: analytics.shopware.events.dlq
+    durable: true
+    exclusive: false
+    auto_delete: false
+    binding:
+      exchange: shopware.analytics.dlx
+      routing_key: '#'
+    purpose: Terminal failures after retry budget is exhausted.
+retry_policy:
+  owner: Analytics consumer
+  max_attempts: environment-specific but finite
+  attempt_tracking: x-retry-attempt header or equivalent persisted metadata
+  terminal_action: publish/dead-letter to analytics.shopware.events.dlq
+  ack_rule: ACK only after successful processing or confirmed duplicate event_id.
+    On transient failure, reject/nack or republish according to retry policy.

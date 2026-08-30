@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  postgres_db_dev:
+    image: postgres:16
+    container_name: jvmoebel_analytics_postgres_dev
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "${POSTGRES_DEV_EXTERNAL_PORT:-5437}:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  rabbitmq_dev:
+    image: rabbitmq:3-management
+    container_name: jvmoebel_analytics_rabbitmq_dev
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "${RABBITMQ_DEV_EXTERNAL_PORT:-5673}:5672"
+      - "${RABBITMQ_DEV_MANAGEMENT_EXTERNAL_PORT:-15673}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: jvmoebel_analytics_backend_dev
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "${PORT_DEV:-8002}:8000"
+    depends_on:
+      postgres_db_dev:
+        condition: service_healthy
+      rabbitmq_dev:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - backend_venv_dev:/app/.venv
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/app
+    command: >
+      uv run uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+  worker_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: jvmoebel_analytics_worker_dev
+    restart: always
+    env_file:
+      - .env.dev
+    depends_on:
+      postgres_db_dev:
+        condition: service_healthy
+      rabbitmq_dev:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - backend_venv_dev:/app/.venv
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/app
+    command: >
+      uv run python -m worker
+
+volumes:
+  postgres_data_dev:
+  backend_venv_dev:

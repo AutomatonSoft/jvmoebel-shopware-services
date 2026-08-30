@@ -30,4 +30,3 @@ extraPaths = ["app"]
 
 [[tool.pyright.executionEnvironments]]
 root = "app"
-extraPaths = []

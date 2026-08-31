@@ -19,8 +19,26 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from core.db.postgres import Base
-#здесь свои реальные модели импортировать
-#from core.db.models import ARModel  # noqa: F401 — register ORM models for autogenerate
+from core.db.models import (
+    AttributionTouch,
+    CartAdd,
+    Checkout,
+    Contact,
+    ContactIntent,
+    CustomerLink,
+    Event,
+    Lead,
+    LeadStatusHistory,
+    ManualSale,
+    Order,
+    OrderLine,
+    PaymentMethodEvent,
+    ProductView,
+    Refund,
+    RefundLine,
+    Session,
+    Visitor,
+)
 from core.config import settings
 
 target_metadata = Base.metadata

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "payment_method_selected event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": ["cart_id"],
+      "properties": {
+        "event_type": {
+          "const": "payment_method_selected"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "payload": {
+          "$ref": "../payloads/payment-method-selected.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Next.js Analytics Event Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "occurred_at",
+    "source",
+    "sales_channel_id",
+    "visitor_id",
+    "session_id",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "$ref": "common/uuid-v4.schema.json",
+      "description": "Created once by Next.js. Retries keep the same event_id."
+    },
+    "event_type": {
+      "$ref": "../enums/event-type.schema.json"
+    },
+    "event_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Actual browser-event occurrence time, not HTTP delivery time."
+    },
+    "source": {
+      "type": "string",
+      "const": "nextjs"
+    },
+    "sales_channel_id": {
+      "$ref": "common/shopware-id.schema.json",
+      "description": "Stable Shopware sales channel UUID as 32 lowercase hex characters. Allowlist is enforced at ingest, not in this schema."
+    },
+    "market_code": {
+      "$ref": "common/market-code.schema.json"
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35
+    },
+    "visitor_id": {
+      "$ref": "common/uuid-v4.schema.json",
+      "description": "First-party visitor UUID owned by Next.js."
+    },
+    "session_id": {
+      "$ref": "common/uuid-v4.schema.json",
+      "description": "Frontend session UUID owned by Next.js."
+    },
+    "cart_id": {
+      "$ref": "common/uuid-v4.schema.json",
+      "description": "Frontend cart/checkout correlation identifier when applicable."
+    },
+    "correlation_id": {
+      "$ref": "common/uuid-v4.schema.json",
+      "description": "One business-process correlation id, e.g. checkout, when applicable."
+    },
+    "consent": {
+      "$ref": "common/consent.schema.json"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

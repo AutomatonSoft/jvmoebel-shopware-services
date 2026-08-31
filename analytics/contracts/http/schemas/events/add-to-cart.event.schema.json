@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "add_to_cart event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": ["cart_id"],
+      "properties": {
+        "event_type": {
+          "const": "add_to_cart"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "payload": {
+          "$ref": "../payloads/add-to-cart.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

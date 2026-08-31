@@ -1,0 +1,16 @@
+{
+  "event_id": "91a2b3c7-049b-4074-9c5c-baf592c40878",
+  "event_type": "contact_intent",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:07:00Z",
+  "source": "nextjs",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "payload": {
+    "channel": "email",
+    "action": "click",
+    "email": "user@example.com"
+  }
+}

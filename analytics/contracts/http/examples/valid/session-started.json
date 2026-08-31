@@ -1,0 +1,37 @@
+{
+  "event_id": "2f1c3a50-fd24-4f2d-8dd4-42e82b5e9101",
+  "event_type": "session_started",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:00:00Z",
+  "source": "nextjs",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "domain": "www.jvmoebel.de",
+  "language": "de-DE",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "consent": {
+    "analytics": true,
+    "ads": true,
+    "captured_at": "2026-08-24T08:59:00Z"
+  },
+  "payload": {
+    "landing_page": "https://www.jvmoebel.de/sofas/sofa-001",
+    "referrer": "https://www.google.com/",
+    "utm": {
+      "utm_source": "google",
+      "utm_medium": "cpc",
+      "utm_campaign": "sofas-de-2026",
+      "utm_content": "rsa-1",
+      "utm_term": "sofa"
+    },
+    "click_ids": {
+      "gclid": "Cj0KCQjw-example"
+    },
+    "device": {
+      "device_type": "desktop",
+      "browser": "chrome",
+      "os": "macos"
+    }
+  }
+}

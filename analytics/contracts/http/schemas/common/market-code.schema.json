@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Contact Intent Action",
+  "title": "Market Code",
   "type": "string",
-  "enum": ["click", "open", "submit"]
+  "enum": ["de", "at", "ch", "uk", "it", "pl"]
 }

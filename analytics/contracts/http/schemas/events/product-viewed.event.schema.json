@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "product_viewed event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "const": "product_viewed"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "payload": {
+          "$ref": "../payloads/product-viewed.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

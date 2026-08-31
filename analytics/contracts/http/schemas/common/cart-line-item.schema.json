@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "product_viewed payload",
+  "title": "Frontend cart line item",
   "type": "object",
   "additionalProperties": false,
-  "required": ["sku", "unit_price", "currency"],
+  "required": ["sku", "quantity", "unit_price", "total_price"],
   "properties": {
     "sku": {
       "type": "string",
@@ -16,16 +16,15 @@
       "minLength": 1,
       "maxLength": 255
     },
-    "category": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
+    "quantity": {
+      "type": "integer",
+      "minimum": 1
     },
     "unit_price": {
-      "$ref": "../common/money.schema.json"
+      "$ref": "money.schema.json"
     },
-    "currency": {
-      "$ref": "../common/currency.schema.json"
+    "total_price": {
+      "$ref": "money.schema.json"
     }
   }
 }

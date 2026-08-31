@@ -1,0 +1,14 @@
+{
+  "event_id": "UUID v4 created by Next.js",
+  "visitor_id": "UUID v4 created by Next.js",
+  "session_id": "UUID v4 created by Next.js",
+  "cart_id": "UUID v4 used to correlate frontend cart/checkout when known",
+  "shopware_entity_id": "32 lowercase hexadecimal characters; HTTP uses this only for sales_channel_id",
+  "money": "non-negative exact decimal string, up to 4 fraction digits",
+  "currency": "ISO 4217 uppercase 3-letter code in monetary payloads only",
+  "occurred_at": "RFC3339/ISO8601 actual browser-event time",
+  "payment_method": "stable technical key, not a display/translated label",
+  "sku": "same product key as Shopware product_number",
+  "source": "const nextjs",
+  "event_id_version": "UUID v4 only; UUID v7 is invalid"
+}

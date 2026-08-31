@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "session_started payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["landing_page"],
+  "properties": {
+    "landing_page": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+    },
+    "referrer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "format": "uri"
+    },
+    "utm": {
+      "$ref": "../common/utm.schema.json"
+    },
+    "click_ids": {
+      "$ref": "../common/click-ids.schema.json"
+    },
+    "device": {
+      "$ref": "../common/device.schema.json"
+    }
+  }
+}

@@ -1,5 +1,8 @@
 # tests/conftest.py
 
+import json
+from pathlib import Path
+
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
@@ -12,9 +15,13 @@ from sqlalchemy.ext.asyncio import (
 
 load_dotenv(".env.test", override=True)
 
-from main import app
+from main import app_without_middleware as app
 from core.config import settings
 from core.db.postgres import Base, get_async_session
+import core.db.models  # noqa: F401 — register ORM models
+
+CONTRACTS_DIR = Path(__file__).resolve().parents[1] / "contracts"
+INGEST_ORIGIN = "http://test"
 
 TEST_ENGINE = create_async_engine(
     settings.db.url,
@@ -29,7 +36,7 @@ TestSessionLocal = async_sessionmaker(
 )
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(autouse=True)
 async def reset_db():
     async with TEST_ENGINE.begin() as connection:
         await connection.run_sync(Base.metadata.drop_all)
@@ -78,6 +85,14 @@ def ingest_auth_headers() -> dict[str, str]:
 
 
 @pytest.fixture
+def ingest_headers(ingest_auth_headers: dict[str, str]) -> dict[str, str]:
+    return {
+        **ingest_auth_headers,
+        "Origin": INGEST_ORIGIN,
+    }
+
+
+@pytest.fixture
 def read_auth_headers() -> dict[str, str]:
     return {
         "Authorization": (
@@ -91,3 +106,27 @@ def invalid_auth_headers() -> dict[str, str]:
     return {
         "Authorization": "Bearer invalid-token",
     }
+
+
+@pytest.fixture
+def session_started_event() -> dict:
+    path = (
+        CONTRACTS_DIR
+        / "http"
+        / "examples"
+        / "valid"
+        / "session-started.json"
+    )
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def shopware_order_paid_event() -> dict:
+    path = (
+        CONTRACTS_DIR
+        / "rabbitmq"
+        / "examples"
+        / "valid"
+        / "order-paid.json"
+    )
+    return json.loads(path.read_text(encoding="utf-8"))

@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from pydantic import BaseModel, Field, Json, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 BASE_DIR = Path(__file__).parent.parent
@@ -76,6 +76,16 @@ class Settings(BaseSettings):
     sales_channels: Json[list[SalesChannelSettings]] = Field(
         default_factory=list,
         description="Allowlist of sales channels (id, origins, market_code)",
+    )
+    max_body_size: int = Field(
+        default=256 * 1024,
+        description="Maximum HTTP request body size in bytes",
+        ge=1,
+    )
+    max_event_payload_bytes: int = Field(
+        default=32 * 1024,
+        description="Maximum size of a single event JSON after parse",
+        ge=1,
     )
 
 

@@ -11,6 +11,7 @@ RUN uv sync --frozen --no-dev
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
+COPY contracts ./contracts
 
 ENV PYTHONPATH=/app/app
 

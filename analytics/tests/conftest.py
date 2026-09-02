@@ -1,7 +1,9 @@
 # tests/conftest.py
 
 import json
+from copy import deepcopy
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -19,6 +21,7 @@ from main import app_without_middleware as app
 from core.config import settings
 from core.db.postgres import Base, get_async_session
 import core.db.models  # noqa: F401 — register ORM models
+from domains.ingestion.service import persist_validated_event
 
 CONTRACTS_DIR = Path(__file__).resolve().parents[1] / "contracts"
 INGEST_ORIGIN = "http://test"
@@ -118,6 +121,40 @@ def session_started_event() -> dict:
         / "session-started.json"
     )
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def unique_event():
+    def _unique(event: dict) -> dict:
+        copied = deepcopy(event)
+        copied["event_id"] = str(uuid4())
+        return copied
+
+    return _unique
+
+
+@pytest_asyncio.fixture
+async def persist_event(db_session):
+    async def _run(body: dict):
+        async with db_session.begin():
+            return await persist_validated_event(db_session, body)
+
+    return _run
+
+
+@pytest.fixture
+def load_shopware_event(unique_event):
+    def _load(stem: str) -> dict:
+        path = (
+            CONTRACTS_DIR
+            / "rabbitmq"
+            / "examples"
+            / "valid"
+            / f"{stem}.json"
+        )
+        return unique_event(json.loads(path.read_text(encoding="utf-8")))
+
+    return _load
 
 
 @pytest.fixture

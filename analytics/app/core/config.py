@@ -6,7 +6,6 @@ from pathlib import Path
 from pydantic import BaseModel, Field, Json, SecretStr
 from pydantic_settings import BaseSettings
 
-
 BASE_DIR = Path(__file__).parent.parent
 
 
@@ -85,6 +84,11 @@ class Settings(BaseSettings):
     max_event_payload_bytes: int = Field(
         default=32 * 1024,
         description="Maximum size of a single event JSON after parse",
+        ge=1,
+    )
+    max_batch_events: int = Field(
+        default=100,
+        description="Maximum number of events in POST /events/batch",
         ge=1,
     )
 

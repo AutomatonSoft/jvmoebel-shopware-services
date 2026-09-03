@@ -43,6 +43,9 @@ class RabbitMqSettings(BaseModel):
         "RABBITMQ_EVENTS_QUEUE",
         "analytics.shopware.events",
     )
+    prefetch: int = int(os.getenv("RABBITMQ_PREFETCH", "10"))
+    max_retry_attempts: int = int(os.getenv("RABBITMQ_MAX_RETRY_ATTEMPTS", "5"))
+    retry_ttl_ms: int = int(os.getenv("RABBITMQ_RETRY_TTL_MS", "5000"))
 
 
 # -------------------------

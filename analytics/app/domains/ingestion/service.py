@@ -5,7 +5,7 @@ from typing import Literal
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.ingestion.validator import validate_http_event
+from domains.ingestion.validator import validate_http_event, validate_rabbit_event
 from domains.projections.dispatcher import dispatch
 from domains.projections.models.journal import Event
 from domains.projections.parsing import parse_datetime
@@ -82,5 +82,14 @@ async def ingest_http_event(
     origin: str | None,
 ) -> IngestStatus:
     validated = validate_http_event(body, origin=origin)
+    async with session.begin():
+        return await persist_validated_event(session, validated)
+
+
+async def ingest_rabbit_event(
+    session: AsyncSession,
+    body: object,
+) -> IngestStatus:
+    validated = validate_rabbit_event(body)
     async with session.begin():
         return await persist_validated_event(session, validated)

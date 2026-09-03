@@ -38,27 +38,47 @@ def resolve_request_origin(request: Request) -> str | None:
     return f"{parts.scheme}://{parts.netloc}"
 
 
-def assert_http_channel_allowed(
+def _require_known_channel(
     sales_channel_id: str,
     *,
-    origin: str | None,
     market_code: str | None,
-) -> None:
+) -> SalesChannelSettings:
     channel = get_sales_channel(sales_channel_id)
     if channel is None:
         raise EventValidationError(
             detail="Unknown sales_channel_id",
         )
 
+    if market_code is not None and market_code != channel.market_code:
+        raise EventValidationError(
+            detail="market_code does not match sales channel",
+        )
+    return channel
+
+
+def assert_http_channel_allowed(
+    sales_channel_id: str,
+    *,
+    origin: str | None,
+    market_code: str | None,
+) -> None:
+    channel = _require_known_channel(
+        sales_channel_id,
+        market_code=market_code,
+    )
+
     if origin is None or origin not in channel.origins:
         raise EventValidationError(
             detail="Origin is not allowed for this sales channel",
         )
 
-    if (
-        market_code is not None
-        and market_code != channel.market_code
-    ):
-        raise EventValidationError(
-            detail="market_code does not match sales channel",
-        )
+
+def assert_rabbit_channel_allowed(
+    sales_channel_id: str,
+    *,
+    market_code: str | None,
+) -> None:
+    _require_known_channel(
+        sales_channel_id,
+        market_code=market_code,
+    )

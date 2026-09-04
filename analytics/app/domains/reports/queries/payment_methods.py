@@ -1,0 +1,76 @@
+from decimal import Decimal
+
+from sqlalchemy import case, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from domains.projections.models.facts import PaymentMethodEvent
+from domains.reports.filters import ReportFilters
+from domains.reports.metrics import apply_period_channel_market
+from domains.reports.schemas import PaymentMethodRow, PaymentMethodsResponse
+
+
+def format_selected_rate(selected: int, shown: int) -> str | None:
+    # вычисляет отношение числа нажатий на способ оплаты к числу его показов
+    if shown == 0:
+        return None
+    return format(
+        (Decimal(selected) / Decimal(shown)).quantize(Decimal("0.0001")),
+        "f",
+    )
+
+# считает shown/selected/failed по каждому способу оплаты и rate = selected/shown
+async def query_payment_methods(
+    session: AsyncSession,
+    filters: ReportFilters,
+) -> PaymentMethodsResponse:
+    shown = func.coalesce(
+        func.sum(case((PaymentMethodEvent.kind == "shown", 1), else_=0)),
+        0,
+    )
+    selected = func.coalesce(
+        func.sum(case((PaymentMethodEvent.kind == "selected", 1), else_=0)),
+        0,
+    )
+    failed = func.coalesce(
+        func.sum(case((PaymentMethodEvent.kind == "failed", 1), else_=0)),
+        0,
+    )
+    stmt = (
+        select(
+            PaymentMethodEvent.payment_method,
+            shown,
+            selected,
+            failed,
+        )
+        .select_from(PaymentMethodEvent)
+        .group_by(PaymentMethodEvent.payment_method)
+    )
+    stmt = apply_period_channel_market(
+        stmt,
+        filters,
+        occurred_at=PaymentMethodEvent.occurred_at,
+        sales_channel_id=PaymentMethodEvent.sales_channel_id,
+    )
+    if filters.payment_method is not None:
+        stmt = stmt.where(
+            PaymentMethodEvent.payment_method == filters.payment_method
+        )
+    result = await session.execute(stmt)
+    items = []
+    for method, shown_count, selected_count, failed_count in result.all():
+        shown_int = int(shown_count or 0)
+        selected_int = int(selected_count or 0)
+        items.append(
+            PaymentMethodRow(
+                payment_method=method,
+                shown=shown_int,
+                selected=selected_int,
+                failed=int(failed_count or 0),
+                selected_rate=format_selected_rate(
+                    selected_int,
+                    shown_int,
+                ),
+            )
+        )
+    items.sort(key=lambda row: row.payment_method)
+    return PaymentMethodsResponse(items=items)

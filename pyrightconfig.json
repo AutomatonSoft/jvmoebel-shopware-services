@@ -1,4 +1,9 @@
 {
+
+  "ignore": [
+    "**/.venv",
+    "**/venv"
+  ],
   "executionEnvironments": [
     {
       "root": "ar",

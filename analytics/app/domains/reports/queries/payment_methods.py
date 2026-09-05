@@ -23,18 +23,9 @@ async def query_payment_methods(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> PaymentMethodsResponse:
-    shown = func.coalesce(
-        func.sum(case((PaymentMethodEvent.kind == "shown", 1), else_=0)),
-        0,
-    )
-    selected = func.coalesce(
-        func.sum(case((PaymentMethodEvent.kind == "selected", 1), else_=0)),
-        0,
-    )
-    failed = func.coalesce(
-        func.sum(case((PaymentMethodEvent.kind == "failed", 1), else_=0)),
-        0,
-    )
+    shown = func.count(case((PaymentMethodEvent.kind == "shown", 1)))
+    selected = func.count(case((PaymentMethodEvent.kind == "selected", 1)))
+    failed = func.count(case((PaymentMethodEvent.kind == "failed", 1)))
     stmt = (
         select(
             PaymentMethodEvent.payment_method,
@@ -58,14 +49,14 @@ async def query_payment_methods(
     result = await session.execute(stmt)
     items = []
     for method, shown_count, selected_count, failed_count in result.all():
-        shown_int = int(shown_count or 0)
-        selected_int = int(selected_count or 0)
+        shown_int = int(shown_count)
+        selected_int = int(selected_count)
         items.append(
             PaymentMethodRow(
                 payment_method=method,
                 shown=shown_int,
                 selected=selected_int,
-                failed=int(failed_count or 0),
+                failed=int(failed_count),
                 selected_rate=format_selected_rate(
                     selected_int,
                     shown_int,

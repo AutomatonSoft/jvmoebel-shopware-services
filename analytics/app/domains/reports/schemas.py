@@ -29,15 +29,15 @@ class OverviewResponse(BaseModel):
     first_visit_to_paid_sale_seconds: str | None
 
 
+class FunnelStep(BaseModel):
+    key: str
+    count: int
+    conversion_from_previous: str | None
+
+
 class FunnelResponse(BaseModel):
-    visitors: int
-    sessions: int
-    product_viewers: int
-    cart_adders: int
-    checkouts: int
-    leads: int
-    orders_created: int
-    orders_paid: int
+    ecommerce: list[FunnelStep]
+    lead: list[FunnelStep]
 
 
 class SourceRow(BaseModel):

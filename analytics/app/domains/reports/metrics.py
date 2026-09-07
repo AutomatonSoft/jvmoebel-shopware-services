@@ -4,7 +4,13 @@ from sqlalchemy import Select, exists, func, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.entities import Lead, ManualSale, Order, Session, Visitor
-from domains.projections.models.facts import CartAdd, Checkout, Contact, ProductView
+from domains.projections.models.facts import (
+    CartAdd,
+    Checkout,
+    Contact,
+    ContactIntent,
+    ProductView,
+)
 from domains.reports.filters import ReportFilters, attr_column, in_period
 
 
@@ -220,6 +226,7 @@ async def count_fact_visitors(
     occurred_at,
     sales_channel_id,
     sku_col=None,
+    channel_col=None,
 ) -> int:
     stmt = (
         select(func.count(func.distinct(visitor_id_col)))
@@ -242,6 +249,8 @@ async def count_fact_visitors(
     )
     if sku_col is not None:
         stmt = apply_sku(stmt, sku_col, filters)
+    if channel_col is not None and filters.channel is not None:
+        stmt = stmt.where(channel_col == filters.channel)
     return await scalar_int(session, stmt)
 
 
@@ -358,6 +367,42 @@ async def count_checkouts(
         occurred_at=Checkout.occurred_at,
         sales_channel_id=Checkout.sales_channel_id,
     )
+
+
+async def count_contact_intent_visitors(
+    session: AsyncSession,
+    filters: ReportFilters,
+) -> int:
+    return await count_fact_visitors(
+        session,
+        filters,
+        model=ContactIntent,
+        visitor_id_col=ContactIntent.visitor_id,
+        occurred_at=ContactIntent.occurred_at,
+        sales_channel_id=ContactIntent.sales_channel_id,
+        channel_col=ContactIntent.channel,
+    )
+
+
+async def count_leads_won(
+    session: AsyncSession,
+    filters: ReportFilters,
+) -> int:
+    stmt = select(func.count()).select_from(Lead).where(
+        Lead.event_id.isnot(None),
+        Lead.won_at.isnot(None),
+    )
+    stmt = apply_period_channel_market(
+        stmt,
+        filters,
+        occurred_at=Lead.won_at,
+        sales_channel_id=Lead.sales_channel_id,
+        market_code=Lead.market_code,
+    )
+    stmt = apply_snapshot_attr(stmt, Lead, filters)
+    if filters.channel is not None:
+        stmt = stmt.where(Lead.contact_channel == filters.channel)
+    return await scalar_int(session, stmt)
 
 
 async def count_contacts(

@@ -1,6 +1,7 @@
 from tests.reports.helpers import (
     ALLOWED_CHANNEL,
     UNKNOWN_CHANNEL,
+    comparison_params,
     report_params,
     uniquify_ids,
 )
@@ -98,9 +99,14 @@ async def test_all_report_endpoints_return_200(
     read_auth_headers: dict[str, str],
 ) -> None:
     for path in REPORT_PATHS:
+        params = (
+            comparison_params()
+            if path.endswith("/period-comparison")
+            else report_params()
+        )
         response = await client.get(
             path,
-            params=report_params(),
+            params=params,
             headers=read_auth_headers,
         )
         assert response.status_code == 200, path

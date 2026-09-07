@@ -110,6 +110,64 @@ class PaymentMethodsResponse(BaseModel):
     items: list[PaymentMethodRow]
 
 
+class Change(BaseModel):
+    abs: str | None
+    pct: str | None
+
+
+class IntChange(BaseModel):
+    abs: int
+    pct: str | None
+
+
+class MoneyChange(BaseModel):
+    currency: str
+    gross: Change
+    refunds: Change
+    net: Change
+    aov: Change
+
+
+class OverviewDelta(BaseModel):
+    visitors: IntChange
+    sessions: IntChange
+    product_views: IntChange
+    cart_adds: IntChange
+    checkouts: IntChange
+    contacts: IntChange
+    leads: IntChange
+    orders_created: IntChange
+    orders_paid: IntChange
+    manual_sales: IntChange
+    money: list[MoneyChange]
+    session_to_lead: Change
+    session_to_paid_sale: Change
+    lead_to_paid_sale: Change
+    checkout_to_paid_order: Change
+    first_visit_to_lead_seconds: Change
+    first_visit_to_paid_sale_seconds: Change
+
+
+class PaymentMethodDelta(BaseModel):
+    payment_method: str
+    shown: IntChange
+    selected: IntChange
+    failed: IntChange
+    selected_rate: Change
+    orders_created: IntChange
+    orders_paid: IntChange
+    selected_to_paid: Change
+    money: list[MoneyChange]
+
+
+class PaymentMethodsComparison(BaseModel):
+    current: list[PaymentMethodRow]
+    previous: list[PaymentMethodRow]
+    delta: list[PaymentMethodDelta]
+
+
 class PeriodComparisonResponse(BaseModel):
     current: OverviewResponse
     previous: OverviewResponse
+    delta: OverviewDelta
+    payment_methods: PaymentMethodsComparison

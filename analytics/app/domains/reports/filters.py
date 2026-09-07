@@ -32,18 +32,9 @@ class ReportFilters(BaseModel):
         return f"attr_{self.first_or_last_prefix}"
 
 
-def previous_period(filters: ReportFilters) -> ReportFilters:
-    delta = filters.period_to - filters.period_from
-    # model_copy - метод BaseModel (который является родителем ReportFilters)
-    # делает новый экземпляр с теми же полями. Исходный filters не трогает
-    # current-окно остаётся как пришло в запрос
-    return filters.model_copy(
-        update={
-            "period_from": filters.period_from - delta,
-            "period_to": filters.period_from,
-            "period_end_inclusive": False,
-        }
-    )
+class PeriodComparisonQuery(BaseModel):
+    current: ReportFilters
+    previous: ReportFilters
 
 
 def in_period(column, filters: ReportFilters) -> ColumnElement[bool]:

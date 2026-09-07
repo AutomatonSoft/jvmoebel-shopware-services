@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.reports.filters import ReportFilters
+from domains.reports.filters import PeriodComparisonQuery, ReportFilters
 from domains.reports.queries.contact_channels import query_contact_channels
 from domains.reports.queries.funnel import query_funnel
 from domains.reports.queries.overview import query_overview
@@ -63,6 +63,6 @@ async def payment_methods(
 
 async def period_comparison(
     session: AsyncSession,
-    filters: ReportFilters,
+    query: PeriodComparisonQuery,
 ) -> PeriodComparisonResponse:
-    return await query_period_comparison(session, filters)
+    return await query_period_comparison(session, query)

@@ -36,6 +36,15 @@ def format_rate(numerator: int, denominator: int) -> str | None:
     )
 
 
+def format_change_pct(current: Decimal, previous: Decimal) -> str | None:
+    if previous == 0:
+        return None
+    return format(
+        ((current - previous) / previous).quantize(RATE_QUANT),
+        "f",
+    )
+
+
 def format_avg_seconds(value: Decimal | float | None) -> str | None:
     if value is None:
         return None

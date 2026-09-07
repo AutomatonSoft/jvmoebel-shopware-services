@@ -9,6 +9,10 @@ PERIOD = {
     "period_from": "2026-08-24T00:00:00Z",
     "period_to": "2026-08-24T23:59:59Z",
 }
+COMPARE_PERIOD = {
+    "compare_from": "2026-08-17T00:00:00Z",
+    "compare_to": "2026-08-17T23:59:59Z",
+}
 
 ALLOWED_CHANNEL = "018f1a2b3c4d5e6f7890abcdef123456"
 UNKNOWN_CHANNEL = "f" * 32
@@ -16,6 +20,10 @@ UNKNOWN_CHANNEL = "f" * 32
 
 def report_params(**extra: str) -> dict[str, str]:
     return {**PERIOD, **extra}
+
+
+def comparison_params(**extra: str) -> dict[str, str]:
+    return {**PERIOD, **COMPARE_PERIOD, **extra}
 
 
 def http_event(stem: str) -> dict:

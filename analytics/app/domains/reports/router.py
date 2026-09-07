@@ -6,8 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.db.postgres import get_async_session
 from domains.base.dependencies import require_read_access
 from domains.reports import service
-from domains.reports.dependencies import parse_report_filters
-from domains.reports.filters import ReportFilters
+from domains.reports.dependencies import (
+    parse_period_comparison_filters,
+    parse_report_filters,
+)
+from domains.reports.filters import PeriodComparisonQuery, ReportFilters
 from domains.reports.schemas import (
     ContactChannelsResponse,
     FunnelResponse,
@@ -25,6 +28,10 @@ router = APIRouter(
 )
 
 Filters = Annotated[ReportFilters, Depends(parse_report_filters)]
+ComparisonQuery = Annotated[
+    PeriodComparisonQuery,
+    Depends(parse_period_comparison_filters),
+]
 DbSession = Annotated[AsyncSession, Depends(get_async_session)]
 
 
@@ -78,7 +85,7 @@ async def get_payment_methods(
 
 @router.get("/period-comparison", response_model=PeriodComparisonResponse)
 async def get_period_comparison(
-    filters: Filters,
+    comparison: ComparisonQuery,
     session: DbSession,
 ) -> PeriodComparisonResponse:
-    return await service.period_comparison(session, filters)
+    return await service.period_comparison(session, comparison)

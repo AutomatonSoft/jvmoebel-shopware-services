@@ -12,10 +12,21 @@ class MoneyBreakdown(BaseModel):
 class OverviewResponse(BaseModel):
     visitors: int
     sessions: int
+    product_views: int
+    cart_adds: int
+    checkouts: int
+    contacts: int
     leads: int
     orders_created: int
     orders_paid: int
+    manual_sales: int
     money: list[MoneyBreakdown]
+    session_to_lead: str | None
+    session_to_paid_sale: str | None
+    lead_to_paid_sale: str | None
+    checkout_to_paid_order: str | None
+    first_visit_to_lead_seconds: str | None
+    first_visit_to_paid_sale_seconds: str | None
 
 
 class FunnelResponse(BaseModel):

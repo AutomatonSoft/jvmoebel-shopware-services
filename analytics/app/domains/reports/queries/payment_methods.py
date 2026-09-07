@@ -1,22 +1,11 @@
-from decimal import Decimal
-
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.facts import PaymentMethodEvent
 from domains.reports.filters import ReportFilters
-from domains.reports.metrics import apply_period_channel_market
+from domains.reports.metrics import apply_period_channel_market, format_rate
 from domains.reports.schemas import PaymentMethodRow, PaymentMethodsResponse
 
-
-def format_selected_rate(selected: int, shown: int) -> str | None:
-    # вычисляет отношение числа нажатий на способ оплаты к числу его показов
-    if shown == 0:
-        return None
-    return format(
-        (Decimal(selected) / Decimal(shown)).quantize(Decimal("0.0001")),
-        "f",
-    )
 
 # считает shown/selected/failed по каждому способу оплаты и rate = selected/shown
 async def query_payment_methods(
@@ -57,7 +46,7 @@ async def query_payment_methods(
                 shown=shown_int,
                 selected=selected_int,
                 failed=int(failed_count),
-                selected_rate=format_selected_rate(
+                selected_rate=format_rate(
                     selected_int,
                     shown_int,
                 ),

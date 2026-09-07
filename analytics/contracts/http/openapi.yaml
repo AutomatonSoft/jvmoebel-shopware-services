@@ -45,6 +45,8 @@ paths:
           description: Missing or invalid ingest API key.
         "422":
           description: Schema, allowlist, or unknown sales_channel_id.
+        "429":
+          description: HTTP ingest rate limit exceeded. Retry-After is in seconds.
   /events/batch:
     post:
       operationId: ingestEventBatch
@@ -63,6 +65,8 @@ paths:
           description: Missing or invalid ingest API key.
         "422":
           description: Batch envelope invalid (item-level 422 is returned inside 200).
+        "429":
+          description: HTTP ingest rate limit exceeded. Retry-After is in seconds.
 components:
   securitySchemes:
     ingestBearer:

@@ -23,6 +23,19 @@ class UnauthorizedException(HTTPException):
         )
 
 
+class TooManyRequestsException(HTTPException):
+    def __init__(
+        self,
+        retry_after: int,
+        detail: str = "Rate limit exceeded",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=detail,
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
 class NotFoundException(HTTPException):
     def __init__(
         self,

@@ -94,6 +94,16 @@ class Settings(BaseSettings):
         description="Maximum number of events in POST /events/batch",
         ge=1,
     )
+    ingest_rate_limit: int = Field(
+        default=600,
+        description="Max HTTP ingest requests per origin (or IP) per window",
+        ge=0,
+    )
+    ingest_rate_limit_window_seconds: int = Field(
+        default=60,
+        description="Rate-limit window in seconds for HTTP ingest",
+        ge=1,
+    )
 
 
 settings: Settings = Settings()  # type: ignore[call-arg]

@@ -1,10 +1,19 @@
+import json
+from pathlib import Path
 from uuid import uuid4
+
+CONTRACTS_DIR = Path(__file__).resolve().parents[2] / "contracts"
 
 VISITOR_ID = "550e8400-e29b-41d4-a716-446655440000"
 SESSION_ID = "9b1de427-512a-482e-a2bf-66d1f6de06e3"
 LEAD_ID = "018f1111111111111111111111111111"
 ORDER_ID = "018f3333333333333333333333333333"
 CONTACT_ID = "018f7777777777777777777777777777"
+
+
+def _http_event(stem: str) -> dict:
+    path = CONTRACTS_DIR / "http" / "examples" / "valid" / f"{stem}.json"
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _hit_ids(body: dict, entity_type: str) -> set[str]:
@@ -123,6 +132,45 @@ async def test_search_text_matches_order_number_gclid_tracking_campaign(
     assert _hit_ids(gclid.json(), "visitor") == {VISITOR_ID}
     assert _hit_ids(tracking.json(), "contact") == {CONTACT_ID}
     assert _hit_ids(campaign.json(), "visitor") == {VISITOR_ID}
+
+
+async def test_search_text_matches_contact_channel(
+    persist_event,
+    load_shopware_event,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    await persist_event(load_shopware_event("contact-received"))
+    await persist_event(_http_event("contact-intent"))
+
+    form = await client.get(
+        "/api/v1/analytics/journey/search",
+        params={"q": "form"},
+        headers=read_auth_headers,
+    )
+    form_upper = await client.get(
+        "/api/v1/analytics/journey/search",
+        params={"q": "FORM"},
+        headers=read_auth_headers,
+    )
+    whatsapp = await client.get(
+        "/api/v1/analytics/journey/search",
+        params={"q": "whatsapp"},
+        headers=read_auth_headers,
+    )
+    phone = await client.get(
+        "/api/v1/analytics/journey/search",
+        params={"q": "phone"},
+        headers=read_auth_headers,
+    )
+
+    assert form.status_code == 200
+    assert _hit_ids(form.json(), "contact") == {CONTACT_ID}
+    assert _hit_ids(form.json(), "lead") == {LEAD_ID}
+    assert _hit_ids(form_upper.json(), "contact") == {CONTACT_ID}
+    assert _hit_ids(form_upper.json(), "lead") == {LEAD_ID}
+    assert _hit_ids(whatsapp.json(), "visitor") == {VISITOR_ID}
+    assert phone.json()["items"] == []
 
 
 async def test_visitor_journey_returns_payload(

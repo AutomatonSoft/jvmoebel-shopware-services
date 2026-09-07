@@ -22,6 +22,7 @@ HEX32_RE = re.compile(r"^[0-9a-f]{32}$", re.IGNORECASE)
 
 SEARCH_SCAN_LIMIT = 500
 SEARCH_HIT_LIMIT = 50
+CONTACT_CHANNELS = frozenset({"form", "email", "whatsapp", "phone"})
 
 SearchMode = Literal["uuid", "hex", "text"]
 
@@ -40,6 +41,13 @@ def classify_search_query(query: str) -> SearchMode:
     if HEX32_RE.fullmatch(query):
         return "hex"
     return "text"
+
+
+def _normalized_contact_channel(query: str) -> str | None:
+    channel = query.lower()
+    if channel in CONTACT_CHANNELS:
+        return channel
+    return None
 
 
 def _payload_text(payload: dict, *keys: str) -> str | None:
@@ -100,6 +108,21 @@ def _hits_for_event(event: Event, query: str, mode: SearchMode) -> list[JourneyS
         hits.append(_hit(event, "contact", event.contact_id))
     if _payload_text(payload, "utm", "utm_campaign") == query and event.visitor_id:
         hits.append(_hit(event, "visitor", str(event.visitor_id)))
+    channel = _normalized_contact_channel(query)
+    if channel is not None and channel in {
+        _payload_text(payload, "contact_channel"),
+        _payload_text(payload, "channel"),
+    }:
+        if event.contact_id:
+            hits.append(_hit(event, "contact", event.contact_id))
+        if event.lead_id:
+            hits.append(_hit(event, "lead", event.lead_id))
+        if (
+            event.visitor_id is not None
+            and event.contact_id is None
+            and event.lead_id is None
+        ):
+            hits.append(_hit(event, "visitor", str(event.visitor_id)))
     return hits
 
 
@@ -119,14 +142,23 @@ def _search_clause(query: str, mode: SearchMode):
         )
 
     payload = Event.body["payload"]
-    return or_(
+    clauses = [
         payload["order_number"].as_string() == query,
         payload["click_ids"]["gclid"].as_string() == query,
         payload["click_ids"]["gbraid"].as_string() == query,
         payload["click_ids"]["wbraid"].as_string() == query,
         payload["tracking_reference"].as_string() == query,
         payload["utm"]["utm_campaign"].as_string() == query,
-    )
+    ]
+    channel = _normalized_contact_channel(query)
+    if channel is not None:
+        clauses.extend(
+            (
+                payload["contact_channel"].as_string() == channel,
+                payload["channel"].as_string() == channel,
+            )
+        )
+    return or_(*clauses)
 
 
 async def search_journeys(

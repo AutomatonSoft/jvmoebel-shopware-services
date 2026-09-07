@@ -3,7 +3,13 @@ from decimal import Decimal
 from sqlalchemy import Select, exists, func, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.projections.models.entities import Lead, ManualSale, Order, Session, Visitor
+from domains.projections.models.entities import (
+    Lead,
+    ManualSale,
+    Order,
+    Session,
+    Visitor,
+)
 from domains.projections.models.facts import (
     CartAdd,
     Checkout,
@@ -12,7 +18,6 @@ from domains.projections.models.facts import (
     ProductView,
 )
 from domains.reports.filters import ReportFilters, attr_column, in_period
-
 
 RATE_QUANT = Decimal("0.0001")
 
@@ -69,8 +74,7 @@ def apply_visitor_attr(
         stmt = stmt.join(Visitor, visitor_id_col == Visitor.visitor_id)
     if filters.source is not None:
         stmt = stmt.where(
-            attr_column(Visitor, filters, "source", snapshot=False)
-            == filters.source
+            attr_column(Visitor, filters, "source", snapshot=False) == filters.source
         )
     if filters.campaign is not None:
         stmt = stmt.where(
@@ -83,13 +87,11 @@ def apply_visitor_attr(
 def apply_snapshot_attr(stmt: Select, entity, filters: ReportFilters) -> Select:
     if filters.source is not None:
         stmt = stmt.where(
-            attr_column(entity, filters, "source", snapshot=True)
-            == filters.source
+            attr_column(entity, filters, "source", snapshot=True) == filters.source
         )
     if filters.campaign is not None:
         stmt = stmt.where(
-            attr_column(entity, filters, "campaign", snapshot=True)
-            == filters.campaign
+            attr_column(entity, filters, "campaign", snapshot=True) == filters.campaign
         )
     return stmt
 
@@ -113,9 +115,13 @@ def apply_sku(stmt: Select, column, filters: ReportFilters) -> Select:
 
 
 async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
-    stmt = select(func.count()).select_from(Visitor).where(
-        Visitor.is_stub.is_(False),
-        in_period(Visitor.first_seen_at, filters),
+    stmt = (
+        select(func.count())
+        .select_from(Visitor)
+        .where(
+            Visitor.is_stub.is_(False),
+            in_period(Visitor.first_seen_at, filters),
+        )
     )
     if filters.sales_channel is not None:
         stmt = stmt.where(
@@ -124,8 +130,7 @@ async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
         )
     if filters.source is not None:
         stmt = stmt.where(
-            attr_column(Visitor, filters, "source", snapshot=False)
-            == filters.source
+            attr_column(Visitor, filters, "source", snapshot=False) == filters.source
         )
     if filters.campaign is not None:
         stmt = stmt.where(
@@ -145,8 +150,12 @@ async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
 
 
 async def count_sessions(session: AsyncSession, filters: ReportFilters) -> int:
-    stmt = select(func.count()).select_from(Session).where(
-        Session.event_id.isnot(None),
+    stmt = (
+        select(func.count())
+        .select_from(Session)
+        .where(
+            Session.event_id.isnot(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -164,8 +173,12 @@ async def count_sessions(session: AsyncSession, filters: ReportFilters) -> int:
 
 
 async def count_leads(session: AsyncSession, filters: ReportFilters) -> int:
-    stmt = select(func.count()).select_from(Lead).where(
-        Lead.event_id.isnot(None),
+    stmt = (
+        select(func.count())
+        .select_from(Lead)
+        .where(
+            Lead.event_id.isnot(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -182,8 +195,12 @@ async def count_orders_created(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> int:
-    stmt = select(func.count()).select_from(Order).where(
-        Order.created_event_id.isnot(None),
+    stmt = (
+        select(func.count())
+        .select_from(Order)
+        .where(
+            Order.created_event_id.isnot(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -201,8 +218,12 @@ async def count_orders_paid(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> int:
-    stmt = select(func.count()).select_from(Order).where(
-        Order.paid_event_id.isnot(None),
+    stmt = (
+        select(func.count())
+        .select_from(Order)
+        .where(
+            Order.paid_event_id.isnot(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -388,9 +409,13 @@ async def count_leads_won(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> int:
-    stmt = select(func.count()).select_from(Lead).where(
-        Lead.event_id.isnot(None),
-        Lead.won_at.isnot(None),
+    stmt = (
+        select(func.count())
+        .select_from(Lead)
+        .where(
+            Lead.event_id.isnot(None),
+            Lead.won_at.isnot(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -429,9 +454,13 @@ async def count_manual_sales(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> int:
-    stmt = select(func.count()).select_from(ManualSale).where(
-        ManualSale.event_id.isnot(None),
-        ManualSale.cancelled_at.is_(None),
+    stmt = (
+        select(func.count())
+        .select_from(ManualSale)
+        .where(
+            ManualSale.event_id.isnot(None),
+            ManualSale.cancelled_at.is_(None),
+        )
     )
     stmt = apply_period_channel_market(
         stmt,
@@ -444,8 +473,9 @@ async def count_manual_sales(
     stmt = apply_currency(stmt, ManualSale.currency, filters)
     return await scalar_int(session, stmt)
 
+
 # сколько секунд прошло между двумя временными метками
-def _duration_seconds(end_at, start_at):
+def duration_seconds(end_at, start_at):
     return func.extract("epoch", end_at - start_at)
 
 
@@ -454,7 +484,7 @@ async def avg_first_visit_to_lead_seconds(
     filters: ReportFilters,
 ) -> str | None:
     stmt = (
-        select(func.avg(_duration_seconds(Lead.created_at, Visitor.first_seen_at)))
+        select(func.avg(duration_seconds(Lead.created_at, Visitor.first_seen_at)))
         .select_from(Lead)
         .join(Visitor, Lead.visitor_id == Visitor.visitor_id)
         .where(
@@ -479,7 +509,7 @@ async def avg_first_visit_to_paid_sale_seconds(
     filters: ReportFilters,
 ) -> str | None:
     order_stmt = (
-        select(_duration_seconds(Order.paid_at, Visitor.first_seen_at).label("seconds"))
+        select(duration_seconds(Order.paid_at, Visitor.first_seen_at).label("seconds"))
         .select_from(Order)
         .join(Visitor, Order.visitor_id == Visitor.visitor_id)
         .where(
@@ -501,7 +531,7 @@ async def avg_first_visit_to_paid_sale_seconds(
 
     sale_stmt = (
         select(
-            _duration_seconds(ManualSale.confirmed_at, Visitor.first_seen_at).label(
+            duration_seconds(ManualSale.confirmed_at, Visitor.first_seen_at).label(
                 "seconds"
             )
         )

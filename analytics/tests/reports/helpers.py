@@ -1,5 +1,9 @@
+import json
 from copy import deepcopy
+from pathlib import Path
 from uuid import uuid4
+
+CONTRACTS_DIR = Path(__file__).resolve().parents[2] / "contracts"
 
 PERIOD = {
     "period_from": "2026-08-24T00:00:00Z",
@@ -12,6 +16,11 @@ UNKNOWN_CHANNEL = "f" * 32
 
 def report_params(**extra: str) -> dict[str, str]:
     return {**PERIOD, **extra}
+
+
+def http_event(stem: str) -> dict:
+    path = CONTRACTS_DIR / "http" / "examples" / "valid" / f"{stem}.json"
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def uniquify_ids(event: dict, *, visitor: bool = False, session: bool = False) -> dict:

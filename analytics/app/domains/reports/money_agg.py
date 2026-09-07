@@ -18,6 +18,7 @@ from domains.reports.schemas import MoneyBreakdown
 MONEY_QUANT = Decimal("0.0001")
 ZERO = Decimal("0")
 
+
 # округляет до 4 знаков после запятой и форматируем в обычную строку
 def money_to_api(value: Decimal) -> str:
     return format(value.quantize(MONEY_QUANT), "f")
@@ -26,7 +27,34 @@ def money_to_api(value: Decimal) -> str:
 def _empty_bucket() -> dict[str, Decimal | int]:
     return {"gross": ZERO, "refunds": ZERO, "paid_count": 0}
 
+
+def empty_money_buckets() -> dict[str, dict[str, Decimal | int]]:
+    return defaultdict(_empty_bucket)
+
+
+def add_to_money(
+    buckets: dict[str, dict[str, Decimal | int]],
+    currency: object,
+    *,
+    gross: Decimal | int | str | None = 0,
+    refunds: Decimal | int | str | None = 0,
+    paid_count: int | None = 0,
+) -> None:
+    if currency is None:
+        return
+    bucket = buckets[str(currency)]
+    bucket["gross"] += Decimal(gross or 0)
+    bucket["refunds"] += Decimal(refunds or 0)
+    bucket["paid_count"] += int(paid_count or 0)
+
+
 # преобразует словарь с данными о доходах и возвратах в список MoneyBreakdown
+def money_breakdowns(
+    buckets: dict[str, dict[str, Decimal | int]],
+) -> list[MoneyBreakdown]:
+    return _to_breakdowns(buckets)
+
+
 def _to_breakdowns(
     buckets: dict[str, dict[str, Decimal | int]],
 ) -> list[MoneyBreakdown]:
@@ -80,6 +108,7 @@ async def _add_order_gross(
         bucket = buckets[str(currency)]
         bucket["gross"] += Decimal(total or 0)
         bucket["paid_count"] += int(count or 0)
+
 
 # добавляет в корзины суммы живых не отменённых ручных продаж, группируя по валюте
 async def _add_manual_sale_gross(
@@ -150,8 +179,8 @@ async def aggregate_money(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> list[MoneyBreakdown]:
-    buckets: dict[str, dict[str, Decimal | int]] = defaultdict(_empty_bucket)
+    buckets = empty_money_buckets()
     await _add_order_gross(session, filters, buckets)
     await _add_manual_sale_gross(session, filters, buckets)
     await _add_refunds(session, filters, buckets)
-    return _to_breakdowns(buckets)
+    return money_breakdowns(buckets)

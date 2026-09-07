@@ -42,11 +42,20 @@ class FunnelResponse(BaseModel):
 
 class SourceRow(BaseModel):
     source: str
+    campaign: str | None
     visitors: int
     sessions: int
+    contacts: int
     leads: int
+    orders_created: int
     orders_paid: int
+    manual_sales: int
     money: list[MoneyBreakdown]
+    session_to_lead: str | None
+    session_to_paid_sale: str | None
+    lead_to_paid_sale: str | None
+    first_visit_to_lead_seconds: str | None
+    first_visit_to_paid_sale_seconds: str | None
 
 
 class SourcesResponse(BaseModel):
@@ -55,7 +64,14 @@ class SourcesResponse(BaseModel):
 
 class ContactChannelRow(BaseModel):
     channel: str
+    intents: int
     contacts: int
+    leads: int
+    orders_paid: int
+    manual_sales: int
+    money: list[MoneyBreakdown]
+    contact_to_lead: str | None
+    lead_to_paid_sale: str | None
 
 
 class ContactChannelsResponse(BaseModel):
@@ -66,7 +82,12 @@ class ProductRow(BaseModel):
     sku: str
     views: int
     cart_adds: int
+    orders_created: int
+    orders_paid: int
     paid_quantity: int
+    money: list[MoneyBreakdown]
+    view_to_paid_order: str | None
+    payment_methods: list[str]
 
 
 class ProductsResponse(BaseModel):
@@ -79,6 +100,10 @@ class PaymentMethodRow(BaseModel):
     selected: int
     failed: int
     selected_rate: str | None
+    orders_created: int
+    orders_paid: int
+    selected_to_paid: str | None
+    money: list[MoneyBreakdown]
 
 
 class PaymentMethodsResponse(BaseModel):

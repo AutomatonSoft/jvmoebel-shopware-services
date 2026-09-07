@@ -5,7 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db.postgres import get_async_session
 from domains.base.dependencies import require_read_access
-from domains.journeys.customer_scope import customer_events_clause
+from domains.journeys.scope import (
+    customer_events_clause,
+    lead_events_clause,
+    order_events_clause,
+)
 from domains.journeys.dependencies import PathEntityId, VisitorId, parse_search_query
 from domains.journeys.repository import load_journey
 from domains.journeys.schemas import JourneyResponse, JourneySearchResponse
@@ -42,7 +46,7 @@ async def get_lead_journey(
     lead_id: PathEntityId,
     session: DbSession,
 ) -> JourneyResponse:
-    return await load_journey(session, Event.lead_id == lead_id.lower())
+    return await load_journey(session, lead_events_clause(lead_id.lower()))
 
 
 @router.get("/orders/{order_id}/journey", response_model=JourneyResponse)
@@ -50,7 +54,7 @@ async def get_order_journey(
     order_id: PathEntityId,
     session: DbSession,
 ) -> JourneyResponse:
-    return await load_journey(session, Event.order_id == order_id.lower())
+    return await load_journey(session, order_events_clause(order_id.lower()))
 
 
 @router.get("/customers/{customer_id}/journey", response_model=JourneyResponse)

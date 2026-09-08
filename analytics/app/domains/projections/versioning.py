@@ -9,6 +9,7 @@ def should_apply_entity_update(
     stored_occurred_at: datetime | None,
     incoming_occurred_at: datetime,
     has_version_column: bool,
+    allow_equal: bool = False,
 ) -> bool:
     if is_stub:
         return True
@@ -17,11 +18,20 @@ def should_apply_entity_update(
         if stored_aggregate_version is None:
             return True
         if incoming_aggregate_version is not None:
-            return incoming_aggregate_version > stored_aggregate_version
+            if incoming_aggregate_version > stored_aggregate_version:
+                return True
+            return (
+                allow_equal
+                and incoming_aggregate_version == stored_aggregate_version
+            )
         if stored_occurred_at is None:
             return True
-        return incoming_occurred_at > stored_occurred_at
+        if incoming_occurred_at > stored_occurred_at:
+            return True
+        return allow_equal and incoming_occurred_at == stored_occurred_at
 
     if stored_occurred_at is None:
         return True
-    return incoming_occurred_at > stored_occurred_at
+    if incoming_occurred_at > stored_occurred_at:
+        return True
+    return allow_equal and incoming_occurred_at == stored_occurred_at

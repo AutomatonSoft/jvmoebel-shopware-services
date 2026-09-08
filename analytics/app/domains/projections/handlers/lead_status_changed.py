@@ -24,6 +24,16 @@ async def handle_lead_status_changed(
     )
 
     payload = event_payload(event)
+    if not should_apply_entity_update(
+        is_stub=lead.is_stub,
+        stored_aggregate_version=lead.aggregate_version,
+        incoming_aggregate_version=event.aggregate_version,
+        stored_occurred_at=lead.last_event_occurred_at,
+        incoming_occurred_at=event.occurred_at,
+        has_version_column=True,
+    ):
+        return
+
     session.add(
         LeadStatusHistory(
             event_id=event.event_id,
@@ -35,16 +45,6 @@ async def handle_lead_status_changed(
             occurred_at=event.occurred_at,
         )
     )
-
-    if not should_apply_entity_update(
-        is_stub=lead.is_stub,
-        stored_aggregate_version=lead.aggregate_version,
-        incoming_aggregate_version=event.aggregate_version,
-        stored_occurred_at=lead.last_event_occurred_at,
-        incoming_occurred_at=event.occurred_at,
-        has_version_column=True,
-    ):
-        return
 
     new_status = payload["new_status"]
     lead.status = new_status

@@ -1,5 +1,7 @@
-from domains.projections.models.entities import Lead
-from domains.projections.models.entities import Order
+from sqlalchemy import func, select
+
+from domains.projections.models.entities import Lead, Order
+from domains.projections.models.facts import LeadStatusHistory
 
 
 async def test_won_does_not_create_sale(
@@ -23,9 +25,13 @@ async def test_won_does_not_create_sale(
 
     lead = await db_session.get(Lead, created["lead_id"])
     order = await db_session.get(Order, won["order_id"])
+    history = await db_session.scalar(
+        select(func.count()).select_from(LeadStatusHistory)
+    )
     assert lead is not None
     assert lead.status == "won"
     assert lead.won_at is not None
+    assert history == 1
     assert order is not None
     assert order.is_stub is True
     assert order.paid_event_id is None

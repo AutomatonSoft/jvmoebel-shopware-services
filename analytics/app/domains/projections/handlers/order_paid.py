@@ -32,6 +32,7 @@ async def handle_order_paid(
         stored_occurred_at=order.last_event_occurred_at,
         incoming_occurred_at=event.occurred_at,
         has_version_column=True,
+        allow_equal=True,
     ):
         return
 

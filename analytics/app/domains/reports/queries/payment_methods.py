@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from sqlalchemy import case, func, select
+from sqlalchemy import ColumnElement, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.entities import Order
@@ -38,14 +38,23 @@ def _apply_method_filter(stmt, column, filters: ReportFilters):
     return stmt.where(column == filters.payment_method)
 
 
-# считает shown/selected/failed по каждому способу оплаты и rate = selected/shown
+def _checkout_id() -> ColumnElement:
+    return func.coalesce(PaymentMethodEvent.cart_id, PaymentMethodEvent.event_id)
+
+
+# shown/selected — уникальные checkout, где способ был доступен / выбран
 async def query_payment_methods(
     session: AsyncSession,
     filters: ReportFilters,
 ) -> PaymentMethodsResponse:
     items: dict[str, dict] = defaultdict(_empty_method)
-    shown = func.count(case((PaymentMethodEvent.kind == "shown", 1)))
-    selected = func.count(case((PaymentMethodEvent.kind == "selected", 1)))
+    checkout_id = _checkout_id()
+    shown = func.count(
+        func.distinct(case((PaymentMethodEvent.kind == "shown", checkout_id)))
+    )
+    selected = func.count(
+        func.distinct(case((PaymentMethodEvent.kind == "selected", checkout_id)))
+    )
     failed = func.count(case((PaymentMethodEvent.kind == "failed", 1)))
     event_stmt = (
         select(

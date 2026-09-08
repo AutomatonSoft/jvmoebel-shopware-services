@@ -31,10 +31,9 @@ async def test_payment_methods_selected_to_paid_and_money(
     items = {row["payment_method"]: row for row in response.json()["items"]}
     paypal = items["paypal"]
     assert overview.json()["sessions"] == 1
-    assert paypal["shown"] == 2
+    assert paypal["shown"] == 1
     assert paypal["selected"] == 1
-    assert paypal["selected_rate"] == "0.5000"
-    assert paypal["shown"] != overview.json()["sessions"]
+    assert paypal["selected_rate"] == "1.0000"
     assert paypal["orders_created"] == 1
     assert paypal["orders_paid"] == 1
     assert paypal["selected_to_paid"] == "1.0000"

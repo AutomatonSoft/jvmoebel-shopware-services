@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,8 +24,36 @@ router = APIRouter(
 
 DbSession = Annotated[AsyncSession, Depends(get_async_session)]
 
+JOURNEY_SEARCH_RESPONSES: dict[int | str, dict[str, Any]] = {
+    400: {
+        "description": "q is required",
+    },
+    401: {
+        "description": "Missing or invalid read API key",
+    },
+    422: {
+        "description": "Invalid query parameter",
+    },
+}
 
-@router.get("/journey/search", response_model=JourneySearchResponse)
+JOURNEY_ENTITY_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: {
+        "description": "Missing or invalid read API key",
+    },
+    404: {
+        "description": "Journey not found",
+    },
+    422: {
+        "description": "Invalid path identifier",
+    },
+}
+
+
+@router.get(
+    "/journey/search",
+    response_model=JourneySearchResponse,
+    responses=JOURNEY_SEARCH_RESPONSES,
+)
 async def get_journey_search(
     session: DbSession,
     q: Annotated[str, Depends(parse_search_query)],
@@ -33,7 +61,11 @@ async def get_journey_search(
     return await search_journeys(session, q)
 
 
-@router.get("/visitors/{visitor_id}/journey", response_model=JourneyResponse)
+@router.get(
+    "/visitors/{visitor_id}/journey",
+    response_model=JourneyResponse,
+    responses=JOURNEY_ENTITY_RESPONSES,
+)
 async def get_visitor_journey(
     visitor_id: VisitorId,
     session: DbSession,
@@ -41,7 +73,11 @@ async def get_visitor_journey(
     return await load_journey(session, Event.visitor_id == visitor_id)
 
 
-@router.get("/leads/{lead_id}/journey", response_model=JourneyResponse)
+@router.get(
+    "/leads/{lead_id}/journey",
+    response_model=JourneyResponse,
+    responses=JOURNEY_ENTITY_RESPONSES,
+)
 async def get_lead_journey(
     lead_id: PathEntityId,
     session: DbSession,
@@ -49,7 +85,11 @@ async def get_lead_journey(
     return await load_journey(session, lead_events_clause(lead_id.lower()))
 
 
-@router.get("/orders/{order_id}/journey", response_model=JourneyResponse)
+@router.get(
+    "/orders/{order_id}/journey",
+    response_model=JourneyResponse,
+    responses=JOURNEY_ENTITY_RESPONSES,
+)
 async def get_order_journey(
     order_id: PathEntityId,
     session: DbSession,
@@ -57,7 +97,11 @@ async def get_order_journey(
     return await load_journey(session, order_events_clause(order_id.lower()))
 
 
-@router.get("/customers/{customer_id}/journey", response_model=JourneyResponse)
+@router.get(
+    "/customers/{customer_id}/journey",
+    response_model=JourneyResponse,
+    responses=JOURNEY_ENTITY_RESPONSES,
+)
 async def get_customer_journey(
     customer_id: PathEntityId,
     session: DbSession,

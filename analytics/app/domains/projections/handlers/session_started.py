@@ -152,7 +152,7 @@ async def handle_session_started(
             is_direct=touch.is_direct,
         )
     )
-    await refresh_dependent_snapshots(session, visitor, event.occurred_at)
+    await refresh_dependent_snapshots(session, visitor, event.occurred_at, touch)
 
 
 def _max_datetime(

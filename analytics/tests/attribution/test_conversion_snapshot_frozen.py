@@ -78,3 +78,26 @@ async def test_late_session_does_not_refresh_manual_sale_snapshot(
     assert sale is not None
     assert sale.attr_last_non_direct_utm_campaign == "campaign-a"
     assert sale.attr_first_touch_utm_campaign == "campaign-a"
+
+
+async def test_delayed_session_before_lead_fills_empty_snapshot(
+    persist_event,
+    session_started_event: dict,
+    load_shopware_event,
+    db_session,
+) -> None:
+    created = load_shopware_event("lead-created")
+    created["visitor_id"] = session_started_event["visitor_id"]
+    created["occurred_at"] = "2026-08-24T10:00:00Z"
+    await persist_event(created)
+
+    delayed = deepcopy(session_started_event)
+    delayed["event_id"] = str(uuid4())
+    delayed["occurred_at"] = "2026-08-24T08:00:00Z"
+    delayed["payload"]["utm"]["utm_campaign"] = "campaign-a"
+    await persist_event(delayed)
+
+    lead = await db_session.get(Lead, created["lead_id"])
+    assert lead is not None
+    assert lead.attr_first_touch_utm_campaign == "campaign-a"
+    assert lead.attr_last_non_direct_utm_campaign == "campaign-a"

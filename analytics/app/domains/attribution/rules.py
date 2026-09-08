@@ -27,7 +27,7 @@ class Touch:
         return self.source == "direct"
 
 
-_SNAPSHOT_PAIRS = (
+_FIRST_TOUCH_PAIRS = (
     ("first_touch_source", "attr_first_touch_source"),
     ("first_touch_campaign", "attr_first_touch_campaign"),
     ("first_touch_gclid", "attr_first_touch_gclid"),
@@ -42,6 +42,8 @@ _SNAPSHOT_PAIRS = (
     ("first_touch_referrer", "attr_first_touch_referrer"),
     ("first_touch_occurred_at", "attr_first_touch_occurred_at"),
     ("first_touch_sales_channel_id", "attr_first_touch_sales_channel_id"),
+)
+_LAST_NON_DIRECT_PAIRS = (
     ("last_non_direct_source", "attr_last_non_direct_source"),
     ("last_non_direct_campaign", "attr_last_non_direct_campaign"),
     ("last_non_direct_gclid", "attr_last_non_direct_gclid"),
@@ -57,6 +59,7 @@ _SNAPSHOT_PAIRS = (
     ("last_non_direct_occurred_at", "attr_last_non_direct_occurred_at"),
     ("last_non_direct_sales_channel_id", "attr_last_non_direct_sales_channel_id"),
 )
+_SNAPSHOT_PAIRS = _FIRST_TOUCH_PAIRS + _LAST_NON_DIRECT_PAIRS
 
 
 def apply_first_touch(visitor: Visitor, touch: Touch) -> None:
@@ -107,3 +110,58 @@ def copy_attribution_snapshot(
 ) -> None:
     for source_field, target_field in _SNAPSHOT_PAIRS:
         setattr(entity, target_field, getattr(visitor, source_field))
+
+
+def _copy_pairs(
+    visitor: Visitor,
+    entity: AttributionSnapshotMixin,
+    pairs: tuple[tuple[str, str], ...],
+) -> None:
+    for source_field, target_field in pairs:
+        setattr(entity, target_field, getattr(visitor, source_field))
+
+
+def _write_last_non_direct_snapshot(
+    entity: AttributionSnapshotMixin,
+    touch: Touch,
+) -> None:
+    entity.attr_last_non_direct_source = touch.source
+    entity.attr_last_non_direct_campaign = touch.campaign
+    entity.attr_last_non_direct_gclid = touch.gclid
+    entity.attr_last_non_direct_gbraid = touch.gbraid
+    entity.attr_last_non_direct_wbraid = touch.wbraid
+    entity.attr_last_non_direct_utm_source = touch.utm_source
+    entity.attr_last_non_direct_utm_medium = touch.utm_medium
+    entity.attr_last_non_direct_utm_campaign = touch.utm_campaign
+    entity.attr_last_non_direct_utm_content = touch.utm_content
+    entity.attr_last_non_direct_utm_term = touch.utm_term
+    entity.attr_last_non_direct_landing_page = touch.landing_page
+    entity.attr_last_non_direct_referrer = touch.referrer
+    entity.attr_last_non_direct_occurred_at = touch.occurred_at
+    entity.attr_last_non_direct_sales_channel_id = touch.sales_channel_id
+
+
+def copy_attribution_known_at(
+    visitor: Visitor,
+    entity: AttributionSnapshotMixin,
+    *,
+    as_of: datetime,
+    incoming: Touch,
+) -> None:
+    if (
+        visitor.first_touch_occurred_at is not None
+        and visitor.first_touch_occurred_at <= as_of
+    ):
+        _copy_pairs(visitor, entity, _FIRST_TOUCH_PAIRS)
+    if (
+        visitor.last_non_direct_occurred_at is not None
+        and visitor.last_non_direct_occurred_at <= as_of
+    ):
+        _copy_pairs(visitor, entity, _LAST_NON_DIRECT_PAIRS)
+        return
+    if (
+        entity.attr_last_non_direct_occurred_at is None
+        and not incoming.is_direct
+        and incoming.occurred_at <= as_of
+    ):
+        _write_last_non_direct_snapshot(entity, incoming)

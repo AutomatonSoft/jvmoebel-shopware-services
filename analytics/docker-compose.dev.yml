@@ -1,4 +1,4 @@
-version: '3.9'
+name: analytics-dev
 
 services:
   postgres_db_dev:

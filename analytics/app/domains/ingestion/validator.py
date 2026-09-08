@@ -80,10 +80,12 @@ def validate_http_event(
         )
 
     market_code = body.get("market_code")
+    domain = body.get("domain")
     assert_http_channel_allowed(
         sales_channel_id,
         origin=origin,
         market_code=(market_code if isinstance(market_code, str) else None),
+        domain=(domain if isinstance(domain, str) else None),
     )
     return body
 

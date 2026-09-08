@@ -28,6 +28,21 @@ async def test_disallowed_origin_is_rejected(
     assert "Origin" in response.json()["detail"]
 
 
+async def test_foreign_domain_is_rejected(
+    client,
+    ingest_headers: dict[str, str],
+    session_started_event: dict,
+) -> None:
+    session_started_event["domain"] = "www.jvmoebel.at"
+    response = await client.post(
+        "/api/v1/events",
+        json=session_started_event,
+        headers=ingest_headers,
+    )
+    assert response.status_code == 422
+    assert "domain" in response.json()["detail"]
+
+
 async def test_market_code_mismatch_is_rejected(
     client,
     ingest_headers: dict[str, str],

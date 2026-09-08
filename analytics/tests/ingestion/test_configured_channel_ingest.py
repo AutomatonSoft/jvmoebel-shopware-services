@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -28,6 +29,18 @@ def test_test_env_lists_all_contract_markets() -> None:
     assert codes == _contract_markets()
 
 
+def _channel_event_domain(channel_id: str) -> str:
+    channel = next(
+        item for item in settings.sales_channels if item.id == channel_id
+    )
+    origin = next(
+        item for item in channel.origins if item != "http://test"
+    )
+    host = urlsplit(origin).hostname
+    assert host is not None
+    return host
+
+
 @pytest.mark.parametrize(("channel_id", "market_code"), CHANNEL_CASES)
 async def test_http_accepts_configured_channel(
     client,
@@ -39,6 +52,7 @@ async def test_http_accepts_configured_channel(
     event = deepcopy(session_started_event)
     event["sales_channel_id"] = channel_id
     event["market_code"] = market_code
+    event["domain"] = _channel_event_domain(channel_id)
     response = await client.post(
         "/api/v1/events",
         json=event,
@@ -68,6 +82,7 @@ async def test_http_rejects_foreign_origin_for_channel(
     event = deepcopy(session_started_event)
     event["sales_channel_id"] = channel_id
     event["market_code"] = market_code
+    event["domain"] = _channel_event_domain(channel_id)
     response = await client.post(
         "/api/v1/events",
         json=event,
@@ -75,6 +90,33 @@ async def test_http_rejects_foreign_origin_for_channel(
     )
     assert response.status_code == 422
     assert "Origin" in response.json()["detail"]
+
+
+@pytest.mark.parametrize(("channel_id", "market_code"), CHANNEL_CASES)
+async def test_http_rejects_foreign_domain_for_channel(
+    client,
+    ingest_headers: dict[str, str],
+    session_started_event: dict,
+    channel_id: str,
+    market_code: str,
+) -> None:
+    other = next(
+        (channel for channel in settings.sales_channels if channel.id != channel_id),
+        None,
+    )
+    if other is None:
+        pytest.skip("Need at least two configured sales channels")
+    event = deepcopy(session_started_event)
+    event["sales_channel_id"] = channel_id
+    event["market_code"] = market_code
+    event["domain"] = _channel_event_domain(other.id)
+    response = await client.post(
+        "/api/v1/events",
+        json=event,
+        headers=ingest_headers,
+    )
+    assert response.status_code == 422
+    assert "domain" in response.json()["detail"]
 
 
 @pytest.mark.parametrize(("channel_id", "market_code"), CHANNEL_CASES)

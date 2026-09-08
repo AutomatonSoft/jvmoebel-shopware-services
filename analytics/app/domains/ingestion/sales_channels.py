@@ -56,11 +56,28 @@ def _require_known_channel(
     return channel
 
 
+def _origin_hostname(origin: str) -> str | None:
+    host = urlsplit(origin).hostname
+    if host is None or not host:
+        return None
+    return host.lower()
+
+
+def _event_hostname(domain: str) -> str:
+    value = domain.strip().lower()
+    if "://" in value:
+        host = urlsplit(value).hostname
+        if host:
+            return host.lower()
+    return value.split("/")[0].split(":")[0]
+
+
 def assert_http_channel_allowed(
     sales_channel_id: str,
     *,
     origin: str | None,
     market_code: str | None,
+    domain: str | None,
 ) -> None:
     channel = _require_known_channel(
         sales_channel_id,
@@ -70,6 +87,18 @@ def assert_http_channel_allowed(
     if origin is None or origin not in channel.origins:
         raise EventValidationError(
             detail="Origin is not allowed for this sales channel",
+        )
+
+    if domain is None:
+        return
+    allowed_hosts = {
+        host
+        for channel_origin in channel.origins
+        if (host := _origin_hostname(channel_origin)) is not None
+    }
+    if _event_hostname(domain) not in allowed_hosts:
+        raise EventValidationError(
+            detail="domain is not allowed for this sales channel",
         )
 
 

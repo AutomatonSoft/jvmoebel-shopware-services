@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - D02-9
   pull_request:
     branches:
       - develop
@@ -51,6 +54,63 @@ jobs:
         env:
           APP_NETWORK: jvmoebel_ci
         run: docker compose -f compose.deploy.yml config --quiet
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Run tests
+        run: uv run pytest
+
+  test-analytics:
+    name: Analytics PostgreSQL + Alembic + Pytest
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: jvmoebel_analytics_ci
+          POSTGRES_USER: jvmoebel_analytics_ci_user
+          POSTGRES_PASSWORD: ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U jvmoebel_analytics_ci_user -d jvmoebel_analytics_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    defaults:
+      run:
+        working-directory: analytics
+
+    env:
+      POSTGRES_DB: jvmoebel_analytics_ci
+      POSTGRES_USER: jvmoebel_analytics_ci_user
+      POSTGRES_PASSWORD: ci_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      ANALYTICS_INGEST_API_KEY: ci-analytics-ingest-token
+      ANALYTICS_READ_API_KEY: ci-analytics-read-token
+      SALES_CHANNELS: '[{"id":"018f1a2b3c4d5e6f7890abcdef123456","origins":["http://test","https://www.jvmoebel.de"],"market_code":"de"},{"id":"018f1a2b3c4d5e6f7890abcdef0000a1","origins":["http://test","https://www.jvmoebel.at"],"market_code":"at"},{"id":"018f1a2b3c4d5e6f7890abcdef0000c1","origins":["http://test","https://www.jvmoebel.ch"],"market_code":"ch"},{"id":"018f1a2b3c4d5e6f7890abcdef0000e1","origins":["http://test","https://www.jvfurniture.co.uk"],"market_code":"uk"},{"id":"018f1a2b3c4d5e6f7890abcdef0000f1","origins":["http://test","https://www.jvmobili.it"],"market_code":"it"},{"id":"018f1a2b3c4d5e6f7890abcdef0000b1","origins":["http://test","https://www.jvmeble.pl"],"market_code":"pl"}]'
+      PYTHONPATH: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5

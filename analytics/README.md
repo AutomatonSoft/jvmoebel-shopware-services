@@ -8,6 +8,8 @@ HTTP Base URL:
 /api/v1
 ```
 
+Host port по умолчанию — `8002` (`PORT` в `.env.example`). Внутри контейнера API слушает `8000`.
+
 HTTP ingestion принимает только frontend event types:
 
 ```text
@@ -119,7 +121,7 @@ Ingest key не подходит для read API и наоборот.
 
 ```bash
 curl -X POST \
-  http://localhost:8000/api/v1/events \
+  http://localhost:8002/api/v1/events \
   -H "Authorization: Bearer $ANALYTICS_INGEST_API_KEY" \
   -H "Origin: https://www.jvmoebel.de" \
   -H "Content-Type: application/json" \
@@ -233,7 +235,7 @@ Shopware `event_type` на этом endpoint даёт `422`, даже если p
 
 ```bash
 curl -X POST \
-  http://localhost:8000/api/v1/events/batch \
+  http://localhost:8002/api/v1/events/batch \
   -H "Authorization: Bearer $ANALYTICS_INGEST_API_KEY" \
   -H "Origin: https://www.jvmoebel.de" \
   -H "Content-Type: application/json" \
@@ -330,7 +332,7 @@ rejected
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/overview?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/overview?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -403,7 +405,7 @@ session → contact_intent → contact_received → lead_created → lead_won �
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/funnel?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/funnel?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -447,7 +449,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/sources?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z&attribution_model=last_non_direct" \
+curl "http://localhost:8002/api/v1/analytics/sources?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z&attribution_model=last_non_direct" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -506,7 +508,7 @@ Contacts и Leads считаются отдельно: повторные обр
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/contact-channels?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/contact-channels?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -555,7 +557,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/products?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/products?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -606,7 +608,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/payment-methods?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/payment-methods?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -659,7 +661,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/period-comparison?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z&compare_from=2026-08-17T00:00:00Z&compare_to=2026-08-17T23:59:59Z" \
+curl "http://localhost:8002/api/v1/analytics/period-comparison?period_from=2026-08-24T00:00:00Z&period_to=2026-08-24T23:59:59Z&compare_from=2026-08-17T00:00:00Z&compare_to=2026-08-17T23:59:59Z" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -716,7 +718,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl "http://localhost:8000/api/v1/analytics/journey/search?q=550e8400-e29b-41d4-a716-446655440000" \
+curl "http://localhost:8002/api/v1/analytics/journey/search?q=550e8400-e29b-41d4-a716-446655440000" \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -760,7 +762,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl http://localhost:8000/api/v1/analytics/visitors/550e8400-e29b-41d4-a716-446655440000/journey \
+curl http://localhost:8002/api/v1/analytics/visitors/550e8400-e29b-41d4-a716-446655440000/journey \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -818,7 +820,7 @@ HTTP/1.1 200 OK
 ### Example
 
 ```bash
-curl http://localhost:8000/api/v1/analytics/leads/018f1111111111111111111111111111/journey \
+curl http://localhost:8002/api/v1/analytics/leads/018f1111111111111111111111111111/journey \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -837,7 +839,7 @@ curl http://localhost:8000/api/v1/analytics/leads/018f11111111111111111111111111
 ### Example
 
 ```bash
-curl http://localhost:8000/api/v1/analytics/orders/018f3333333333333333333333333333/journey \
+curl http://localhost:8002/api/v1/analytics/orders/018f3333333333333333333333333333/journey \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 
@@ -856,7 +858,7 @@ curl http://localhost:8000/api/v1/analytics/orders/018f3333333333333333333333333
 ### Example
 
 ```bash
-curl http://localhost:8000/api/v1/analytics/customers/018f2222222222222222222222222222/journey \
+curl http://localhost:8002/api/v1/analytics/customers/018f2222222222222222222222222222/journey \
   -H "Authorization: Bearer $ANALYTICS_READ_API_KEY"
 ```
 

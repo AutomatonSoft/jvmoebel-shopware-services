@@ -7,6 +7,8 @@ services:
     restart: always
     env_file:
       - .env
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5438}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,8 +25,8 @@ services:
     env_file:
       - .env
     ports:
-      - "${RABBITMQ_EXTERNAL_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_EXTERNAL_PORT:-15672}:15672"
+      - "${RABBITMQ_EXTERNAL_PORT:-5674}:5672"
+      - "${RABBITMQ_MANAGEMENT_EXTERNAL_PORT:-15674}:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -62,7 +64,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT:-8000}:8000"
+      - "${PORT:-8002}:8000"
     depends_on:
       migrations:
         condition: service_completed_successfully

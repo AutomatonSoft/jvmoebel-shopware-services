@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Duration seconds",
+  "type": "string",
+  "pattern": "^-?\\d+$",
+  "description": "Whole-second duration as a decimal string without a fractional part."
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Attribution Model",
+  "type": "string",
+  "enum": ["first_touch", "last_non_direct"],
+  "description": "First Touch never overwrites. Last Non-Direct ignores direct visits."
+}

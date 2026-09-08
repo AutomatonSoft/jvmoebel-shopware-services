@@ -22,6 +22,33 @@ STEMS = {
     "contact_intent": "contact-intent",
 }
 
+READ_PATHS = (
+    "/analytics/overview",
+    "/analytics/funnel",
+    "/analytics/sources",
+    "/analytics/contact-channels",
+    "/analytics/products",
+    "/analytics/payment-methods",
+    "/analytics/period-comparison",
+    "/analytics/journey/search",
+    "/analytics/visitors/{visitor_id}/journey",
+    "/analytics/leads/{lead_id}/journey",
+    "/analytics/orders/{order_id}/journey",
+    "/analytics/customers/{customer_id}/journey",
+)
+
+RESPONSE_EXAMPLES = {
+    "overview": "overview",
+    "funnel": "funnel",
+    "sources": "sources",
+    "contact-channels": "contact-channels",
+    "products": "products",
+    "payment-methods": "payment-methods",
+    "period-comparison": "period-comparison",
+    "journey": "journey",
+    "journey-search": "journey-search",
+}
+
 
 def load(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -59,6 +86,19 @@ def validate(example: Path, expected: bool) -> bool:
     return True
 
 
+def _validator(schema_path: Path) -> Draft202012Validator:
+    schema = load(schema_path)
+    resolver = RefResolver(
+        base_uri=schema_path.resolve().as_uri(),
+        referrer=schema,
+    )
+    return Draft202012Validator(
+        schema,
+        resolver=resolver,
+        format_checker=Draft202012Validator.FORMAT_CHECKER,
+    )
+
+
 def extra_invariants() -> bool:
     ok = True
     openapi = (ROOT / "openapi.yaml").read_text(encoding="utf-8")
@@ -68,6 +108,31 @@ def extra_invariants() -> bool:
     if "./schemas/events/" not in openapi:
         print("FAIL openapi.yaml: must $ref event JSON Schemas")
         ok = False
+    if "./schemas/responses/" not in openapi:
+        print("FAIL openapi.yaml: must $ref read-API JSON Schemas")
+        ok = False
+    if "readBearer:" not in openapi:
+        print("FAIL openapi.yaml: missing readBearer security scheme")
+        ok = False
+    for path in READ_PATHS:
+        if f"  {path}:" not in openapi:
+            print(f"FAIL openapi.yaml: missing path {path}")
+            ok = False
+    for stem, schema_stem in RESPONSE_EXAMPLES.items():
+        example = ROOT / "examples" / "responses" / f"{stem}.json"
+        schema_path = ROOT / "schemas" / "responses" / f"{schema_stem}.schema.json"
+        if not example.exists():
+            print(f"FAIL missing response example {example.name}")
+            ok = False
+            continue
+        errors = list(_validator(schema_path).iter_errors(load(example)))
+        if errors:
+            print(f"FAIL {example.name}: expected valid response")
+            for err in errors[:10]:
+                print("  -", "/".join(str(x) for x in err.absolute_path), err.message)
+            ok = False
+        else:
+            print(f"OK   {example.name}")
     for path in (ROOT / "examples" / "valid").glob("*.json"):
         doc = load(path)
         if doc.get("source") != "nextjs":

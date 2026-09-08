@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Journey Search Entity Type",
+  "type": "string",
+  "enum": [
+    "visitor",
+    "session",
+    "lead",
+    "order",
+    "customer",
+    "contact",
+    "manual_sale"
+  ]
+}

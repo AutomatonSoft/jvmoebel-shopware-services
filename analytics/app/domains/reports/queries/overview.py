@@ -30,6 +30,9 @@ async def query_overview(
     orders_paid = await count_orders_paid(session, filters)
     manual_sales = await count_manual_sales(session, filters)
     paid_sales = orders_paid + manual_sales
+    lead_linked_sales = await count_orders_paid(
+        session, filters, require_lead=True
+    ) + await count_manual_sales(session, filters, require_lead=True)
     return OverviewResponse(
         visitors=await count_visitors(session, filters),
         sessions=sessions,
@@ -44,7 +47,7 @@ async def query_overview(
         money=await aggregate_money(session, filters),
         session_to_lead=format_rate(leads, sessions),
         session_to_paid_sale=format_rate(paid_sales, sessions),
-        lead_to_paid_sale=format_rate(paid_sales, leads),
+        lead_to_paid_sale=format_rate(lead_linked_sales, leads),
         checkout_to_paid_order=format_rate(orders_paid, checkouts),
         first_visit_to_lead_seconds=await avg_first_visit_to_lead_seconds(
             session,

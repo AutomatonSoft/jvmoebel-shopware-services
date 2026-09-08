@@ -158,6 +158,60 @@ async def test_checkout_to_paid_order_ignores_manual_sale(
     assert body["checkout_to_paid_order"] == "0.0000"
 
 
+async def test_lead_to_paid_sale_ignores_ecommerce_paid(
+    persist_event,
+    session_started_event: dict,
+    load_shopware_event,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    paid = load_shopware_event("order-paid")
+    paid["lead_id"] = None
+    await persist_event(session_started_event)
+    await persist_event(load_shopware_event("lead-created"))
+    await persist_event(paid)
+
+    body = await _overview(client, read_auth_headers)
+    assert body["leads"] == 1
+    assert body["orders_paid"] == 1
+    assert body["session_to_paid_sale"] == "1.0000"
+    assert body["lead_to_paid_sale"] == "0.0000"
+
+
+async def test_channel_filter_counts_only_matching_leads(
+    persist_event,
+    session_started_event: dict,
+    load_shopware_event,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    await persist_event(session_started_event)
+    await persist_event(load_shopware_event("lead-created"))
+    whatsapp = load_shopware_event("lead-created")
+    whatsapp["lead_id"] = "018f1111111111111111111111111112"
+    whatsapp["aggregate_id"] = whatsapp["lead_id"]
+    whatsapp["payload"] = {**whatsapp["payload"], "contact_channel": "whatsapp"}
+    await persist_event(whatsapp)
+
+    all_leads = await _overview(client, read_auth_headers)
+    filtered = await client.get(
+        "/api/v1/analytics/overview",
+        params=report_params(channel="whatsapp"),
+        headers=read_auth_headers,
+    )
+    funnel = await client.get(
+        "/api/v1/analytics/funnel",
+        params=report_params(channel="whatsapp"),
+        headers=read_auth_headers,
+    )
+    lead_steps = {step["key"]: step for step in funnel.json()["lead"]}
+    assert all_leads["leads"] == 2
+    assert filtered.status_code == 200
+    assert filtered.json()["leads"] == 1
+    assert funnel.status_code == 200
+    assert lead_steps["lead_created"]["count"] == 1
+
+
 async def test_overview_time_skips_lead_without_visitor(
     persist_event,
     load_shopware_event,

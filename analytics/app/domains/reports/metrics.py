@@ -197,6 +197,8 @@ async def count_leads(session: AsyncSession, filters: ReportFilters) -> int:
         market_code=Lead.market_code,
     )
     stmt = apply_snapshot_attr(stmt, Lead, filters)
+    if filters.channel is not None:
+        stmt = stmt.where(Lead.contact_channel == filters.channel)
     return await scalar_int(session, stmt)
 
 
@@ -239,6 +241,9 @@ async def count_orders_paid(
     )
     if require_lead:
         stmt = stmt.where(Order.lead_id.isnot(None))
+        if filters.channel is not None:
+            stmt = stmt.join(Lead, Order.lead_id == Lead.lead_id)
+            stmt = stmt.where(Lead.contact_channel == filters.channel)
     stmt = apply_period_channel_market(
         stmt,
         filters,
@@ -480,6 +485,9 @@ async def count_manual_sales(
     )
     if require_lead:
         stmt = stmt.where(ManualSale.lead_id.isnot(None))
+        if filters.channel is not None:
+            stmt = stmt.join(Lead, ManualSale.lead_id == Lead.lead_id)
+            stmt = stmt.where(Lead.contact_channel == filters.channel)
     stmt = apply_period_channel_market(
         stmt,
         filters,

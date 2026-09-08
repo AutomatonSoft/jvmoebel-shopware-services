@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from domains.attribution.rules import copy_attribution_snapshot
 from domains.projections.exceptions import require_id, require_row
-from domains.projections.models.entities import Order
+from domains.projections.models.entities import Order, Visitor
 from domains.projections.models.journal import Event
 from domains.projections.order_lines import replace_order_lines
 from domains.projections.parsing import event_payload, parse_money
@@ -57,6 +58,14 @@ async def handle_order_updated(
     order.aggregate_version = event.aggregate_version
     order.last_event_occurred_at = event.occurred_at
     order.is_stub = False
+
+    if event.visitor_id is not None:
+        visitor = require_row(
+            await session.get(Visitor, event.visitor_id),
+            entity="visitor",
+            event_type=event.event_type,
+        )
+        copy_attribution_snapshot(visitor, order)
 
     await replace_order_lines(
         session,

@@ -50,6 +50,7 @@ def _empty_source() -> dict:
         "orders_created": 0,
         "orders_paid": 0,
         "manual_sales": 0,
+        "lead_linked_paid_sales": 0,
         "money": empty_money_buckets(),
         "first_visit_to_lead_seconds": None,
         "first_visit_to_paid_sale_seconds": None,
@@ -188,6 +189,7 @@ async def query_sources(
         market_code=Order.market_code,
     )
     created_stmt = apply_payment_method(created_stmt, Order.payment_method, filters)
+    created_stmt = apply_currency(created_stmt, Order.currency, filters)
     created_stmt = _apply_source_campaign(
         created_stmt,
         order_source,
@@ -204,6 +206,7 @@ async def query_sources(
             Order.currency,
             func.coalesce(func.sum(Order.paid_amount), 0),
             func.count(Order.order_id),
+            func.count(Order.lead_id),
         )
         .where(Order.paid_event_id.isnot(None))
         .where(Order.currency.isnot(None))
@@ -225,9 +228,10 @@ async def query_sources(
         filters,
     )
     order_rows = await session.execute(order_stmt)
-    for source, campaign, currency, total, count in order_rows.all():
+    for source, campaign, currency, total, count, lead_linked in order_rows.all():
         key = _row_key(source, campaign)
         items[key]["orders_paid"] += int(count or 0)
+        items[key]["lead_linked_paid_sales"] += int(lead_linked or 0)
         add_to_money(
             items[key]["money"],
             currency,
@@ -244,6 +248,7 @@ async def query_sources(
             ManualSale.currency,
             func.coalesce(func.sum(ManualSale.amount), 0),
             func.count(ManualSale.manual_sale_id),
+            func.count(ManualSale.lead_id),
         )
         .where(ManualSale.event_id.isnot(None))
         .where(ManualSale.cancelled_at.is_(None))
@@ -265,9 +270,10 @@ async def query_sources(
         filters,
     )
     sale_rows = await session.execute(sale_stmt)
-    for source, campaign, currency, total, count in sale_rows.all():
+    for source, campaign, currency, total, count, lead_linked in sale_rows.all():
         key = _row_key(source, campaign)
         items[key]["manual_sales"] += int(count or 0)
+        items[key]["lead_linked_paid_sales"] += int(lead_linked or 0)
         add_to_money(
             items[key]["money"],
             currency,
@@ -425,6 +431,7 @@ async def query_sources(
     ):
         data = items[(source, campaign)]
         paid_sales = data["orders_paid"] + data["manual_sales"]
+        lead_linked_sales = data["lead_linked_paid_sales"]
         rows.append(
             SourceRow(
                 source=source,
@@ -439,7 +446,7 @@ async def query_sources(
                 money=money_breakdowns(data["money"]),
                 session_to_lead=format_rate(data["leads"], data["sessions"]),
                 session_to_paid_sale=format_rate(paid_sales, data["sessions"]),
-                lead_to_paid_sale=format_rate(paid_sales, data["leads"]),
+                lead_to_paid_sale=format_rate(lead_linked_sales, data["leads"]),
                 first_visit_to_lead_seconds=data["first_visit_to_lead_seconds"],
                 first_visit_to_paid_sale_seconds=data[
                     "first_visit_to_paid_sale_seconds"

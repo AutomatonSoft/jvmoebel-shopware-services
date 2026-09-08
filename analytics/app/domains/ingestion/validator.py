@@ -90,6 +90,33 @@ def validate_http_event(
     return body
 
 
+AGGREGATE_ID_FIELDS: dict[str, str] = {
+    "lead": "lead_id",
+    "contact": "contact_id",
+    "customer": "customer_id",
+    "order": "order_id",
+    "manual_sale": "manual_sale_id",
+    "refund": "refund_id",
+}
+
+
+def _assert_aggregate_id_matches(body: dict) -> None:
+    aggregate_type = body.get("aggregate_type")
+    if not isinstance(aggregate_type, str):
+        raise EventValidationError(
+            detail="aggregate_type is required",
+        )
+    id_field = AGGREGATE_ID_FIELDS.get(aggregate_type)
+    if id_field is None:
+        raise EventValidationError(
+            detail="Unknown aggregate_type",
+        )
+    if body.get("aggregate_id") != body.get(id_field):
+        raise EventValidationError(
+            detail=f"aggregate_id must equal {id_field}",
+        )
+
+
 @lru_cache(maxsize=None)
 def _rabbit_event_validator(event_type: str) -> Draft202012Validator:
     schema_path = rabbit_event_schema_path(event_type)
@@ -129,6 +156,8 @@ def validate_rabbit_event(body: object) -> dict:
         path = "/".join(str(part) for part in error.absolute_path)
         detail = error.message if not path else f"{path}: {error.message}"
         raise EventValidationError(detail=detail)
+
+    _assert_aggregate_id_matches(body)
 
     sales_channel_id = body.get("sales_channel_id")
     if not isinstance(sales_channel_id, str):

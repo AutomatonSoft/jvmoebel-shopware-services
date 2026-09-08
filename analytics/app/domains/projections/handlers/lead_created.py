@@ -22,6 +22,8 @@ async def handle_lead_created(
         entity="lead",
         event_type=event.event_type,
     )
+    if lead.event_id is not None:
+        return
     if not should_apply_entity_update(
         is_stub=lead.is_stub,
         stored_aggregate_version=lead.aggregate_version,

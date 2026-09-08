@@ -42,3 +42,34 @@ async def test_order_updated_does_not_overwrite_paid_snapshot(
     assert paid_lines
     assert unpaid_lines
     assert all(line.total_price == Decimal("2499.00") for line in paid_lines)
+
+
+async def test_order_created_does_not_overwrite_paid_order(
+    persist_event,
+    load_shopware_event,
+    db_session,
+) -> None:
+    created = load_shopware_event("order-created")
+    paid = load_shopware_event("order-paid")
+    late_created = load_shopware_event("order-created")
+    paid["order_id"] = created["order_id"]
+    paid["lead_id"] = created["lead_id"]
+    paid["aggregate_id"] = created["order_id"]
+    paid["aggregate_version"] = 2
+    late_created["order_id"] = created["order_id"]
+    late_created["lead_id"] = created["lead_id"]
+    late_created["aggregate_id"] = created["order_id"]
+    late_created["aggregate_version"] = 3
+    late_created["visitor_id"] = None
+    late_created["payload"]["total_amount"] = "1.00"
+
+    await persist_event(created)
+    await persist_event(paid)
+    await persist_event(late_created)
+
+    order = await db_session.get(Order, created["order_id"])
+    assert order is not None
+    assert order.paid_event_id is not None
+    assert order.paid_amount == Decimal("2499.00")
+    assert order.total_amount == Decimal("2499.00")
+    assert order.visitor_id is not None

@@ -22,6 +22,8 @@ async def handle_manual_sale_created(
         entity="manual_sale",
         event_type=event.event_type,
     )
+    if sale.event_id is not None:
+        return
     if not should_apply_entity_update(
         is_stub=sale.is_stub,
         stored_aggregate_version=sale.aggregate_version,

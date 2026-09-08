@@ -23,6 +23,8 @@ async def handle_order_created(
         entity="order",
         event_type=event.event_type,
     )
+    if order.paid_event_id is not None:
+        return
     if not should_apply_entity_update(
         is_stub=order.is_stub,
         stored_aggregate_version=order.aggregate_version,

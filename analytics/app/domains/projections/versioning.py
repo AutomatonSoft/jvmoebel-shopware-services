@@ -17,11 +17,11 @@ def should_apply_entity_update(
         if stored_aggregate_version is None:
             return True
         if incoming_aggregate_version is not None:
-            return incoming_aggregate_version >= stored_aggregate_version
+            return incoming_aggregate_version > stored_aggregate_version
         if stored_occurred_at is None:
             return True
-        return incoming_occurred_at >= stored_occurred_at
+        return incoming_occurred_at > stored_occurred_at
 
     if stored_occurred_at is None:
         return True
-    return incoming_occurred_at >= stored_occurred_at
+    return incoming_occurred_at > stored_occurred_at

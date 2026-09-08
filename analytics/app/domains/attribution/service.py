@@ -32,6 +32,8 @@ async def refresh_dependent_snapshots(
         )
     )
     for order in orders:
+        if order.paid_event_id is not None:
+            continue
         copy_attribution_snapshot(visitor, order)
 
     sales = await session.scalars(

@@ -109,6 +109,7 @@ async def query_products(
     )
     created_stmt = apply_snapshot_attr(created_stmt, Order, filters)
     created_stmt = apply_payment_method(created_stmt, Order.payment_method, filters)
+    created_stmt = apply_currency(created_stmt, Order.currency, filters)
     created_stmt = apply_sku(created_stmt, OrderLine.product_number, filters)
     created_rows = await session.execute(created_stmt)
     for sku, count in created_rows.all():

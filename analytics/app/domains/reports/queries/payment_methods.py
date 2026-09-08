@@ -95,6 +95,7 @@ async def query_payment_methods(
     )
     created_stmt = apply_snapshot_attr(created_stmt, Order, filters)
     created_stmt = _apply_method_filter(created_stmt, Order.payment_method, filters)
+    created_stmt = apply_currency(created_stmt, Order.currency, filters)
     created_rows = await session.execute(created_stmt)
     for method, count in created_rows.all():
         items[str(method)]["orders_created"] = int(count or 0)
@@ -137,6 +138,8 @@ async def query_payment_methods(
             Refund.currency,
             func.coalesce(func.sum(Refund.refund_amount), 0),
         )
+        .select_from(Refund)
+        .join(Order, Refund.order_id == Order.order_id)
         .where(Refund.payment_method.isnot(None))
         .group_by(Refund.payment_method, Refund.currency)
     )
@@ -145,12 +148,11 @@ async def query_payment_methods(
         filters,
         occurred_at=Refund.refunded_at,
         sales_channel_id=Refund.sales_channel_id,
+        market_code=Order.market_code,
     )
     refund_stmt = apply_currency(refund_stmt, Refund.currency, filters)
     refund_stmt = _apply_method_filter(refund_stmt, Refund.payment_method, filters)
-    if filters.source is not None or filters.campaign is not None:
-        refund_stmt = refund_stmt.join(Order, Refund.order_id == Order.order_id)
-        refund_stmt = apply_snapshot_attr(refund_stmt, Order, filters)
+    refund_stmt = apply_snapshot_attr(refund_stmt, Order, filters)
     refund_rows = await session.execute(refund_stmt)
     for method, currency, total in refund_rows.all():
         add_to_money(items[str(method)]["money"], currency, refunds=total)

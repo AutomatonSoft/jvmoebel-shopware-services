@@ -220,12 +220,15 @@ async def count_orders_created(
     )
     stmt = apply_snapshot_attr(stmt, Order, filters)
     stmt = apply_payment_method(stmt, Order.payment_method, filters)
+    stmt = apply_currency(stmt, Order.currency, filters)
     return await scalar_int(session, stmt)
 
 
 async def count_orders_paid(
     session: AsyncSession,
     filters: ReportFilters,
+    *,
+    require_lead: bool = False,
 ) -> int:
     stmt = (
         select(func.count())
@@ -234,6 +237,8 @@ async def count_orders_paid(
             Order.paid_event_id.isnot(None),
         )
     )
+    if require_lead:
+        stmt = stmt.where(Order.lead_id.isnot(None))
     stmt = apply_period_channel_market(
         stmt,
         filters,
@@ -462,6 +467,8 @@ async def count_contacts(
 async def count_manual_sales(
     session: AsyncSession,
     filters: ReportFilters,
+    *,
+    require_lead: bool = False,
 ) -> int:
     stmt = (
         select(func.count())
@@ -471,6 +478,8 @@ async def count_manual_sales(
             ManualSale.cancelled_at.is_(None),
         )
     )
+    if require_lead:
+        stmt = stmt.where(ManualSale.lead_id.isnot(None))
     stmt = apply_period_channel_market(
         stmt,
         filters,

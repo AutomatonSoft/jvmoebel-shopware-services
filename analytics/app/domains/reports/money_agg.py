@@ -156,6 +156,8 @@ async def _add_refunds(
             Refund.currency,
             func.coalesce(func.sum(Refund.refund_amount), 0),
         )
+        .select_from(Refund)
+        .join(Order, Refund.order_id == Order.order_id)
         .where(Refund.currency.isnot(None))
         .group_by(Refund.currency)
     )
@@ -164,12 +166,11 @@ async def _add_refunds(
         filters,
         occurred_at=Refund.refunded_at,
         sales_channel_id=Refund.sales_channel_id,
+        market_code=Order.market_code,
     )
     stmt = apply_payment_method(stmt, Refund.payment_method, filters)
     stmt = apply_currency(stmt, Refund.currency, filters)
-    if filters.source is not None or filters.campaign is not None:
-        stmt = stmt.join(Order, Refund.order_id == Order.order_id)
-        stmt = apply_snapshot_attr(stmt, Order, filters)
+    stmt = apply_snapshot_attr(stmt, Order, filters)
     result = await session.execute(stmt)
     for currency, total in result.all():
         buckets[str(currency)]["refunds"] += Decimal(total or 0)

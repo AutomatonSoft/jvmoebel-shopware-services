@@ -196,6 +196,7 @@ async def query_contact_channels(
         filters,
         occurred_at=Refund.refunded_at,
         sales_channel_id=Refund.sales_channel_id,
+        market_code=Order.market_code,
     )
     refund_stmt = apply_payment_method(refund_stmt, Refund.payment_method, filters)
     refund_stmt = apply_currency(refund_stmt, Refund.currency, filters)

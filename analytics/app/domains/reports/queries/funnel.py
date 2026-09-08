@@ -59,7 +59,10 @@ async def query_funnel(
 ) -> FunnelResponse:
     sessions = await count_sessions(session, filters)
     orders_paid = await count_orders_paid(session, filters)
-    manual_sales = await count_manual_sales(session, filters)
+    lead_paid_sales = await count_orders_paid(session, filters, require_lead=True)
+    lead_manual_sales = await count_manual_sales(
+        session, filters, require_lead=True
+    )
     return FunnelResponse(
         ecommerce=build_steps(
             ECOMMERCE_KEYS,
@@ -80,7 +83,7 @@ async def query_funnel(
                 await count_contacts(session, filters),
                 await count_leads(session, filters),
                 await count_leads_won(session, filters),
-                orders_paid + manual_sales,
+                lead_paid_sales + lead_manual_sales,
             ],
         ),
     )

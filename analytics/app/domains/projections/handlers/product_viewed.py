@@ -22,6 +22,7 @@ async def handle_product_viewed(
             visitor_id=visitor_id,
             session_id=event.session_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             sku=payload["sku"],
             name=payload.get("name"),
             price=parse_money(payload.get("unit_price")),

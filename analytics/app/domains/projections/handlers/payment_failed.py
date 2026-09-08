@@ -18,6 +18,7 @@ async def handle_payment_failed(
             session_id=event.session_id,
             cart_id=event.cart_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             kind="failed",
             error_category=payload.get("error_category"),
             error_code=payload.get("error_code"),

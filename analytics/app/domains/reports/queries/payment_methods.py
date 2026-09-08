@@ -62,6 +62,7 @@ async def query_payment_methods(
         filters,
         occurred_at=PaymentMethodEvent.occurred_at,
         sales_channel_id=PaymentMethodEvent.sales_channel_id,
+        market_code=PaymentMethodEvent.market_code,
     )
     event_stmt = apply_visitor_attr(
         event_stmt,

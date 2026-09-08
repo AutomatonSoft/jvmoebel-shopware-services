@@ -22,6 +22,7 @@ async def handle_contact_intent(
             visitor_id=visitor_id,
             session_id=event.session_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             channel=payload["channel"],
             action=payload.get("action"),
             occurred_at=event.occurred_at,

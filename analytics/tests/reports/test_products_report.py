@@ -33,3 +33,38 @@ async def test_products_view_to_paid_and_line_money(
     assert sofa["payment_methods"] == ["paypal"]
     assert sofa["money"][0]["currency"] == "EUR"
     assert sofa["money"][0]["gross"] == "2499.0000"
+
+
+async def test_products_subtract_refund_lines(
+    persist_event,
+    session_started_event: dict,
+    load_shopware_event,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    paid = load_shopware_event("order-paid")
+    refund = load_shopware_event("refund-created")
+    refund["order_id"] = paid["order_id"]
+    refund["payload"]["line_items"] = [
+        {
+            "line_item_id": paid["payload"]["line_items"][0]["line_item_id"],
+            "product_number": "SOFA-001",
+            "item_type": "product",
+            "quantity": 1,
+            "unit_price": "500.00",
+            "total_price": "500.00",
+        }
+    ]
+    await persist_event(session_started_event)
+    await persist_event(paid)
+    await persist_event(refund)
+
+    response = await client.get(
+        "/api/v1/analytics/products",
+        params=report_params(),
+        headers=read_auth_headers,
+    )
+    sofa = {row["sku"]: row for row in response.json()["items"]}["SOFA-001"]
+    assert sofa["money"][0]["gross"] == "2499.0000"
+    assert sofa["money"][0]["refunds"] == "500.0000"
+    assert sofa["money"][0]["net"] == "1999.0000"

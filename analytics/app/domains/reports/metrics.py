@@ -280,6 +280,7 @@ async def count_fact_visitors(
         filters,
         occurred_at=occurred_at,
         sales_channel_id=sales_channel_id,
+        market_code=getattr(model, "market_code", None),
     )
     stmt = apply_visitor_attr(
         stmt,
@@ -354,6 +355,7 @@ async def count_fact_rows(
         filters,
         occurred_at=occurred_at,
         sales_channel_id=sales_channel_id,
+        market_code=getattr(model, "market_code", None),
     )
     stmt = apply_visitor_attr(
         stmt,

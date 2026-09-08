@@ -23,6 +23,7 @@ async def handle_checkout_started(
             session_id=event.session_id,
             cart_id=event.cart_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             total_amount=parse_money(payload.get("total_amount")),
             currency=payload.get("currency"),
             occurred_at=event.occurred_at,

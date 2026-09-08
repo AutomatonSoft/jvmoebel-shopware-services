@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.entities import Order, Visitor
-from domains.projections.models.facts import CartAdd, OrderLine, ProductView
+from domains.projections.models.facts import CartAdd, OrderLine, ProductView, Refund, RefundLine
 from domains.reports.filters import ReportFilters
 from domains.reports.metrics import (
     apply_currency,
@@ -53,6 +53,7 @@ async def query_products(
         filters,
         occurred_at=ProductView.occurred_at,
         sales_channel_id=ProductView.sales_channel_id,
+        market_code=ProductView.market_code,
     )
     views_stmt = apply_visitor_attr(
         views_stmt,
@@ -77,6 +78,7 @@ async def query_products(
         filters,
         occurred_at=CartAdd.occurred_at,
         sales_channel_id=CartAdd.sales_channel_id,
+        market_code=CartAdd.market_code,
     )
     cart_stmt = apply_visitor_attr(
         cart_stmt,
@@ -175,6 +177,32 @@ async def query_products(
     method_rows = await session.execute(method_stmt)
     for sku, method in method_rows.all():
         items[str(sku)]["payment_methods"].add(str(method))
+
+    refund_stmt = (
+        select(
+            RefundLine.product_number,
+            Refund.currency,
+            func.coalesce(func.sum(RefundLine.total_price), 0),
+        )
+        .join(Refund, RefundLine.refund_id == Refund.refund_id)
+        .join(Order, Refund.order_id == Order.order_id)
+        .where(RefundLine.product_number.isnot(None))
+        .group_by(RefundLine.product_number, Refund.currency)
+    )
+    refund_stmt = apply_period_channel_market(
+        refund_stmt,
+        filters,
+        occurred_at=Refund.refunded_at,
+        sales_channel_id=Refund.sales_channel_id,
+        market_code=Order.market_code,
+    )
+    refund_stmt = apply_snapshot_attr(refund_stmt, Order, filters)
+    refund_stmt = apply_payment_method(refund_stmt, Refund.payment_method, filters)
+    refund_stmt = apply_currency(refund_stmt, Refund.currency, filters)
+    refund_stmt = apply_sku(refund_stmt, RefundLine.product_number, filters)
+    refund_rows = await session.execute(refund_stmt)
+    for sku, currency, total in refund_rows.all():
+        add_to_money(items[str(sku)]["money"], currency, refunds=total)
 
     rows = [
         ProductRow(

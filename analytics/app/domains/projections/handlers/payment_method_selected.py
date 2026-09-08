@@ -18,6 +18,7 @@ async def handle_payment_method_selected(
             session_id=event.session_id,
             cart_id=event.cart_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             kind="selected",
             occurred_at=event.occurred_at,
         )

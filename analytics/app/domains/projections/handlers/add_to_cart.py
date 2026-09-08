@@ -23,6 +23,7 @@ async def handle_add_to_cart(
             session_id=event.session_id,
             cart_id=event.cart_id,
             sales_channel_id=event.sales_channel_id,
+            market_code=event.market_code,
             sku=payload["sku"],
             quantity=payload["quantity"],
             price=parse_money(payload.get("unit_price")),

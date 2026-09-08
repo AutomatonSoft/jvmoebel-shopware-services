@@ -57,6 +57,7 @@ async def query_contact_channels(
         filters,
         occurred_at=ContactIntent.occurred_at,
         sales_channel_id=ContactIntent.sales_channel_id,
+        market_code=ContactIntent.market_code,
     )
     intent_stmt = apply_visitor_attr(
         intent_stmt,

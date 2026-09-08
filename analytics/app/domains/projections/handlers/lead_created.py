@@ -34,15 +34,18 @@ async def handle_lead_created(
 
     payload = event_payload(event)
     lead.event_id = event.event_id
-    lead.visitor_id = event.visitor_id
-    lead.session_id = event.session_id
+    if event.visitor_id is not None:
+        lead.visitor_id = event.visitor_id
+    if event.session_id is not None:
+        lead.session_id = event.session_id
     lead.sales_channel_id = event.sales_channel_id
     lead.market_code = event.market_code
     lead.status = payload.get("status")
     lead.contact_channel = payload.get("contact_channel")
     lead.contact_type = payload.get("contact_type")
     lead.provider = payload.get("provider")
-    lead.customer_id = event.customer_id
+    if event.customer_id is not None:
+        lead.customer_id = event.customer_id
     lead.created_at = event.occurred_at
     lead.is_stub = False
     lead.aggregate_version = event.aggregate_version

@@ -37,11 +37,16 @@ async def handle_order_created(
 
     payload = event_payload(event)
     order.order_number = payload.get("order_number")
-    order.visitor_id = event.visitor_id
-    order.session_id = event.session_id
-    order.cart_id = event.cart_id
-    order.lead_id = event.lead_id
-    order.customer_id = event.customer_id
+    if event.visitor_id is not None:
+        order.visitor_id = event.visitor_id
+    if event.session_id is not None:
+        order.session_id = event.session_id
+    if event.cart_id is not None:
+        order.cart_id = event.cart_id
+    if event.lead_id is not None:
+        order.lead_id = event.lead_id
+    if event.customer_id is not None:
+        order.customer_id = event.customer_id
     order.sales_channel_id = event.sales_channel_id
     order.market_code = event.market_code
     order.payment_method = payload.get("payment_method")

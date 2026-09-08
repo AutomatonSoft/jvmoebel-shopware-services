@@ -36,9 +36,12 @@ async def handle_manual_sale_created(
 
     payload = event_payload(event)
     sale.event_id = event.event_id
-    sale.visitor_id = event.visitor_id
-    sale.lead_id = event.lead_id
-    sale.customer_id = event.customer_id
+    if event.visitor_id is not None:
+        sale.visitor_id = event.visitor_id
+    if event.lead_id is not None:
+        sale.lead_id = event.lead_id
+    if event.customer_id is not None:
+        sale.customer_id = event.customer_id
     sale.sales_channel_id = event.sales_channel_id
     sale.market_code = event.market_code
     sale.amount = parse_money(payload.get("amount"))

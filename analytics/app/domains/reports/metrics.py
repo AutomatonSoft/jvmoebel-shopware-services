@@ -22,6 +22,18 @@ from domains.reports.filters import ReportFilters, attr_column, in_period
 RATE_QUANT = Decimal("0.0001")
 
 
+def apply_visitor_market(stmt: Select, filters: ReportFilters) -> Select:
+    if filters.market is None:
+        return stmt
+    return stmt.where(
+        exists().where(
+            Session.visitor_id == Visitor.visitor_id,
+            Session.event_id.isnot(None),
+            Session.market_code == filters.market,
+        )
+    )
+
+
 async def scalar_int(session: AsyncSession, stmt: Select) -> int:
     value = await session.scalar(stmt)
     return int(value or 0)
@@ -146,15 +158,7 @@ async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
             attr_column(Visitor, filters, "campaign", snapshot=False)
             == filters.campaign
         )
-    if filters.market is not None:
-        # Оставляем только те строки запроса, для которых у visitor есть хотя бы одна подходящая session
-        stmt = stmt.where(
-            exists().where(
-                Session.visitor_id == Visitor.visitor_id,
-                Session.event_id.isnot(None),
-                Session.market_code == filters.market,
-            )
-        )
+    stmt = apply_visitor_market(stmt, filters)
     return await scalar_int(session, stmt)
 
 

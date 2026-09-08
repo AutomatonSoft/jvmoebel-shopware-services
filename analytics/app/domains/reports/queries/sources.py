@@ -17,6 +17,7 @@ from domains.reports.metrics import (
     apply_payment_method,
     apply_period_channel_market,
     apply_snapshot_attr,
+    apply_visitor_market,
     duration_seconds,
     format_avg_seconds,
     format_rate,
@@ -98,6 +99,7 @@ async def query_sources(
             attr_column(Visitor, filters, "sales_channel_id", snapshot=False)
             == filters.sales_channel
         )
+    visitor_stmt = apply_visitor_market(visitor_stmt, filters)
     visitor_stmt = _apply_source_campaign(
         visitor_stmt,
         visitor_source,

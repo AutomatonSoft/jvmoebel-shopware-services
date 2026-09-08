@@ -1,3 +1,6 @@
+import pytest
+
+from core.config import settings
 from tests.reports.helpers import report_params, uniquify_ids
 
 
@@ -149,3 +152,30 @@ async def test_sources_mixed_currency_is_not_summed(
     assert set(money) == {"EUR", "USD"}
     assert money["EUR"]["gross"] == "2499.0000"
     assert money["USD"]["gross"] == "100.0000"
+
+
+async def test_sources_visitors_respect_market(
+    persist_event,
+    session_started_event: dict,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    if len(settings.sales_channels) < 2:
+        pytest.skip("Need at least two configured sales channels")
+
+    channel_a, channel_b = settings.sales_channels[:2]
+    event_a = uniquify_ids(session_started_event, visitor=True, session=True)
+    event_a["sales_channel_id"] = channel_a.id
+    event_a["market_code"] = channel_a.market_code
+    event_b = uniquify_ids(session_started_event, visitor=True, session=True)
+    event_b["sales_channel_id"] = channel_b.id
+    event_b["market_code"] = channel_b.market_code
+    await persist_event(event_a)
+    await persist_event(event_b)
+
+    items_a = await _sources(client, read_auth_headers, market=channel_a.market_code)
+    items_b = await _sources(client, read_auth_headers, market=channel_b.market_code)
+    items_all = await _sources(client, read_auth_headers)
+    assert sum(row["visitors"] for row in items_a) == 1
+    assert sum(row["visitors"] for row in items_b) == 1
+    assert sum(row["visitors"] for row in items_all) == 2

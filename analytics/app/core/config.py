@@ -69,7 +69,7 @@ class Settings(BaseSettings):
 
     analytics_ingest_api_key: SecretStr = Field(
         min_length=1,
-        description="API key for event ingestion from Next.js",
+        description="Server-side API key for event ingestion from Next.js BFF",
     )
     analytics_read_api_key: SecretStr = Field(
         min_length=1,

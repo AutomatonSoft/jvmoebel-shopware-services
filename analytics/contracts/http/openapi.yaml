@@ -415,7 +415,9 @@ components:
     ingestBearer:
       type: http
       scheme: bearer
-      description: analytics_ingest_api_key
+      description: >
+        Server-side ANALYTICS_INGEST_API_KEY for Next.js BFF / backend
+        workers. Must not be embedded in browser JavaScript.
     readBearer:
       type: http
       scheme: bearer

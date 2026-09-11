@@ -2,6 +2,16 @@
 
 Analytics API принимает frontend-события Next.js по HTTP, подтверждённые backend-события Shopware из RabbitMQ и отдаёт отчёты и Customer Journey.
 
+HTTP ingest — server-to-server. Браузер не вызывает Analytics и не получает `ANALYTICS_INGEST_API_KEY`.
+
+```text
+Browser (без секрета)
+  → Next.js server / Route Handler / BFF
+  → POST /api/v1/events
+```
+
+Ключ живёт только в env Next.js-сервера. Прокси, visitor/session IDs, consent и retry/batching на стороне витрины — отдельная задача, в этом репозитории их нет.
+
 HTTP Base URL:
 
 ```text
@@ -59,7 +69,7 @@ INGEST_RATE_LIMIT_MAX_KEYS=1024
 
 Rate limit хранится in-process и не общий между uvicorn workers и репликами. Redis в этой поставке не используется. Bearer проверяется до записи в store. Ключи с истекшим окном удаляются; при переполнении `INGEST_RATE_LIMIT_MAX_KEYS` новый бакет не создаётся. Origin из allowlist `SALES_CHANNELS` получает свой бакет, неизвестный Origin считается по IP.
 
-`sales_channel_id` проверяется по allowlist `SALES_CHANNELS`. Для browser ingestion Origin/Referer и `payload`/`domain` должны соответствовать origins этого канала.
+`sales_channel_id` проверяется по allowlist `SALES_CHANNELS`. Next.js BFF передаёт Origin/Referer витрины; Origin и `payload`/`domain` должны соответствовать origins этого канала.
 
 ---
 
@@ -113,17 +123,21 @@ Invalid authentication token
 
 Ingest key не подходит для read API и наоборот.
 
+`ANALYTICS_INGEST_API_KEY` нельзя класть в browser JS, `NEXT_PUBLIC_*` или GTM. Его держит только Next.js BFF. Примеры `curl` ниже — серверные вызовы, не код витрины.
+
 ---
 
 # POST /api/v1/events
 
-Принять одно frontend-событие.
+Принять одно frontend-событие от Next.js BFF.
 
-Требуется ingest Bearer token. Браузер должен передать `Origin` (или `Referer`) из allowlist sales channel.
+Требуется ingest Bearer token. BFF передаёт `Origin` (или `Referer`) витрины из allowlist sales channel.
 
 Повтор с тем же `event_id` не меняет метрики и Journey. API возвращает успешный идемпотентный результат.
 
 ### Example
+
+Серверный вызов (BFF или curl с сервера), не из браузера.
 
 ```bash
 curl -X POST \
@@ -219,9 +233,9 @@ Shopware `event_type` на этом endpoint даёт `422`, даже если p
 
 # POST /api/v1/events/batch
 
-Принять пакет frontend-событий.
+Принять пакет frontend-событий от Next.js BFF.
 
-Требуется ingest Bearer token.
+Требуется ingest Bearer token. BFF передаёт `Origin` (или `Referer`) витрины.
 
 Ошибка одного элемента не скрывает результат остальных. Повторный `event_id` внутри batch обрабатывается идемпотентно.
 
@@ -238,6 +252,8 @@ Shopware `event_type` на этом endpoint даёт `422`, даже если p
 `events` — непустой массив, не длиннее `MAX_BATCH_EVENTS`.
 
 ### Example
+
+Серверный вызов (BFF или curl с сервера), не из браузера.
 
 ```bash
 curl -X POST \

@@ -15,8 +15,8 @@ router = APIRouter(
     prefix="/events",
     tags=["Ingestion"],
     dependencies=[
-        Depends(enforce_ingest_rate_limit),
         Depends(require_ingest_access),
+        Depends(enforce_ingest_rate_limit),
     ],
 )
 

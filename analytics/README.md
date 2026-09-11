@@ -42,8 +42,9 @@ Shopware-события (`order_paid`, `lead_created`, `refund_created` и ос�
 | `MAX_BODY_SIZE` | `262144` (256 KB) | Максимальный размер HTTP request body |
 | `MAX_EVENT_PAYLOAD_BYTES` | `32768` (32 KB) | Максимальный размер одного event JSON |
 | `MAX_BATCH_EVENTS` | `100` | Максимум событий в `POST /events/batch` |
-| `INGEST_RATE_LIMIT` | `600` | Лимит HTTP ingest-запросов на origin/IP за окно |
+| `INGEST_RATE_LIMIT` | `600` | Лимит HTTP ingest-запросов на allowlisted Origin или IP за окно |
 | `INGEST_RATE_LIMIT_WINDOW_SECONDS` | `60` | Окно rate limit в секундах |
+| `INGEST_RATE_LIMIT_MAX_KEYS` | `1024` | Максимум источников запросов |
 
 ```env
 MAX_BODY_SIZE=262144
@@ -51,9 +52,12 @@ MAX_EVENT_PAYLOAD_BYTES=32768
 MAX_BATCH_EVENTS=100
 INGEST_RATE_LIMIT=600
 INGEST_RATE_LIMIT_WINDOW_SECONDS=60
+INGEST_RATE_LIMIT_MAX_KEYS=1024
 ```
 
 Если значения не заданы, используются значения по умолчанию из `app/core/config.py`.
+
+Rate limit хранится in-process и не общий между uvicorn workers и репликами. Redis в этой поставке не используется. Bearer проверяется до записи в store. Ключи с истекшим окном удаляются; при переполнении `INGEST_RATE_LIMIT_MAX_KEYS` новый бакет не создаётся. Origin из allowlist `SALES_CHANNELS` получает свой бакет, неизвестный Origin считается по IP.
 
 `sales_channel_id` проверяется по allowlist `SALES_CHANNELS`. Для browser ingestion Origin/Referer и `payload`/`domain` должны соответствовать origins этого канала.
 

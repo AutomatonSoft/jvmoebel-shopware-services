@@ -96,12 +96,17 @@ class Settings(BaseSettings):
     )
     ingest_rate_limit: int = Field(
         default=600,
-        description="Max HTTP ingest requests per origin (or IP) per window",
+        description="Max HTTP ingest requests per allowlisted origin or IP per window",
         ge=0,
     )
     ingest_rate_limit_window_seconds: int = Field(
         default=60,
         description="Rate-limit window in seconds for HTTP ingest",
+        ge=1,
+    )
+    ingest_rate_limit_max_keys: int = Field(
+        default=1024,
+        description="Max in-process rate-limit buckets; extra keys are rejected",
         ge=1,
     )
 

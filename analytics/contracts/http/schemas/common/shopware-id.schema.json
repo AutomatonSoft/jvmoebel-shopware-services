@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shopware entity ID",
+  "type": "string",
+  "pattern": "^[0-9a-f]{32}$",
+  "minLength": 32,
+  "maxLength": 32,
+  "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Journey response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["events"],
+  "properties": {
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/JourneyEvent" }
+    }
+  },
+  "$defs": {
+    "JourneyEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_type",
+        "occurred_at",
+        "received_at",
+        "source",
+        "sales_channel_id",
+        "payload"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "../common/uuid-v4.schema.json"
+        },
+        "event_type": { "type": "string", "minLength": 1 },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "received_at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "minLength": 1 },
+        "sales_channel_id": {
+          "$ref": "../common/shopware-id.schema.json"
+        },
+        "visitor_id": {
+          "oneOf": [
+            { "$ref": "../common/uuid-v4.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "session_id": {
+          "oneOf": [
+            { "$ref": "../common/uuid-v4.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "lead_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "customer_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "order_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "contact_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "manual_sale_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "refund_id": {
+          "oneOf": [
+            { "$ref": "../common/shopware-id.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

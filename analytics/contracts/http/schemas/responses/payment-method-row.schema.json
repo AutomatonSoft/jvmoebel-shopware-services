@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Payment method row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "payment_method",
+    "shown",
+    "selected",
+    "failed",
+    "selected_rate",
+    "orders_created",
+    "orders_paid",
+    "selected_to_paid",
+    "money"
+  ],
+  "properties": {
+    "payment_method": { "type": "string", "minLength": 1 },
+    "shown": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unique checkouts where this method was available."
+    },
+    "selected": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unique checkouts where this method was selected."
+    },
+    "failed": { "type": "integer", "minimum": 0 },
+    "selected_rate": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ],
+      "description": "selected / shown. Denominator is checkouts where the method was available."
+    },
+    "orders_created": { "type": "integer", "minimum": 0 },
+    "orders_paid": { "type": "integer", "minimum": 0 },
+    "selected_to_paid": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "money": {
+      "type": "array",
+      "items": { "$ref": "money-breakdown.schema.json" }
+    }
+  }
+}

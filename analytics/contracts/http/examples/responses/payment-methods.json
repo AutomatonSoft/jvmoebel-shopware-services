@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "payment_method": "paypal",
+      "shown": 2,
+      "selected": 1,
+      "failed": 0,
+      "selected_rate": "0.5000",
+      "orders_created": 1,
+      "orders_paid": 1,
+      "selected_to_paid": "1.0000",
+      "money": [
+        {
+          "currency": "EUR",
+          "gross": "2499.0000",
+          "refunds": "0.0000",
+          "net": "2499.0000",
+          "aov": "2499.0000"
+        }
+      ]
+    }
+  ]
+}

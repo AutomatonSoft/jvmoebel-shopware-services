@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Money",
+  "type": "string",
+  "pattern": "^\\d+(?:\\.\\d{1,4})?$",
+  "description": "Exact non-negative decimal string, up to 4 fraction digits. Binary floating point is forbidden."
+}

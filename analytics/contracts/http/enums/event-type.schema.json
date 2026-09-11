@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Frontend Event Type",
+  "type": "string",
+  "enum": [
+    "session_started",
+    "product_viewed",
+    "add_to_cart",
+    "checkout_started",
+    "payment_methods_shown",
+    "payment_method_selected",
+    "payment_failed",
+    "contact_intent"
+  ]
+}

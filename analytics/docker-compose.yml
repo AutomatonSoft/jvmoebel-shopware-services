@@ -1,0 +1,105 @@
+name: analytics
+
+services:
+  postgres_db:
+    image: postgres:16
+    container_name: jvmoebel_analytics_postgres
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: jvmoebel_analytics_rabbitmq
+    restart: always
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jvmoebel_analytics_migrations
+    restart: "no"
+    env_file:
+      - .env
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/app
+    command:
+      - uv
+      - run
+      - alembic
+      - upgrade
+      - head
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jvmoebel_analytics_backend
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-8002}:8000"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/app
+    command:
+      - uv
+      - run
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jvmoebel_analytics_worker
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app/app
+    command:
+      - uv
+      - run
+      - python
+      - -m
+      - worker
+
+volumes:
+  postgres_data:

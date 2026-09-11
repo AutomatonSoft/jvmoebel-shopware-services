@@ -1,0 +1,15 @@
+{
+  "event_id": "018f4d48-0f42-7be4-bf6b-3aa4ad41ad18",
+  "event_type": "session_started",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:00:00Z",
+  "source": "nextjs",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "domain": "www.jvmoebel.de",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "payload": {
+    "landing_page": "https://www.jvmoebel.de/sofas/sofa-001"
+  }
+}

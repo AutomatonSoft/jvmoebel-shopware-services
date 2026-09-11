@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "refund_created event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "refund_id",
+        "order_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "refund_created"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "refund"
+        },
+        "payload": {
+          "$ref": "../payloads/refund-created.payload.schema.json"
+        }
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal refund_id."
+}

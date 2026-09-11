@@ -1,0 +1,22 @@
+name: analytics-test
+
+services:
+  postgres_test:
+    image: postgres:16
+    container_name: jvmoebel_analytics_postgres_test
+    restart: always
+    env_file:
+      - .env.test
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_test_data:

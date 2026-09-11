@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Money breakdown",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["currency", "gross", "refunds", "net", "aov"],
+  "properties": {
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3,
+      "description": "ISO 4217 currency. Monetary totals of different currencies are never summed."
+    },
+    "gross": {
+      "$ref": "../common/report-decimal.schema.json"
+    },
+    "refunds": {
+      "$ref": "../common/report-decimal.schema.json"
+    },
+    "net": {
+      "$ref": "../common/report-decimal.schema.json"
+    },
+    "aov": {
+      "$ref": "../common/report-decimal.schema.json"
+    }
+  }
+}

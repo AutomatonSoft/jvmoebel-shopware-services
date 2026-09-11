@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "checkout_started event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": ["cart_id"],
+      "properties": {
+        "event_type": {
+          "const": "checkout_started"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "payload": {
+          "$ref": "../payloads/checkout-started.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

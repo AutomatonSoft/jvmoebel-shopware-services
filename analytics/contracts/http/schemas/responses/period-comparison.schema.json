@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Period comparison response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["current", "previous", "delta", "payment_methods"],
+  "properties": {
+    "current": { "$ref": "overview.schema.json" },
+    "previous": { "$ref": "overview.schema.json" },
+    "delta": { "$ref": "#/$defs/OverviewDelta" },
+    "payment_methods": { "$ref": "#/$defs/PaymentMethodsComparison" }
+  },
+  "$defs": {
+    "Change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abs", "pct"],
+      "properties": {
+        "abs": {
+          "oneOf": [
+            { "$ref": "../common/change-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "pct": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "IntChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abs", "pct"],
+      "properties": {
+        "abs": { "type": "integer" },
+        "pct": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "MoneyChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "gross", "refunds", "net", "aov"],
+      "properties": {
+        "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+        "gross": { "$ref": "#/$defs/Change" },
+        "refunds": { "$ref": "#/$defs/Change" },
+        "net": { "$ref": "#/$defs/Change" },
+        "aov": { "$ref": "#/$defs/Change" }
+      }
+    },
+    "OverviewDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visitors",
+        "sessions",
+        "product_views",
+        "cart_adds",
+        "checkouts",
+        "contacts",
+        "leads",
+        "orders_created",
+        "orders_paid",
+        "manual_sales",
+        "money",
+        "session_to_lead",
+        "session_to_paid_sale",
+        "lead_to_paid_sale",
+        "checkout_to_paid_order",
+        "first_visit_to_lead_seconds",
+        "first_visit_to_paid_sale_seconds"
+      ],
+      "properties": {
+        "visitors": { "$ref": "#/$defs/IntChange" },
+        "sessions": { "$ref": "#/$defs/IntChange" },
+        "product_views": { "$ref": "#/$defs/IntChange" },
+        "cart_adds": { "$ref": "#/$defs/IntChange" },
+        "checkouts": { "$ref": "#/$defs/IntChange" },
+        "contacts": { "$ref": "#/$defs/IntChange" },
+        "leads": { "$ref": "#/$defs/IntChange" },
+        "orders_created": { "$ref": "#/$defs/IntChange" },
+        "orders_paid": { "$ref": "#/$defs/IntChange" },
+        "manual_sales": { "$ref": "#/$defs/IntChange" },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MoneyChange" }
+        },
+        "session_to_lead": { "$ref": "#/$defs/Change" },
+        "session_to_paid_sale": { "$ref": "#/$defs/Change" },
+        "lead_to_paid_sale": { "$ref": "#/$defs/Change" },
+        "checkout_to_paid_order": { "$ref": "#/$defs/Change" },
+        "first_visit_to_lead_seconds": { "$ref": "#/$defs/Change" },
+        "first_visit_to_paid_sale_seconds": { "$ref": "#/$defs/Change" }
+      }
+    },
+    "PaymentMethodDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payment_method",
+        "shown",
+        "selected",
+        "failed",
+        "selected_rate",
+        "orders_created",
+        "orders_paid",
+        "selected_to_paid",
+        "money"
+      ],
+      "properties": {
+        "payment_method": { "type": "string", "minLength": 1 },
+        "shown": { "$ref": "#/$defs/IntChange" },
+        "selected": { "$ref": "#/$defs/IntChange" },
+        "failed": { "$ref": "#/$defs/IntChange" },
+        "selected_rate": { "$ref": "#/$defs/Change" },
+        "orders_created": { "$ref": "#/$defs/IntChange" },
+        "orders_paid": { "$ref": "#/$defs/IntChange" },
+        "selected_to_paid": { "$ref": "#/$defs/Change" },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MoneyChange" }
+        }
+      }
+    },
+    "PaymentMethodsComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "previous", "delta"],
+      "properties": {
+        "current": {
+          "type": "array",
+          "items": { "$ref": "payment-method-row.schema.json" }
+        },
+        "previous": {
+          "type": "array",
+          "items": { "$ref": "payment-method-row.schema.json" }
+        },
+        "delta": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PaymentMethodDelta" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "source": "google_ads",
+      "campaign": "sofas-de-2026",
+      "visitors": 1,
+      "sessions": 1,
+      "contacts": 1,
+      "leads": 1,
+      "orders_created": 1,
+      "orders_paid": 1,
+      "manual_sales": 0,
+      "money": [
+        {
+          "currency": "EUR",
+          "gross": "2499.0000",
+          "refunds": "0.0000",
+          "net": "2499.0000",
+          "aov": "2499.0000"
+        }
+      ],
+      "session_to_lead": "1.0000",
+      "session_to_paid_sale": "1.0000",
+      "lead_to_paid_sale": "1.0000",
+      "first_visit_to_lead_seconds": "3600",
+      "first_visit_to_paid_sale_seconds": "7200"
+    }
+  ]
+}

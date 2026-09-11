@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "product_viewed payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sku", "unit_price", "currency"],
+  "properties": {
+    "sku": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Same product key as Shopware product_number."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "unit_price": {
+      "$ref": "../common/money.schema.json"
+    },
+    "currency": {
+      "$ref": "../common/currency.schema.json"
+    }
+  }
+}

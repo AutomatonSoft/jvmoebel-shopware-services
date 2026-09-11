@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manual_sale_cancelled event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "manual_sale_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "manual_sale_cancelled"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "manual_sale"
+        },
+        "payload": {
+          "$ref": "../payloads/manual-sale-cancelled.payload.schema.json"
+        }
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal manual_sale_id."
+}

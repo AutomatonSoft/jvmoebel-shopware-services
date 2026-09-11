@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "session_started event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "const": "session_started"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "payload": {
+          "$ref": "../payloads/session-started.payload.schema.json"
+        }
+      }
+    }
+  ]
+}

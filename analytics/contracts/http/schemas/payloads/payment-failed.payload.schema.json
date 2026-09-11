@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "payment_failed payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payment_method", "error_category", "stage"],
+  "properties": {
+    "payment_method": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+      "description": "Stable technical payment-method key/handler identifier; never a translated/display label."
+    },
+    "error_category": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Stable technical error category. Raw provider text and PII are forbidden."
+    },
+    "error_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "stage": {
+      "$ref": "../../enums/payment-error-stage.schema.json"
+    }
+  }
+}

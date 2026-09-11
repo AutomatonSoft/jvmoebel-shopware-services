@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Frontend cart line item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sku", "quantity", "unit_price", "total_price"],
+  "properties": {
+    "sku": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Same product key as Shopware product_number."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "unit_price": {
+      "$ref": "money.schema.json"
+    },
+    "total_price": {
+      "$ref": "money.schema.json"
+    }
+  }
+}

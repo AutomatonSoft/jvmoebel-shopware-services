@@ -10,3 +10,14 @@ class EventValidationError(HTTPException):
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=detail,
         )
+
+
+class EventIdCollisionError(HTTPException):
+    def __init__(
+        self,
+        detail: str = "event_id collision: payload does not match stored event",
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail,
+        )

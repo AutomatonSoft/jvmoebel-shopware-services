@@ -12,7 +12,10 @@ Re-publication of the same outbox row keeps the same `event_id`.
 
 ## Analytics consumption
 Analytics consumes `analytics.shopware.events` with manual ACK.
-ACK is sent only after successful processing or confirmed `event_id` duplicate.
+ACK is sent only after successful processing or confirmed `event_id` duplicate
+of the same event. An `event_id` collision (same id, different payload / type /
+aggregate) is a terminal failure and goes to `analytics.shopware.events.dlq`
+without retry.
 Transient failures follow bounded retry policy.
 Terminal failures go to `analytics.shopware.events.dlq`.
 

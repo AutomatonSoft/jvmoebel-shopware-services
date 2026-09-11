@@ -79,5 +79,7 @@ retry_policy:
   max_attempts: environment-specific but finite
   attempt_tracking: x-retry-attempt header or equivalent persisted metadata
   terminal_action: publish/dead-letter to analytics.shopware.events.dlq
-  ack_rule: ACK only after successful processing or confirmed duplicate event_id.
+  ack_rule: ACK only after successful processing or confirmed duplicate of the
+    same event_id. event_id collision (same id, different event) is terminal and
+    goes to analytics.shopware.events.dlq without retry.
     On transient failure, reject/nack or republish according to retry policy.

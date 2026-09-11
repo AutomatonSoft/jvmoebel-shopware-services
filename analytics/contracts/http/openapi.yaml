@@ -42,13 +42,15 @@ paths:
                 $ref: "./examples/valid/contact-intent.json"
       responses:
         "200":
-          description: Accepted or already processed (same event_id).
+          description: Accepted or duplicate of the same event.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/IngestEventResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Same event_id already stored with a different event.
         "422":
           description: Schema, allowlist, or unknown sales_channel_id.
         "429":
@@ -75,6 +77,8 @@ paths:
                 $ref: "#/components/schemas/IngestBatchResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Same event_id already stored with a different event.
         "422":
           description: Batch envelope invalid (item-level 422 is returned inside 200).
         "429":

@@ -27,6 +27,11 @@ INGEST_RESPONSES: dict[int | str, dict[str, Any]] = {
     413: {
         "description": "HTTP request body exceeds MAX_BODY_SIZE",
     },
+    409: {
+        "description": (
+            "Same event_id already stored with a different event"
+        ),
+    },
     422: {
         "description": (
             "Schema, allowlist, origin/domain, unknown sales_channel_id, "

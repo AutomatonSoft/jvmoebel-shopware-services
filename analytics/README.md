@@ -206,7 +206,7 @@ HTTP/1.1 200 OK
 
 ### Response: duplicate
 
-Повтор того же `event_id`:
+Повтор **того же** события (тот же `event_id` и те же immutable-поля):
 
 ```http
 HTTP/1.1 200 OK
@@ -218,11 +218,28 @@ HTTP/1.1 200 OK
 }
 ```
 
+### Response: collision
+
+Тот же `event_id`, но другое событие (`payload`, `event_type`, агрегат или id-поля):
+
+```http
+HTTP/1.1 409 Conflict
+```
+
+```json
+{
+  "detail": "event_id collision: payload does not match stored event"
+}
+```
+
+Журнал не перезаписывается.
+
 ### Errors
 
 | Status | Description |
 | ------ | ----------- |
 | `401` | Missing or invalid ingest API key |
+| `409` | Same `event_id` already stored with a different event |
 | `413` | HTTP request body exceeds `MAX_BODY_SIZE` |
 | `422` | Schema, allowlist, origin/domain or unknown `sales_channel_id` |
 | `429` | HTTP ingest rate limit exceeded. `Retry-After` в секундах |
@@ -237,7 +254,7 @@ Shopware `event_type` на этом endpoint даёт `422`, даже если p
 
 Требуется ingest Bearer token. BFF передаёт `Origin` (или `Referer`) витрины.
 
-Ошибка одного элемента не скрывает результат остальных. Повторный `event_id` внутри batch обрабатывается идемпотентно.
+Ошибка одного элемента не скрывает результат остальных. Повтор того же события внутри batch — `duplicate`. Collision (`event_id` уже занят другим событием) возвращает `409` на весь запрос; уже принятые элементы остаются в журнале.
 
 ### Request
 
@@ -308,6 +325,7 @@ rejected
 | Status | Description |
 | ------ | ----------- |
 | `401` | Missing or invalid ingest API key |
+| `409` | Same `event_id` already stored with a different event |
 | `413` | HTTP request body exceeds `MAX_BODY_SIZE` |
 | `422` | Invalid batch envelope, schema, allowlist, origin/domain or unknown `sales_channel_id` |
 | `429` | HTTP ingest rate limit exceeded. `Retry-After` в секундах |
@@ -894,10 +912,11 @@ curl http://localhost:8002/api/v1/analytics/customers/018f2222222222222222222222
 
 | HTTP status | Когда возникает |
 | ----------- | --------------- |
-| `200` | Успешный ingest (в том числе duplicate) или успешный read |
+| `200` | Успешный ingest (в том числе duplicate того же события) или успешный read |
 | `400` | Некорректный диапазон периода, нет `compare_from`/`compare_to`, пустой `q` |
 | `401` | Отсутствует или неверный Bearer token |
 | `404` | Journey не найден |
+| `409` | HTTP ingest: тот же `event_id`, другое событие |
 | `413` | HTTP request body превышает `MAX_BODY_SIZE` |
 | `422` | Невалидная JSON Schema, неизвестный `sales_channel_id`, Origin/domain, Shopware type на HTTP, некорректный query/path |
 | `429` | HTTP ingest rate limit exceeded |

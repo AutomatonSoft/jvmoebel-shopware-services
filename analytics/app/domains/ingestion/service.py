@@ -5,6 +5,8 @@ from typing import Literal
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from domains.ingestion.exceptions import EventIdCollisionError
+from domains.ingestion.idempotency import is_same_event
 from domains.ingestion.validator import validate_http_event, validate_rabbit_event
 from domains.projections.dispatcher import dispatch
 from domains.projections.models.journal import Event
@@ -64,7 +66,12 @@ async def persist_validated_event(
     )
     inserted_id = result.scalar_one_or_none()
     if inserted_id is None:
-        return "duplicate"
+        existing = await session.get(Event, event_id)
+        if existing is None:
+            raise RuntimeError("Conflicting event was not readable")
+        if is_same_event(existing, values):
+            return "duplicate"
+        raise EventIdCollisionError()
 
     event = await session.get(Event, event_id)
     if event is None:

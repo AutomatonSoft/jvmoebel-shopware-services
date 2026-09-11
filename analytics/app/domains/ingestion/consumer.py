@@ -6,7 +6,7 @@ from aio_pika.abc import AbstractExchange, AbstractIncomingMessage
 
 from core.config import settings
 from core.db.postgres import async_session_maker
-from domains.ingestion.exceptions import EventValidationError
+from domains.ingestion.exceptions import EventIdCollisionError, EventValidationError
 from domains.ingestion.service import persist_validated_event
 from domains.ingestion.validator import validate_rabbit_event
 
@@ -81,6 +81,10 @@ async def handle_shopware_message(
         async with async_session_maker() as session:
             async with session.begin():
                 await persist_validated_event(session, validated)
+    except EventIdCollisionError:
+        log.warning("Shopware event_id collision, sending to DLQ")
+        await message.reject(requeue=False)
+        return
     except Exception:
         log.exception("Transient shopware ingest failure")
         await retry_or_dead_letter(message, retry_exchange)

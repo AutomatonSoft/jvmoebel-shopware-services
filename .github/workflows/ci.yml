@@ -50,7 +50,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate deployment Compose
+      - name: Validate AR deployment Compose
         env:
           APP_NETWORK: jvmoebel_ci
         run: docker compose -f compose.deploy.yml config --quiet
@@ -130,3 +130,125 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+  validate-analytics-deploy:
+    name: Analytics deployment validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: analytics
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Analytics deployment artifact
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if find . -type l -print -quit | grep -q .; then
+            echo "::error::Analytics deployment source contains symbolic links"
+            find . -type l
+            exit 1
+          fi
+
+          for required in \
+            Dockerfile \
+            pyproject.toml \
+            uv.lock \
+            alembic.ini \
+            docker-compose.yml \
+            app/main.py \
+            app/worker.py
+          do
+            if [[ ! -f "${required}" ]]; then
+              echo "::error::Analytics is missing ${required}"
+              exit 1
+            fi
+          done
+
+          if [[ ! -d contracts ]]; then
+            echo "::error::Analytics is missing contracts/"
+            exit 1
+          fi
+
+          cp .env.example .env
+          sed -i "s/^SALES_CHANNELS='\(.*\)'$/SALES_CHANNELS=\1/" .env
+
+          docker compose -f docker-compose.yml config --quiet
+
+          echo "Analytics deployment artifact validation passed."
+
+      - name: Build and start Analytics stack
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          docker compose -f docker-compose.yml up -d --build
+
+          echo "Waiting for migrations to finish..."
+          status=""
+          for _ in $(seq 1 60); do
+            status="$(docker inspect -f '{{.State.Status}}' jvmoebel_analytics_migrations 2>/dev/null || true)"
+            if [[ "${status}" == "exited" ]]; then
+              break
+            fi
+            sleep 5
+          done
+
+          if [[ "${status}" != "exited" ]]; then
+            echo "::error::Analytics migrations did not finish"
+            docker compose -f docker-compose.yml logs migrations
+            exit 1
+          fi
+
+          migration_code="$(docker inspect -f '{{.State.ExitCode}}' jvmoebel_analytics_migrations)"
+          if [[ "${migration_code}" != "0" ]]; then
+            echo "::error::Analytics migrations failed"
+            docker compose -f docker-compose.yml logs migrations
+            exit 1
+          fi
+
+          echo "Waiting for backend..."
+          for _ in $(seq 1 36); do
+            if curl -sf "http://127.0.0.1:8002/docs" >/dev/null; then
+              break
+            fi
+            sleep 5
+          done
+
+          if ! curl -sf "http://127.0.0.1:8002/docs" >/dev/null; then
+            echo "::error::Analytics backend did not become ready"
+            docker compose -f docker-compose.yml logs backend
+            exit 1
+          fi
+
+          sleep 5
+
+          worker_status="$(docker inspect -f '{{.State.Status}}' jvmoebel_analytics_worker)"
+          worker_restarts="$(docker inspect -f '{{.RestartCount}}' jvmoebel_analytics_worker)"
+          if [[ "${worker_status}" != "running" ]]; then
+            echo "::error::Analytics worker is not running"
+            docker compose -f docker-compose.yml logs worker
+            exit 1
+          fi
+          if [[ "${worker_restarts}" != "0" ]]; then
+            echo "::error::Analytics worker restarted (${worker_restarts})"
+            docker compose -f docker-compose.yml logs worker
+            exit 1
+          fi
+
+          echo "Analytics stack started: migrations, backend, worker."
+
+      - name: Dump Analytics compose logs
+        if: failure()
+        shell: bash
+        run: docker compose -f docker-compose.yml logs
+
+      - name: Stop Analytics stack
+        if: always()
+        shell: bash
+        run: docker compose -f docker-compose.yml down -v

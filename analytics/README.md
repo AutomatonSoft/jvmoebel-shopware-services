@@ -10,6 +10,8 @@ HTTP Base URL:
 
 Host port по умолчанию — `8002` (`PORT` в `.env.example`). Внутри контейнера API слушает `8000`.
 
+**Deploy.** `AR Deploy stage` покрывает только AR и не выкладывает Analytics. CI job `Analytics deployment validation` собирает production `docker-compose.yml`, применяет миграции и стартует backend/worker; это проверка, что стек поднимается, а не деплой на Server5.
+
 HTTP ingestion принимает только frontend event types:
 
 ```text

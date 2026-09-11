@@ -9,16 +9,16 @@
 
 **Deploy.** Workflow `AR Deploy stage` проверяет и выкладывает только AR (`ar/compose.deploy.yml`, артефакт из `ar/`). Analytics в этот pipeline не входит: зелёный AR Deploy не означает, что Analytics задеплоен. Готовность Analytics к выкладке проверяет CI job `Analytics deployment validation` (compose, image, миграции, backend, worker). На сервер Analytics этим workflow не уезжает.
 
-Внутри контейнеров API слушает `8000`, Postgres — `5432`, RabbitMQ — `5672` / `15672`. Ниже — порты на хосте.
+Внутри контейнеров API слушает `8000`, Postgres — `5432`, RabbitMQ — `5672` / `15672`. Production Postgres и RabbitMQ на хост не публикуются: сервисы ходят друг к другу по Docker network.
 
 ## Production ports
 
-`.env.example` / `docker-compose.yml`
+`.env.example` / `docker-compose.yml`. Наружу только HTTP API.
 
-| Service | HTTP (`PORT`) | Postgres (`POSTGRES_EXTERNAL_PORT`) | RabbitMQ AMQP | RabbitMQ management |
-| ------- | ------------- | ----------------------------------- | ------------- | ------------------- |
-| AR | `8000` | `5435` | — | — |
-| Analytics | `8002` | `5438` | `5674` | `15674` |
+| Service | HTTP (`PORT`) |
+| ------- | ------------- |
+| AR | `8000` |
+| Analytics | `8002` |
 
 ## Dev ports
 

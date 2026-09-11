@@ -7,8 +7,6 @@ services:
     restart: always
     env_file:
       - .env
-    ports:
-      - "${POSTGRES_EXTERNAL_PORT:-5438}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,9 +22,6 @@ services:
     restart: always
     env_file:
       - .env
-    ports:
-      - "${RABBITMQ_EXTERNAL_PORT:-5674}:5672"
-      - "${RABBITMQ_MANAGEMENT_EXTERNAL_PORT:-15674}:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s

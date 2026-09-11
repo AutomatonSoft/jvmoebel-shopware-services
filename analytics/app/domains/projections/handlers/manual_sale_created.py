@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.attribution.rules import copy_attribution_snapshot
 from domains.projections.exceptions import require_id, require_row
+from domains.projections.locking import get_aggregate_for_update
 from domains.projections.models.entities import ManualSale, Visitor
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload, parse_datetime, parse_money
@@ -17,8 +18,10 @@ async def handle_manual_sale_created(
         field="manual_sale_id",
         event_type=event.event_type,
     )
-    sale = require_row(
-        await session.get(ManualSale, manual_sale_id),
+    sale = await get_aggregate_for_update(
+        session,
+        ManualSale,
+        manual_sale_id,
         entity="manual_sale",
         event_type=event.event_type,
     )

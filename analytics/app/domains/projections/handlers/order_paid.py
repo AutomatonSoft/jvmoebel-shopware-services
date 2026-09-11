@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.attribution.rules import copy_attribution_snapshot
 from domains.projections.exceptions import require_id, require_row
+from domains.projections.locking import get_aggregate_for_update
 from domains.projections.models.entities import Order, Visitor
 from domains.projections.models.journal import Event
 from domains.projections.order_lines import replace_order_lines
@@ -18,8 +19,10 @@ async def handle_order_paid(
         field="order_id",
         event_type=event.event_type,
     )
-    order = require_row(
-        await session.get(Order, order_id),
+    order = await get_aggregate_for_update(
+        session,
+        Order,
+        order_id,
         entity="order",
         event_type=event.event_type,
     )

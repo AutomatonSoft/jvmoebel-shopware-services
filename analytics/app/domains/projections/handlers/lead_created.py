@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.attribution.rules import copy_attribution_snapshot
 from domains.projections.exceptions import require_id, require_row
+from domains.projections.locking import get_aggregate_for_update
 from domains.projections.models.entities import Lead, Visitor
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload
@@ -17,8 +18,10 @@ async def handle_lead_created(
         field="lead_id",
         event_type=event.event_type,
     )
-    lead = require_row(
-        await session.get(Lead, lead_id),
+    lead = await get_aggregate_for_update(
+        session,
+        Lead,
+        lead_id,
         entity="lead",
         event_type=event.event_type,
     )

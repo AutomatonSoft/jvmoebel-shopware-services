@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.projections.exceptions import require_id, require_row
+from domains.projections.exceptions import require_id
+from domains.projections.locking import get_aggregate_for_update
 from domains.projections.models.entities import Lead
 from domains.projections.models.facts import LeadStatusHistory
 from domains.projections.models.journal import Event
@@ -17,8 +18,10 @@ async def handle_lead_status_changed(
         field="lead_id",
         event_type=event.event_type,
     )
-    lead = require_row(
-        await session.get(Lead, lead_id),
+    lead = await get_aggregate_for_update(
+        session,
+        Lead,
+        lead_id,
         entity="lead",
         event_type=event.event_type,
     )

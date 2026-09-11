@@ -51,13 +51,4 @@ async def ingest_http_batch(
                     "detail": exc.detail,
                 }
             )
-        except Exception:
-            results.append(
-                {
-                    "index": index,
-                    "event_id": event_id,
-                    "status": "rejected",
-                    "detail": "Internal server error",
-                }
-            )
     return results

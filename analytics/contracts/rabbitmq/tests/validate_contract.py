@@ -6,27 +6,35 @@ from jsonschema import Draft202012Validator, RefResolver
 ROOT = Path(__file__).resolve().parents[1]
 
 STEMS = {
-    "lead_created":"lead-created",
-    "contact_received":"contact-received",
-    "lead_status_changed":"lead-status-changed",
-    "customer_linked":"customer-linked",
-    "order_created":"order-created",
-    "order_updated":"order-updated",
-    "order_paid":"order-paid",
-    "order_cancelled":"order-cancelled",
-    "manual_sale_created":"manual-sale-created",
-    "manual_sale_updated":"manual-sale-updated",
-    "manual_sale_cancelled":"manual-sale-cancelled",
-    "refund_created":"refund-created",
+    "lead_created": "lead-created",
+    "contact_received": "contact-received",
+    "lead_status_changed": "lead-status-changed",
+    "customer_linked": "customer-linked",
+    "order_created": "order-created",
+    "order_updated": "order-updated",
+    "order_paid": "order-paid",
+    "order_cancelled": "order-cancelled",
+    "manual_sale_created": "manual-sale-created",
+    "manual_sale_updated": "manual-sale-updated",
+    "manual_sale_cancelled": "manual-sale-cancelled",
+    "refund_created": "refund-created",
 }
+
 
 def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
+
 def validate(example, expected):
     doc = load(example)
     event_type = doc.get("event_type")
-    stem = STEMS.get(event_type, "order-paid")
+    stem = STEMS.get(event_type)
+    if stem is None:
+        if expected:
+            print(f"FAIL {example.name}: unknown event_type {event_type!r}")
+            return False
+        print(f"OK   {example.name}")
+        return True
     schema_path = ROOT / "schemas" / "events" / f"{stem}.event.schema.json"
     schema = load(schema_path)
     resolver = RefResolver(base_uri=schema_path.resolve().as_uri(), referrer=schema)
@@ -45,11 +53,14 @@ def validate(example, expected):
     print(f"OK   {example.name}")
     return True
 
+
 def extra_invariants():
     ok = True
     # AsyncAPI and infrastructure files must parse.
     yaml.safe_load((ROOT / "asyncapi.yaml").read_text(encoding="utf-8"))
-    topology = yaml.safe_load((ROOT / "infrastructure/rabbitmq-topology.yaml").read_text(encoding="utf-8"))
+    topology = yaml.safe_load(
+        (ROOT / "infrastructure/rabbitmq-topology.yaml").read_text(encoding="utf-8")
+    )
     if topology["delivery"]["publisher_delivery_mode"] != 2:
         print("FAIL RabbitMQ delivery mode must be persistent (2)")
         ok = False
@@ -74,14 +85,19 @@ def extra_invariants():
             ok = False
     return ok
 
-def main():
+
+def check():
     ok = True
     for p in sorted((ROOT / "examples" / "valid").glob("*.json")):
         ok = validate(p, True) and ok
     for p in sorted((ROOT / "examples" / "invalid").glob("*.json")):
         ok = validate(p, False) and ok
-    ok = extra_invariants() and ok
-    sys.exit(0 if ok else 1)
+    return extra_invariants() and ok
+
+
+def main():
+    sys.exit(0 if check() else 1)
+
 
 if __name__ == "__main__":
     main()

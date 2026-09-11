@@ -150,14 +150,17 @@ def extra_invariants() -> bool:
     return ok
 
 
-def main() -> None:
+def check() -> bool:
     ok = True
     for path in sorted((ROOT / "examples" / "valid").glob("*.json")):
         ok = validate(path, True) and ok
     for path in sorted((ROOT / "examples" / "invalid").glob("*.json")):
         ok = validate(path, False) and ok
-    ok = extra_invariants() and ok
-    sys.exit(0 if ok else 1)
+    return extra_invariants() and ok
+
+
+def main() -> None:
+    sys.exit(0 if check() else 1)
 
 
 if __name__ == "__main__":

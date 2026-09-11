@@ -45,34 +45,38 @@
 
 # Scope поставки
 
+Analytics в этом репозитории можно разрабатывать и тестировать на фикстурах до появления producers.
 
-## Первая поставка (Analytics Core)
+## Что реализовано в этом репозитории
 
+- Analytics API (ingest + read)
+- HTTP ingestion frontend events
+- RabbitMQ consumer подтверждённых Shopware events
+- projections, attribution, reports, Customer Journey
+- JSON Schema / OpenAPI / AsyncAPI contracts
 
-- Одиночные и пакетные события принимаются и валидируются.
-- Повторный `event_id` не создаёт дублей.
-- Public HTTP ingestion принимает только разрешённые frontend events и защищён rate/payload/batch limits и проверкой Sales Channel.
-- Backend-события Shopware принимаются из RabbitMQ с отдельными credentials/permissions.
-- Visitor, Session, Cart, Lead, Customer, Order и Manual Sale связываются по переданным идентификаторам.
-- First Touch не перезаписывается, Last Non-Direct Touch рассчитывается по зафиксированным правилам.
-- Прямой визит не стирает известный рекламный источник.
-- `contact_received` и `lead_created` считаются раздельно.
-- `lead_status_changed` в Won не считается продажей.
-- Оплата подтверждается только `order_paid`.
-- Manual Sale не дублирует Shopware Order.
-- `order_updated` корректирует неоплаченный Order без создания Sale conversion.
-- Полный и частичный `refund_created` отражается в Journey и корректирует net revenue без изменения исходного gross revenue.
-- Рассчитываются overview, ecommerce- и Lead-воронки.
-- Доступны отчёты по источникам, каналам обращений, товарам и способам оплаты.
-- Реализована возможнось сравнить показатели за 2 периода.
-- Реализована возможнось открыть Journey по Visitor, Lead, Order и Customer.
-- Отчёты фильтруются по периоду и Sales Channel.
-- Денежные показатели разных валют не суммируются без настроенного FX conversion.
-- Dashboard обрабатывает loading, empty и error states.
-- API описано в OpenAPI с примерами событий.
-- Основные сценарии покрыты автоматическими тестами.
+## Что не входит в этот PR (отдельные задачи, другие репозитории)
 
-Закрытый dashboard UI в этом PR не реализован. Критерий про loading / empty / error закрывается во второй поставке.
+В этом PR back, front и docs-репозитории не меняются.
+
+Backend (`jvmoebel-shopware-back`):
+
+- transactional outbox
+- RabbitMQ publisher
+- стабильный `event_id`
+- aggregate versions
+- producer retry
+- webhook/provider deduplication
+
+Frontend (Next.js):
+
+- отправка frontend events
+- visitor/session IDs
+- consent
+- retry/batching
+- безопасная доставка через BFF
+
+Закрытый dashboard UI в этом PR не реализован.
 
 ## Критерии готовности второй поставки
 

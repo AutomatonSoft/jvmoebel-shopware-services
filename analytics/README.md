@@ -2,6 +2,8 @@
 
 Analytics API принимает frontend-события Next.js по HTTP, подтверждённые backend-события Shopware из RabbitMQ и отдаёт отчёты и Customer Journey.
 
+Это контракт приёма. В этом репозитории нет Next.js-отправки событий и нет Shopware transactional outbox / RabbitMQ publisher: их делают отдельные задачи в front и `jvmoebel-shopware-back`. Пока producers не готовы, ingest проверяется фикстурами и тестами.
+
 HTTP ingest — server-to-server. Браузер не вызывает Analytics и не получает `ANALYTICS_INGEST_API_KEY`.
 
 ```text

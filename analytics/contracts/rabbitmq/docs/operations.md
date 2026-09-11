@@ -5,6 +5,8 @@ Shopware internal queues remain on Redis.
 RabbitMQ is used only for Shopware → Analytics interservice events.
 
 ## Transactional outbox
+This is a Shopware producer contract. The outbox and RabbitMQ publisher are implemented in `jvmoebel-shopware-back`, not in this Analytics repository.
+
 The Shopware business mutation and outbox insert MUST commit in one DB transaction.
 The outbox worker publishes pending records using persistent AMQP messages.
 If RabbitMQ is unavailable, the business operation remains committed and the outbox row remains pending.

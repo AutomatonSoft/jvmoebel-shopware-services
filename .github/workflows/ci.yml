@@ -232,6 +232,9 @@ jobs:
 
           assert_no_host_ports("postgres")
           assert_no_host_ports("rabbitmq")
+          assert_no_host_ports("migrations")
+          assert_no_host_ports("backend")
+          assert_no_host_ports("worker")
 
           postgres_networks = set(service_networks("postgres"))
           if postgres_networks != {"database"}:
@@ -276,10 +279,19 @@ jobs:
           if worker_url.username in ("", "guest", None):
               raise SystemExit("RABBITMQ_URL must not use guest")
 
-          backend_networks = set(service_networks("backend"))
-          if backend_networks != {"database", "application"}:
+          backend_networks = service_networks("backend")
+          if set(backend_networks) != {"database", "application"}:
               raise SystemExit(
-                  f"backend must join database and application, got {backend_networks}"
+                  f"backend must join database and application, "
+                  f"got {set(backend_networks)}"
+              )
+          backend_aliases = (backend_networks.get("application") or {}).get(
+              "aliases"
+          ) or []
+          if "analytics-backend" not in backend_aliases:
+              raise SystemExit(
+                  "backend must expose alias analytics-backend, "
+                  f"got {backend_networks}"
               )
 
           worker_networks = set(service_networks("worker"))

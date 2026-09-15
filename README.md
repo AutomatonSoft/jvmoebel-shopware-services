@@ -9,16 +9,16 @@
 
 **Deploy.** Workflow `AR Deploy stage` проверяет и выкладывает только AR (`ar/compose.deploy.yml`, артефакт из `ar/`). Analytics в этот pipeline не входит: зелёный AR Deploy не означает, что Analytics задеплоен. Готовность Analytics к выкладке проверяет CI job `Analytics deployment validation` (`analytics/compose.deploy.yml`, image, миграции, backend, worker). На сервер Analytics этим workflow не уезжает.
 
-Production Analytics — `analytics/compose.deploy.yml`: Postgres только во внутренней сети, RabbitMQ и HTTP API — в общем `APP_NETWORK`. Shopware ходит в брокер по alias `analytics-rabbitmq` на vhost `/shopware-analytics`. Host ports для Postgres и RabbitMQ не публикуются.
+Production Analytics — `analytics/compose.deploy.yml`: Postgres только во внутренней сети, RabbitMQ и HTTP API — в общем `APP_NETWORK`. Shopware ходит в брокер по alias `analytics-rabbitmq` на vhost `/shopware-analytics`. Nginx ходит в API по alias `analytics-backend:8000`. Host ports для Postgres, RabbitMQ и HTTP API в production compose не публикуются.
 
 ## Production ports
 
-`.env.example` / `docker-compose.yml`. Наружу только HTTP API.
+Production AR/Analytics наружу через Nginx на `APP_NETWORK`, без публикации HTTP на host. Local `docker-compose.yml` для Analytics слушает только loopback.
 
-| Service | HTTP (`PORT`) |
+| Service | Local HTTP |
 | ------- | ------------- |
-| AR | `8000` |
-| Analytics | `8002` |
+| AR | `8000` (`PORT`) |
+| Analytics | `127.0.0.1:8002` (`PORT`) |
 
 ## Dev ports
 

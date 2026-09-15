@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - D02-9
   pull_request:
     branches:
       - develop

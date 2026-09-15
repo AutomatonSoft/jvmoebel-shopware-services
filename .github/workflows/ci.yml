@@ -255,6 +255,41 @@ jobs:
                   f"got {rabbit_networks}"
               )
 
+          volume_names = set(cfg.get("volumes") or {})
+          if "rabbitmq_data" not in volume_names:
+              raise SystemExit(
+                  f"named volume rabbitmq_data is missing, got {sorted(volume_names)}"
+              )
+
+          rabbit_data_mounts = []
+          for vol in services["rabbitmq"].get("volumes") or []:
+              if isinstance(vol, str):
+                  source, _, target = vol.partition(":")
+                  entry = {"type": "bind" if source.startswith(".") or source.startswith("/") else "volume", "source": source, "target": target.split(":")[0]}
+              else:
+                  entry = vol
+              if entry.get("target") == "/var/lib/rabbitmq":
+                  rabbit_data_mounts.append(entry)
+          if len(rabbit_data_mounts) != 1:
+              raise SystemExit(
+                  "rabbitmq must mount exactly one data volume at /var/lib/rabbitmq, "
+                  f"got {rabbit_data_mounts}"
+              )
+          data_mount = rabbit_data_mounts[0]
+          if data_mount.get("type") != "volume":
+              raise SystemExit(
+                  "rabbitmq data dir must be a named volume, not a bind mount: "
+                  f"{data_mount}"
+              )
+          data_source = str(data_mount.get("source") or "")
+          if data_source != "rabbitmq_data" and not data_source.endswith(
+              "rabbitmq_data"
+          ):
+              raise SystemExit(
+                  "rabbitmq data volume must be rabbitmq_data, "
+                  f"got {data_source!r}"
+              )
+
           rabbit_env = env_map("rabbitmq")
           if rabbit_env.get("RABBITMQ_DEFAULT_VHOST") != "shopware-analytics":
               raise SystemExit(

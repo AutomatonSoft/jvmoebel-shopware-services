@@ -31,6 +31,7 @@ services:
       RABBITMQ_PUBLISHER_USER: ${RABBITMQ_PUBLISHER_USER:?RABBITMQ_PUBLISHER_USER is required}
       RABBITMQ_PUBLISHER_PASSWORD: ${RABBITMQ_PUBLISHER_PASSWORD:?RABBITMQ_PUBLISHER_PASSWORD is required}
     volumes:
+      - rabbitmq_data_dev:/var/lib/rabbitmq
       - ./rabbitmq/entrypoint.sh:/usr/local/bin/analytics-rabbitmq-entrypoint.sh:ro
       - ./rabbitmq/init-users.sh:/usr/local/bin/init-users.sh:ro
     entrypoint:
@@ -97,4 +98,5 @@ services:
 
 volumes:
   postgres_data_dev:
+  rabbitmq_data_dev:
   backend_venv_dev:

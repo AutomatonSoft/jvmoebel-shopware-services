@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contact channels response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ContactChannelRow" }
+    }
+  },
+  "$defs": {
+    "ContactChannelRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel",
+        "intents",
+        "contacts",
+        "leads",
+        "orders_paid",
+        "manual_sales",
+        "money",
+        "contact_to_lead",
+        "lead_to_paid_sale"
+      ],
+      "properties": {
+        "channel": {
+          "$ref": "../../enums/contact-channel.schema.json"
+        },
+        "intents": { "type": "integer", "minimum": 0 },
+        "contacts": { "type": "integer", "minimum": 0 },
+        "leads": { "type": "integer", "minimum": 0 },
+        "orders_paid": { "type": "integer", "minimum": 0 },
+        "manual_sales": { "type": "integer", "minimum": 0 },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "money-breakdown.schema.json" }
+        },
+        "contact_to_lead": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "lead_to_paid_sale": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

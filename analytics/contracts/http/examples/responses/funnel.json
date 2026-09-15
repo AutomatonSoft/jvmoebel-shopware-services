@@ -1,0 +1,18 @@
+{
+  "ecommerce": [
+    { "key": "session", "count": 1, "conversion_from_previous": null },
+    { "key": "product_view", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "add_to_cart", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "checkout_started", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "order_created", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "order_paid", "count": 1, "conversion_from_previous": "1.0000" }
+  ],
+  "lead": [
+    { "key": "session", "count": 1, "conversion_from_previous": null },
+    { "key": "contact_intent", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "contact_received", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "lead_created", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "lead_won", "count": 1, "conversion_from_previous": "1.0000" },
+    { "key": "paid_sale", "count": 1, "conversion_from_previous": "1.0000" }
+  ]
+}

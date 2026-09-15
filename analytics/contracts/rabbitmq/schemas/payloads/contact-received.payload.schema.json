@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "contact_received payload",
+  "description": "Normalized confirmed-contact data. Raw PII and message text are forbidden.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contact_channel",
+    "contact_type"
+  ],
+  "properties": {
+    "contact_channel": {
+      "$ref": "../../enums/contact-channel.schema.json"
+    },
+    "contact_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Stable technical contact type, e.g. contact_form, offer_request, callback_request, direct_email, whatsapp_message, qualified_call."
+    },
+    "tracking_reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Non-secret tracking reference when available."
+    },
+    "provider_reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Stable non-secret provider message/call reference when available."
+    },
+    "product_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Related product/SKU when the contact is explicitly product-specific."
+    }
+  }
+}

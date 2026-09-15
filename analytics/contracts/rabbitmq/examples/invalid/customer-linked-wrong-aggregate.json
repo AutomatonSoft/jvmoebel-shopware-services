@@ -1,0 +1,20 @@
+{
+  "event_id": "2f1c3a50-fd24-4f2d-8dd4-42e82b5e9101",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:00:00Z",
+  "source": "shopware",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "domain": "jvmoebel.de",
+  "language": "de-DE",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "cart_id": "161ac41f-6684-4757-b9ec-47e107f7b04e",
+  "correlation_id": "8fbf6d3c-7d55-49d2-8442-7be5fcad934e",
+  "aggregate_version": 1,
+  "event_type": "customer_linked",
+  "customer_id": "018f2222222222222222222222222222",
+  "aggregate_type": "lead",
+  "aggregate_id": "018f2222222222222222222222222222",
+  "payload": {}
+}

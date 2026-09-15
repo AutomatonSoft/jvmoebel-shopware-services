@@ -1,0 +1,12 @@
+{
+  "event_id": "UUID v4",
+  "visitor_id": "UUID v4 created by Next.js; optional except customer_linked v1",
+  "session_id": "UUID v4 created by Next.js; optional",
+  "cart_id": "UUID v4 used to correlate frontend cart/checkout with Order when known",
+  "shopware_entity_id": "32 lowercase hexadecimal characters",
+  "money": "non-negative exact decimal string, up to 4 fraction digits",
+  "currency": "ISO 4217 uppercase 3-letter code in monetary payloads only",
+  "occurred_at": "RFC3339/ISO8601 actual business-event time",
+  "payment_method": "stable technical key, not a display/translated label",
+  "contact_id": "32 lowercase hexadecimal Shopware Contact UUID; required for contact_received"
+}

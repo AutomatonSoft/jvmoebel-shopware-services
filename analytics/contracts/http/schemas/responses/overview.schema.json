@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Overview response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "visitors",
+    "sessions",
+    "product_views",
+    "cart_adds",
+    "checkouts",
+    "contacts",
+    "leads",
+    "orders_created",
+    "orders_paid",
+    "manual_sales",
+    "money",
+    "session_to_lead",
+    "session_to_paid_sale",
+    "lead_to_paid_sale",
+    "checkout_to_paid_order",
+    "first_visit_to_lead_seconds",
+    "first_visit_to_paid_sale_seconds"
+  ],
+  "properties": {
+    "visitors": { "type": "integer", "minimum": 0 },
+    "sessions": { "type": "integer", "minimum": 0 },
+    "product_views": { "type": "integer", "minimum": 0 },
+    "cart_adds": { "type": "integer", "minimum": 0 },
+    "checkouts": { "type": "integer", "minimum": 0 },
+    "contacts": { "type": "integer", "minimum": 0 },
+    "leads": { "type": "integer", "minimum": 0 },
+    "orders_created": { "type": "integer", "minimum": 0 },
+    "orders_paid": { "type": "integer", "minimum": 0 },
+    "manual_sales": { "type": "integer", "minimum": 0 },
+    "money": {
+      "type": "array",
+      "items": { "$ref": "money-breakdown.schema.json" }
+    },
+    "session_to_lead": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "session_to_paid_sale": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "lead_to_paid_sale": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "checkout_to_paid_order": {
+      "oneOf": [
+        { "$ref": "../common/report-decimal.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "first_visit_to_lead_seconds": {
+      "oneOf": [
+        { "$ref": "../common/seconds.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "first_visit_to_paid_sale_seconds": {
+      "oneOf": [
+        { "$ref": "../common/seconds.schema.json" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

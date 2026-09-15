@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Journey search response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/JourneySearchHit" }
+    }
+  },
+  "$defs": {
+    "JourneySearchHit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_type", "id", "sales_channel_id", "occurred_at"],
+      "properties": {
+        "entity_type": {
+          "$ref": "../../enums/journey-entity-type.schema.json"
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "sales_channel_id": {
+          "$ref": "../common/shopware-id.schema.json"
+        },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

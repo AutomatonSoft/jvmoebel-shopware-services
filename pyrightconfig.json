@@ -1,8 +1,25 @@
 {
+
+  "ignore": [
+    "**/.venv",
+    "**/venv"
+  ],
   "executionEnvironments": [
     {
       "root": "ar",
       "extraPaths": ["ar/app"]
+    },
+    {
+      "root": "analytics",
+      "extraPaths": ["analytics/app"]
+    },
+    {
+      "root": "analytics/tests",
+      "extraPaths": ["analytics/app"]
+    },
+    {
+      "root": "analytics/alembic",
+      "extraPaths": ["analytics/app"]
     }
   ]
 }

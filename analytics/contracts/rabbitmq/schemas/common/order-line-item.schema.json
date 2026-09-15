@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order line item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "line_item_id",
+    "item_type",
+    "quantity",
+    "unit_price",
+    "total_price"
+  ],
+  "properties": {
+    "line_item_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "product_number": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Stable Shopware product number/SKU. Required only for item_type=product."
+    },
+    "item_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Stable technical Shopware line-item type, e.g. product, promotion, custom."
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "unit_price": {
+      "type": "string",
+      "pattern": "^\\d+(?:\\.\\d{1,4})?$",
+      "description": "Exact non-negative decimal string. Binary floating point is forbidden."
+    },
+    "total_price": {
+      "type": "string",
+      "pattern": "^\\d+(?:\\.\\d{1,4})?$",
+      "description": "Exact non-negative decimal string. Binary floating point is forbidden."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "item_type": {
+            "const": "product"
+          }
+        },
+        "required": [
+          "item_type"
+        ]
+      },
+      "then": {
+        "required": [
+          "product_number"
+        ]
+      }
+    }
+  ]
+}

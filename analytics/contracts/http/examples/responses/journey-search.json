@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "entity_type": "visitor",
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+      "occurred_at": "2026-08-24T09:00:00Z"
+    },
+    {
+      "entity_type": "order",
+      "id": "018f3333333333333333333333333333",
+      "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+      "occurred_at": "2026-08-24T11:00:00Z"
+    }
+  ]
+}

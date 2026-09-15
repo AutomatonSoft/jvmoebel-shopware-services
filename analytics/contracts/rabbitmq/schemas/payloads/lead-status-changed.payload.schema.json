@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lead_status_changed payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "previous_status",
+    "new_status"
+  ],
+  "properties": {
+    "previous_status": {
+      "$ref": "../../enums/lead-status.schema.json"
+    },
+    "new_status": {
+      "$ref": "../../enums/lead-status.schema.json"
+    }
+  },
+  "not": {
+    "properties": {
+      "previous_status": {
+        "const": "won"
+      },
+      "new_status": {
+        "const": "won"
+      }
+    },
+    "required": [
+      "previous_status",
+      "new_status"
+    ]
+  }
+}

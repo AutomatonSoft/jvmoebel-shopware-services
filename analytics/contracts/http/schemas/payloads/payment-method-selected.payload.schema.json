@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "payment_method_selected payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payment_method"],
+  "properties": {
+    "payment_method": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$",
+      "description": "Stable technical payment-method key/handler identifier; never a translated/display label."
+    }
+  }
+}

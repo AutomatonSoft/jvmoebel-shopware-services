@@ -1,4 +1,4 @@
-name: Deploy stage
+name: AR Deploy stage
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   validate:
-    name: stage deployment validation
+    name: AR stage deployment validation
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -89,7 +89,7 @@ jobs:
           echo "Deployment artifact validation passed."
 
   deploy:
-    name: deploy services to stage
+    name: deploy AR to stage
     if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
     runs-on: ubuntu-24.04
     timeout-minutes: 30

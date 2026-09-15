@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "checkout_started payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["line_items", "total_amount", "currency"],
+  "properties": {
+    "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "../common/cart-line-item.schema.json"
+      }
+    },
+    "total_amount": {
+      "$ref": "../common/money.schema.json"
+    },
+    "currency": {
+      "$ref": "../common/currency.schema.json"
+    }
+  }
+}

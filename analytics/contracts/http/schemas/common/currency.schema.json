@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Currency",
+  "type": "string",
+  "pattern": "^[A-Z]{3}$",
+  "description": "ISO 4217 uppercase 3-letter code. Lives in monetary payloads only, not in the envelope."
+}

@@ -1,0 +1,17 @@
+{
+  "event_id": "4c5d6e72-bf46-4b2f-ad07-65a04d7fb323",
+  "event_type": "add_to_cart",
+  "event_version": 1,
+  "occurred_at": "2026-08-24T09:02:00Z",
+  "source": "nextjs",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "session_id": "9b1de427-512a-482e-a2bf-66d1f6de06e3",
+  "payload": {
+    "sku": "SOFA-001",
+    "quantity": 1,
+    "unit_price": "2499.00",
+    "currency": "EUR"
+  }
+}

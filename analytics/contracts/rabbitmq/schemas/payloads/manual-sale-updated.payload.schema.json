@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manual_sale_updated payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "amount",
+    "currency",
+    "status",
+    "change_reasons"
+  ],
+  "properties": {
+    "amount": {
+      "type": "string",
+      "pattern": "^\\d+(?:\\.\\d{1,4})?$",
+      "description": "Exact non-negative decimal string. Binary floating point is forbidden."
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code."
+    },
+    "status": {
+      "type": "string",
+      "const": "confirmed"
+    },
+    "reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "change_reasons": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "amount_changed",
+          "currency_changed",
+          "reference_changed",
+          "lead_linked",
+          "customer_linked"
+        ]
+      }
+    }
+  }
+}

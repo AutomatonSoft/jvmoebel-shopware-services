@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Click IDs",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "gclid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "gbraid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "wbraid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  }
+}

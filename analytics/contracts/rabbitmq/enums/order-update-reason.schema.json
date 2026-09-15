@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order Update Reason",
+  "type": "string",
+  "enum": [
+    "order_state_changed",
+    "payment_state_changed",
+    "items_changed",
+    "amount_changed",
+    "payment_method_changed"
+  ]
+}

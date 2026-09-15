@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UTM parameters",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "utm_source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "utm_medium": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "utm_campaign": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "utm_content": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "utm_term": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lead_created event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "lead_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "lead_created"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "lead"
+        },
+        "payload": {
+          "$ref": "../payloads/lead-created.payload.schema.json"
+        }
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal lead_id."
+}

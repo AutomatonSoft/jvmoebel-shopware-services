@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "customer_linked event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "visitor_id",
+        "customer_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "customer_linked"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "customer"
+        },
+        "payload": {
+          "$ref": "../payloads/customer-linked.payload.schema.json"
+        }
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal customer_id."
+}

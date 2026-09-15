@@ -1,0 +1,21 @@
+{
+  "contract_version": 1,
+  "http_allowlist": [
+    "session_started",
+    "product_viewed",
+    "add_to_cart",
+    "checkout_started",
+    "payment_methods_shown",
+    "payment_method_selected",
+    "payment_failed",
+    "contact_intent"
+  ],
+  "shopware_types_on_http": "Any event_type from the Shopware v3 enum is rejected by this schema and must also be rejected by ingest with HTTP 422 even if a caller posts a valid rabbitmq payload.",
+  "source": "const nextjs; aggregate_type and aggregate_id are not part of the envelope",
+  "attribution_touch": "Only session_started may carry UTM and GCLID/GBRAID/WBRAID. Shopware must not publish those fields.",
+  "payment_methods_shown": "payload.methods is an array of technical keys; Analytics stores one payment_method_events row per key.",
+  "pii": "Raw name, email, phone, address and message text are forbidden.",
+  "sales_channel_allowlist": "Unknown sales_channel_id is rejected at ingest from settings, not from this schema. Browser origin must match the channel origins list.",
+  "money": "Decimal string in payload only. Currency must not appear on the envelope.",
+  "consent": "Optional snapshot. Shopware envelopes have no consent field; Analytics stores null for those events."
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sources response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/SourceRow" }
+    }
+  },
+  "$defs": {
+    "SourceRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "campaign",
+        "visitors",
+        "sessions",
+        "contacts",
+        "leads",
+        "orders_created",
+        "orders_paid",
+        "manual_sales",
+        "money",
+        "session_to_lead",
+        "session_to_paid_sale",
+        "lead_to_paid_sale",
+        "first_visit_to_lead_seconds",
+        "first_visit_to_paid_sale_seconds"
+      ],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "campaign": { "type": ["string", "null"] },
+        "visitors": { "type": "integer", "minimum": 0 },
+        "sessions": { "type": "integer", "minimum": 0 },
+        "contacts": { "type": "integer", "minimum": 0 },
+        "leads": { "type": "integer", "minimum": 0 },
+        "orders_created": { "type": "integer", "minimum": 0 },
+        "orders_paid": { "type": "integer", "minimum": 0 },
+        "manual_sales": { "type": "integer", "minimum": 0 },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "money-breakdown.schema.json" }
+        },
+        "session_to_lead": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "session_to_paid_sale": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "lead_to_paid_sale": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "first_visit_to_lead_seconds": {
+          "oneOf": [
+            { "$ref": "../common/seconds.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "first_visit_to_paid_sale_seconds": {
+          "oneOf": [
+            { "$ref": "../common/seconds.schema.json" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

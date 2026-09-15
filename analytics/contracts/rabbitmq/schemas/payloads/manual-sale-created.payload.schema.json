@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manual_sale_created payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "amount",
+    "currency",
+    "confirmed_at"
+  ],
+  "properties": {
+    "amount": {
+      "type": "string",
+      "pattern": "^\\d+(?:\\.\\d{1,4})?$",
+      "description": "Exact non-negative decimal string. Binary floating point is forbidden."
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code."
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    }
+  }
+}

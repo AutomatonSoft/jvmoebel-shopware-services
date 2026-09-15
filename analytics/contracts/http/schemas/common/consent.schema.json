@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Consent snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["analytics", "ads", "captured_at"],
+  "properties": {
+    "analytics": {
+      "type": "boolean"
+    },
+    "ads": {
+      "type": "boolean"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

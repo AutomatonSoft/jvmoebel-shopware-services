@@ -1,0 +1,80 @@
+{
+  "contract_version": 1,
+  "customer_linked": {
+    "required_linking": [
+      "visitor_id",
+      "customer_id"
+    ],
+    "lead_id": "optional",
+    "aggregate_type": "customer",
+    "aggregate_id_rule": "aggregate_id equals customer_id"
+  },
+  "refund_created": {
+    "refund_id": "required in envelope",
+    "aggregate_type": "refund",
+    "aggregate_id_rule": "aggregate_id equals refund_id",
+    "line_items": "optional",
+    "refunded_at": "required actual refund timestamp"
+  },
+  "order_updated": {
+    "only_before_paid_snapshot": true,
+    "rule": "Do not publish order_updated for mutations after order_paid that would overwrite the Analytics sale snapshot.",
+    "change_reasons": "one or more stable enum values",
+    "payment_state_excludes": [
+      "paid",
+      "refunded",
+      "refunded_partially",
+      "chargeback"
+    ],
+    "specialized_events": {
+      "paid": "order_paid",
+      "cancelled_order": "order_cancelled",
+      "refund": "refund_created"
+    }
+  },
+  "payment_method": "Stable technical key/handler identifier; display or translated labels are forbidden.",
+  "lead_won": {
+    "rule": "lead_status_changed to won requires order_id or manual_sale_id in envelope.",
+    "conversion_source": "Only order_paid or manual_sale_created creates the sale conversion fact."
+  },
+  "transactional_outbox": {
+    "required": true,
+    "transaction_rule": "Business mutation and outbox insert commit in the same database transaction.",
+    "retry_event_id": "Re-publication of one outbox record keeps the original event_id.",
+    "rabbitmq_unavailable": "Business operation remains committed and the event remains pending in outbox."
+  },
+  "input_deduplication": {
+    "http_submit": "Stable submission_id for one logical submit; duplicate submit must not create a second business fact.",
+    "provider_webhook": "Deduplicate by provider plus stable provider event/message id before creating a business fact.",
+    "payment_callback": "Deduplicate by payment provider plus stable callback/transaction id before creating a business fact."
+  },
+  "forbidden_rabbitmq_data": [
+    "raw name",
+    "raw email",
+    "raw phone",
+    "raw address",
+    "message text",
+    "GCLID",
+    "GBRAID",
+    "WBRAID",
+    "UTM parameters"
+  ],
+  "contact_received": {
+    "business_fact": "Every confirmed contact creates one Contact and publishes contact_received.",
+    "aggregate_type": "contact",
+    "aggregate_id_rule": "aggregate_id equals contact_id",
+    "required_linking": [
+      "contact_id",
+      "lead_id"
+    ],
+    "visitor_id": "optional; may be absent for direct email/phone",
+    "lead_reuse": [
+      "Use an explicit lead_id or trusted tracking reference when it unambiguously identifies a Lead.",
+      "Otherwise reuse exactly one open Lead only when visitor_id, sales_channel_id and same-contact rules match.",
+      "If topic/product differs, Lead is closed, or matching is ambiguous, create a new Lead.",
+      "Email/phone equality alone is not sufficient for automatic Lead merging."
+    ],
+    "publishing": "If a new Lead is created, publish both lead_created and contact_received. If an existing Lead is reused, publish contact_received only.",
+    "pii": "Raw name, email, phone and message text remain inside Shopware and are not published."
+  }
+}

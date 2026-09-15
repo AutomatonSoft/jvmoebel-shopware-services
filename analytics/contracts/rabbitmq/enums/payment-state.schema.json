@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Payment State",
+  "type": "string",
+  "enum": [
+    "open",
+    "paid",
+    "paid_partially",
+    "refunded",
+    "refunded_partially",
+    "cancelled",
+    "reminded",
+    "authorized",
+    "failed",
+    "in_progress",
+    "chargeback",
+    "unconfirmed"
+  ]
+}

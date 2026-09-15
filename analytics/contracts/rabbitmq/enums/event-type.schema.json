@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Event Type",
+  "type": "string",
+  "enum": [
+    "lead_created",
+    "contact_received",
+    "lead_status_changed",
+    "customer_linked",
+    "order_created",
+    "order_updated",
+    "order_paid",
+    "order_cancelled",
+    "manual_sale_created",
+    "manual_sale_updated",
+    "manual_sale_cancelled",
+    "refund_created"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "event_id": "5f792d46-6bfb-4f91-83c3-75056a803f40",
+  "event_type": "contact_received",
+  "event_version": 1,
+  "occurred_at": "2026-08-27T07:30:00Z",
+  "source": "shopware",
+  "sales_channel_id": "018f1a2b3c4d5e6f7890abcdef123456",
+  "market_code": "de",
+  "domain": "jvmoebel.de",
+  "language": "de-DE",
+  "visitor_id": "550e8400-e29b-41d4-a716-446655440000",
+  "contact_id": "018f7777777777777777777777777777",
+  "lead_id": "018f1111111111111111111111111111",
+  "aggregate_type": "lead",
+  "aggregate_id": "018f7777777777777777777777777777",
+  "aggregate_version": 1,
+  "payload": {
+    "contact_channel": "form",
+    "contact_type": "offer_request",
+    "tracking_reference": "trk-8f27a1",
+    "product_number": "SOFA-001"
+  }
+}

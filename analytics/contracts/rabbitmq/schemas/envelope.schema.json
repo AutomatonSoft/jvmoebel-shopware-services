@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shopware Analytics Event Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "occurred_at",
+    "source",
+    "sales_channel_id",
+    "aggregate_type",
+    "aggregate_id",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Created once with the outbox record. Re-publication/retry keeps the same event_id."
+    },
+    "event_type": {
+      "$ref": "../enums/event-type.schema.json"
+    },
+    "event_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Actual business-event occurrence time, not RabbitMQ publication time."
+    },
+    "source": {
+      "type": "string",
+      "const": "shopware"
+    },
+    "sales_channel_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "market_code": {
+      "$ref": "../enums/market-code.schema.json"
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35
+    },
+    "visitor_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Browser/device profile UUID owned by Next.js. May be absent for direct email/phone."
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Frontend session UUID owned by Next.js when known."
+    },
+    "cart_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Frontend cart/checkout correlation identifier when known."
+    },
+    "lead_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "customer_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "order_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "manual_sale_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "refund_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "aggregate_type": {
+      "$ref": "../enums/aggregate-type.schema.json"
+    },
+    "aggregate_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Stable Shopware entity UUID serialized as 32 lowercase hex characters."
+    },
+    "aggregate_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "One business-process correlation id, e.g. checkout, when applicable."
+    },
+    "payload": {
+      "type": "object"
+    },
+    "contact_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "minLength": 32,
+      "maxLength": 32,
+      "description": "Shopware Contact entity id when the event is related to a confirmed contact."
+    }
+  }
+}

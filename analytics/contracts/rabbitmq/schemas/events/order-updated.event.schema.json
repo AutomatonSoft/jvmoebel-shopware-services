@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "order_updated event v1",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "order_id"
+      ],
+      "properties": {
+        "event_type": {
+          "const": "order_updated"
+        },
+        "event_version": {
+          "const": 1
+        },
+        "aggregate_type": {
+          "const": "order"
+        },
+        "payload": {
+          "$ref": "../payloads/order-updated.payload.schema.json"
+        }
+      }
+    }
+  ],
+  "description": "aggregate_id MUST equal order_id."
+}

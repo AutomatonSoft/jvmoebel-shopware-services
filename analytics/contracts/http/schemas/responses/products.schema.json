@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Products response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ProductRow" }
+    }
+  },
+  "$defs": {
+    "ProductRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sku",
+        "views",
+        "cart_adds",
+        "orders_created",
+        "orders_paid",
+        "paid_quantity",
+        "money",
+        "view_to_paid_order",
+        "payment_methods"
+      ],
+      "properties": {
+        "sku": { "type": "string", "minLength": 1 },
+        "views": { "type": "integer", "minimum": 0 },
+        "cart_adds": { "type": "integer", "minimum": 0 },
+        "orders_created": { "type": "integer", "minimum": 0 },
+        "orders_paid": { "type": "integer", "minimum": 0 },
+        "paid_quantity": { "type": "integer", "minimum": 0 },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "money-breakdown.schema.json" }
+        },
+        "view_to_paid_order": {
+          "oneOf": [
+            { "$ref": "../common/report-decimal.schema.json" },
+            { "type": "null" }
+          ]
+        },
+        "payment_methods": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

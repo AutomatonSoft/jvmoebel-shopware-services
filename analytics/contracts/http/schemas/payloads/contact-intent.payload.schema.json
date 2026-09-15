@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "contact_intent payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["channel", "action"],
+  "properties": {
+    "channel": {
+      "$ref": "../../enums/contact-channel.schema.json"
+    },
+    "action": {
+      "$ref": "../../enums/contact-intent-action.schema.json"
+    }
+  }
+}

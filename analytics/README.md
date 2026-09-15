@@ -20,9 +20,9 @@ HTTP Base URL:
 /api/v1
 ```
 
-Host port по умолчанию — `8002` (`PORT` в `.env.example`). Внутри контейнера API слушает `8000`.
+Production HTTP: Nginx → `analytics-backend:8000` на `APP_NETWORK`. Host port в `compose.deploy.yml` не публикуется. Local `docker-compose.yml` слушает только `127.0.0.1:8002` (`PORT`). Внутри контейнера API слушает `8000`.
 
-**Deploy.** `AR Deploy stage` покрывает только AR и не выкладывает Analytics. Production-контракт сети — `compose.deploy.yml`: RabbitMQ доступен Shopware по alias `analytics-rabbitmq` в `APP_NETWORK` на vhost `/shopware-analytics`, Postgres остаётся внутренним. CI job `Analytics deployment validation` проверяет этот файл, собирает local `docker-compose.yml`, применяет миграции и стартует backend/worker; это проверка, что стек поднимается, а не деплой на Server5.
+**Deploy.** `AR Deploy stage` покрывает только AR и не выкладывает Analytics. Production-контракт сети — `compose.deploy.yml`: RabbitMQ доступен Shopware по alias `analytics-rabbitmq` в `APP_NETWORK` на vhost `/shopware-analytics`, HTTP API — по alias `analytics-backend:8000`, Postgres остаётся внутренним. CI job `Analytics deployment validation` проверяет этот файл, собирает local `docker-compose.yml`, применяет миграции и стартует backend/worker; это проверка, что стек поднимается, а не деплой на Server5.
 
 HTTP ingestion принимает только frontend event types:
 

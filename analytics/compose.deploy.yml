@@ -110,8 +110,10 @@ services:
       rabbitmq:
         condition: service_healthy
     networks:
-      - database
-      - application
+      database:
+      application:
+        aliases:
+          - analytics-backend
     healthcheck:
       test:
         - CMD

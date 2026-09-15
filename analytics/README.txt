@@ -17,7 +17,7 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv
 docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv run alembic upgrade head
 ```
 
-Host HTTP: `8003` (dev, `PORT_DEV`). Prod: `8002` (`PORT`).
+Host HTTP: `8003` (dev, `PORT_DEV`). Local compose: `127.0.0.1:8002` (`PORT`). Production: Nginx → `analytics-backend:8000`, без host port.
 
 Prod / dev / test — разные compose-проекты (`analytics`, `analytics-dev`, `analytics-test`). `down` одного файла остальные стеки не трогает.
 

@@ -7,9 +7,9 @@
 
 Команды из корня — в [`README.txt`](README.txt).
 
-**Deploy.** Workflow `AR Deploy stage` проверяет и выкладывает только AR (`ar/compose.deploy.yml`, артефакт из `ar/`). Analytics в этот pipeline не входит: зелёный AR Deploy не означает, что Analytics задеплоен. Готовность Analytics к выкладке проверяет CI job `Analytics deployment validation` (compose, image, миграции, backend, worker). На сервер Analytics этим workflow не уезжает.
+**Deploy.** Workflow `AR Deploy stage` проверяет и выкладывает только AR (`ar/compose.deploy.yml`, артефакт из `ar/`). Analytics в этот pipeline не входит: зелёный AR Deploy не означает, что Analytics задеплоен. Готовность Analytics к выкладке проверяет CI job `Analytics deployment validation` (`analytics/compose.deploy.yml`, image, миграции, backend, worker). На сервер Analytics этим workflow не уезжает.
 
-Внутри контейнеров API слушает `8000`, Postgres — `5432`, RabbitMQ — `5672` / `15672`. Production Postgres и RabbitMQ на хост не публикуются: сервисы ходят друг к другу по Docker network.
+Production Analytics — `analytics/compose.deploy.yml`: Postgres только во внутренней сети, RabbitMQ и HTTP API — в общем `APP_NETWORK`. Shopware ходит в брокер по alias `analytics-rabbitmq`. Host ports для Postgres и RabbitMQ не публикуются.
 
 ## Production ports
 

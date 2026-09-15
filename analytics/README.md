@@ -22,7 +22,7 @@ HTTP Base URL:
 
 Host port по умолчанию — `8002` (`PORT` в `.env.example`). Внутри контейнера API слушает `8000`.
 
-**Deploy.** `AR Deploy stage` покрывает только AR и не выкладывает Analytics. CI job `Analytics deployment validation` собирает production `docker-compose.yml`, применяет миграции и стартует backend/worker; это проверка, что стек поднимается, а не деплой на Server5.
+**Deploy.** `AR Deploy stage` покрывает только AR и не выкладывает Analytics. Production-контракт сети — `compose.deploy.yml`: RabbitMQ доступен Shopware по alias `analytics-rabbitmq` в `APP_NETWORK`, Postgres остаётся внутренним. CI job `Analytics deployment validation` проверяет этот файл, собирает local `docker-compose.yml`, применяет миграции и стартует backend/worker; это проверка, что стек поднимается, а не деплой на Server5.
 
 HTTP ingestion принимает только frontend event types:
 

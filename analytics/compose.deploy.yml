@@ -1,0 +1,167 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - database
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    networks:
+      database:
+      application:
+        aliases:
+          - analytics-rabbitmq
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "no"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      ANALYTICS_INGEST_API_KEY: ${ANALYTICS_INGEST_API_KEY:?ANALYTICS_INGEST_API_KEY is required}
+      ANALYTICS_READ_API_KEY: ${ANALYTICS_READ_API_KEY:?ANALYTICS_READ_API_KEY is required}
+      SALES_CHANNELS: "${SALES_CHANNELS:?SALES_CHANNELS is required}"
+      PYTHONPATH: /app/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - database
+    command:
+      - uv
+      - run
+      - alembic
+      - upgrade
+      - head
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      ANALYTICS_INGEST_API_KEY: ${ANALYTICS_INGEST_API_KEY:?ANALYTICS_INGEST_API_KEY is required}
+      ANALYTICS_READ_API_KEY: ${ANALYTICS_READ_API_KEY:?ANALYTICS_READ_API_KEY is required}
+      SALES_CHANNELS: "${SALES_CHANNELS:?SALES_CHANNELS is required}"
+      RABBITMQ_URL: ${RABBITMQ_URL:?RABBITMQ_URL is required}
+      RABBITMQ_EVENTS_QUEUE: ${RABBITMQ_EVENTS_QUEUE:-analytics.shopware.events}
+      RABBITMQ_PREFETCH: ${RABBITMQ_PREFETCH:-10}
+      RABBITMQ_MAX_RETRY_ATTEMPTS: ${RABBITMQ_MAX_RETRY_ATTEMPTS:-5}
+      RABBITMQ_RETRY_TTL_MS: ${RABBITMQ_RETRY_TTL_MS:-5000}
+      MAX_BODY_SIZE: ${MAX_BODY_SIZE:-262144}
+      MAX_EVENT_PAYLOAD_BYTES: ${MAX_EVENT_PAYLOAD_BYTES:-32768}
+      MAX_BATCH_EVENTS: ${MAX_BATCH_EVENTS:-100}
+      INGEST_RATE_LIMIT: ${INGEST_RATE_LIMIT:-600}
+      INGEST_RATE_LIMIT_WINDOW_SECONDS: ${INGEST_RATE_LIMIT_WINDOW_SECONDS:-60}
+      INGEST_RATE_LIMIT_MAX_KEYS: ${INGEST_RATE_LIMIT_MAX_KEYS:-1024}
+      PYTHONPATH: /app/app
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - database
+      - application
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command:
+      - uv
+      - run
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      ANALYTICS_INGEST_API_KEY: ${ANALYTICS_INGEST_API_KEY:?ANALYTICS_INGEST_API_KEY is required}
+      ANALYTICS_READ_API_KEY: ${ANALYTICS_READ_API_KEY:?ANALYTICS_READ_API_KEY is required}
+      SALES_CHANNELS: "${SALES_CHANNELS:?SALES_CHANNELS is required}"
+      RABBITMQ_URL: ${RABBITMQ_URL:?RABBITMQ_URL is required}
+      RABBITMQ_EVENTS_QUEUE: ${RABBITMQ_EVENTS_QUEUE:-analytics.shopware.events}
+      RABBITMQ_PREFETCH: ${RABBITMQ_PREFETCH:-10}
+      RABBITMQ_MAX_RETRY_ATTEMPTS: ${RABBITMQ_MAX_RETRY_ATTEMPTS:-5}
+      RABBITMQ_RETRY_TTL_MS: ${RABBITMQ_RETRY_TTL_MS:-5000}
+      PYTHONPATH: /app/app
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - database
+    command:
+      - uv
+      - run
+      - python
+      - -m
+      - worker
+
+networks:
+  database:
+    internal: true
+
+  application:
+    external: true
+    name: ${APP_NETWORK:?APP_NETWORK is required}
+
+volumes:
+  postgres_data:

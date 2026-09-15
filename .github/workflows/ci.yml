@@ -161,6 +161,7 @@ jobs:
             uv.lock \
             alembic.ini \
             docker-compose.yml \
+            compose.deploy.yml \
             app/main.py \
             app/worker.py
           do
@@ -179,6 +180,78 @@ jobs:
           sed -i "s/^SALES_CHANNELS='\(.*\)'$/SALES_CHANNELS=\1/" .env
 
           docker compose -f docker-compose.yml config --quiet
+
+          APP_NETWORK=jvmoebel_ci docker compose -f compose.deploy.yml config --quiet
+          APP_NETWORK=jvmoebel_ci docker compose -f compose.deploy.yml config --format json \
+            > /tmp/analytics-deploy.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          cfg = json.loads(Path("/tmp/analytics-deploy.json").read_text())
+          services = cfg["services"]
+          networks = cfg["networks"]
+
+          app_net = networks.get("application") or {}
+          if not app_net.get("external"):
+              raise SystemExit("application network must be external")
+          if app_net.get("name") != "jvmoebel_ci":
+              raise SystemExit(f"application network name mismatch: {app_net}")
+
+          db_net = networks.get("database") or {}
+          if not db_net.get("internal"):
+              raise SystemExit("database network must be internal")
+
+          def service_networks(name: str) -> dict:
+              raw = services[name].get("networks") or {}
+              if isinstance(raw, list):
+                  return {item: {} for item in raw}
+              return raw
+
+          def assert_no_host_ports(name: str) -> None:
+              ports = services[name].get("ports") or []
+              if ports:
+                  raise SystemExit(f"{name} must not publish host ports: {ports}")
+
+          for name in ("postgres", "rabbitmq", "migrations", "backend", "worker"):
+              if name not in services:
+                  raise SystemExit(f"missing service {name}")
+
+          assert_no_host_ports("postgres")
+          assert_no_host_ports("rabbitmq")
+
+          postgres_networks = set(service_networks("postgres"))
+          if postgres_networks != {"database"}:
+              raise SystemExit(
+                  f"postgres must stay on database only, got {postgres_networks}"
+              )
+
+          rabbit_networks = service_networks("rabbitmq")
+          if set(rabbit_networks) != {"database", "application"}:
+              raise SystemExit(
+                  "rabbitmq must join database and application, "
+                  f"got {set(rabbit_networks)}"
+              )
+          aliases = (rabbit_networks.get("application") or {}).get("aliases") or []
+          if "analytics-rabbitmq" not in aliases:
+              raise SystemExit(
+                  "rabbitmq must expose alias analytics-rabbitmq, "
+                  f"got {rabbit_networks}"
+              )
+
+          backend_networks = set(service_networks("backend"))
+          if backend_networks != {"database", "application"}:
+              raise SystemExit(
+                  f"backend must join database and application, got {backend_networks}"
+              )
+
+          worker_networks = set(service_networks("worker"))
+          if worker_networks != {"database"}:
+              raise SystemExit(f"worker must stay on database only, got {worker_networks}")
+
+          print("Analytics inter-service network scheme is valid.")
+          PY
 
           echo "Analytics deployment artifact validation passed."
 

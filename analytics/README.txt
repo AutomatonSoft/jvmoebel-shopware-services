@@ -21,6 +21,8 @@ Host HTTP: `8003` (dev, `PORT_DEV`). Prod: `8002` (`PORT`).
 
 Prod / dev / test — разные compose-проекты (`analytics`, `analytics-dev`, `analytics-test`). `down` одного файла остальные стеки не трогает.
 
+После смены RabbitMQ vhost или users нужен `docker compose down -v`: `RABBITMQ_DEFAULT_*` применяется только на пустом volume брокера.
+
 ## Тесты
 ```bash
 cp .env.test.example .env.test

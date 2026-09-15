@@ -7,9 +7,12 @@ defaultContentType: application/json
 servers:
   rabbitmq:
     host: '{host}:{port}'
+    pathname: /shopware-analytics
     protocol: amqp
-    description: Dedicated interservice RabbitMQ; Shopware internal queues remain
-      on Redis.
+    description: Dedicated interservice RabbitMQ on vhost /shopware-analytics.
+      Shopware publisher uses alias analytics-rabbitmq on APP_NETWORK. Analytics
+      consumer uses the compose service hostname rabbitmq. Separate credentials
+      are required for publisher and consumer; guest/guest is not used.
     variables:
       host:
         default: rabbitmq

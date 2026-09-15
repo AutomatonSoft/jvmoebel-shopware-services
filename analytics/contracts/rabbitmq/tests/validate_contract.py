@@ -57,10 +57,21 @@ def validate(example, expected):
 def extra_invariants():
     ok = True
     # AsyncAPI and infrastructure files must parse.
-    yaml.safe_load((ROOT / "asyncapi.yaml").read_text(encoding="utf-8"))
+    asyncapi = yaml.safe_load((ROOT / "asyncapi.yaml").read_text(encoding="utf-8"))
     topology = yaml.safe_load(
         (ROOT / "infrastructure/rabbitmq-topology.yaml").read_text(encoding="utf-8")
     )
+    if topology.get("vhost") != "/shopware-analytics":
+        print("FAIL topology vhost must be /shopware-analytics")
+        ok = False
+    users = topology.get("users") or {}
+    if "analytics_consumer" not in users or "shopware_publisher" not in users:
+        print("FAIL topology must define analytics_consumer and shopware_publisher")
+        ok = False
+    pathname = ((asyncapi.get("servers") or {}).get("rabbitmq") or {}).get("pathname")
+    if pathname != "/shopware-analytics":
+        print("FAIL AsyncAPI server pathname must be /shopware-analytics")
+        ok = False
     if topology["delivery"]["publisher_delivery_mode"] != 2:
         print("FAIL RabbitMQ delivery mode must be persistent (2)")
         ok = False

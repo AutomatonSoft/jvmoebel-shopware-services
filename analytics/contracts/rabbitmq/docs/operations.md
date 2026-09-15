@@ -23,6 +23,31 @@ Terminal failures go to `analytics.shopware.events.dlq`.
 
 See `../infrastructure/rabbitmq-topology.yaml` for the agreed topology contract.
 
+## Vhost and credentials
+Runtime, AsyncAPI and topology use the same vhost: `/shopware-analytics`
+(broker name `shopware-analytics`, AMQP URL path `/shopware-analytics`).
+
+Do not use `guest/guest`. The broker creates two users:
+
+- `analytics_consumer` — Analytics worker; `RABBITMQ_URL` points here.
+- `shopware_publisher` — Shopware outbox publisher; write-only on
+  `shopware.analytics.events`.
+
+Analytics consumer (same Compose project):
+
+```text
+amqp://analytics_consumer:SECRET@rabbitmq:5672/shopware-analytics
+```
+
+Shopware publisher (`APP_NETWORK` alias):
+
+```text
+amqp://shopware_publisher:SECRET@analytics-rabbitmq:5672/shopware-analytics
+```
+
+`RABBITMQ_DEFAULT_*` applies only on an empty RabbitMQ volume. After changing
+vhost or users locally, recreate the broker with `docker compose down -v`.
+
 ## Source-request deduplication
 Shopware must deduplicate:
 - HTTP form submissions by stable `submission_id`;

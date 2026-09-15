@@ -24,6 +24,18 @@ services:
     restart: always
     env_file:
       - .env.dev
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_CONSUMER_USER:?RABBITMQ_CONSUMER_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_CONSUMER_PASSWORD:?RABBITMQ_CONSUMER_PASSWORD is required}
+      RABBITMQ_DEFAULT_VHOST: shopware-analytics
+      RABBITMQ_PUBLISHER_USER: ${RABBITMQ_PUBLISHER_USER:?RABBITMQ_PUBLISHER_USER is required}
+      RABBITMQ_PUBLISHER_PASSWORD: ${RABBITMQ_PUBLISHER_PASSWORD:?RABBITMQ_PUBLISHER_PASSWORD is required}
+    volumes:
+      - ./rabbitmq/entrypoint.sh:/usr/local/bin/analytics-rabbitmq-entrypoint.sh:ro
+      - ./rabbitmq/init-users.sh:/usr/local/bin/init-users.sh:ro
+    entrypoint:
+      - /bin/bash
+      - /usr/local/bin/analytics-rabbitmq-entrypoint.sh
     ports:
       - "${RABBITMQ_DEV_EXTERNAL_PORT:-5673}:5672"
       - "${RABBITMQ_DEV_MANAGEMENT_EXTERNAL_PORT:-15673}:15672"

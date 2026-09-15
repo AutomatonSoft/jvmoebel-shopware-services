@@ -162,6 +162,8 @@ jobs:
             alembic.ini \
             docker-compose.yml \
             compose.deploy.yml \
+            rabbitmq/entrypoint.sh \
+            rabbitmq/init-users.sh \
             app/main.py \
             app/worker.py
           do
@@ -181,13 +183,16 @@ jobs:
 
           docker compose -f docker-compose.yml config --quiet
 
-          APP_NETWORK=jvmoebel_ci docker compose -f compose.deploy.yml config --quiet
-          APP_NETWORK=jvmoebel_ci docker compose -f compose.deploy.yml config --format json \
+          APP_NETWORK=jvmoebel_ci docker compose --env-file .env \
+            -f compose.deploy.yml config --quiet
+          APP_NETWORK=jvmoebel_ci docker compose --env-file .env \
+            -f compose.deploy.yml config --format json \
             > /tmp/analytics-deploy.json
 
           python3 - <<'PY'
           import json
           from pathlib import Path
+          from urllib.parse import urlparse
 
           cfg = json.loads(Path("/tmp/analytics-deploy.json").read_text())
           services = cfg["services"]
@@ -202,6 +207,16 @@ jobs:
           db_net = networks.get("database") or {}
           if not db_net.get("internal"):
               raise SystemExit("database network must be internal")
+
+          def env_map(name: str) -> dict:
+              raw = services[name].get("environment") or {}
+              if isinstance(raw, dict):
+                  return {str(k): str(v) if v is not None else "" for k, v in raw.items()}
+              mapped = {}
+              for item in raw:
+                  key, _, value = str(item).partition("=")
+                  mapped[key] = value
+              return mapped
 
           def service_networks(name: str) -> dict:
               raw = services[name].get("networks") or {}
@@ -239,6 +254,30 @@ jobs:
                   "rabbitmq must expose alias analytics-rabbitmq, "
                   f"got {rabbit_networks}"
               )
+
+          rabbit_env = env_map("rabbitmq")
+          if rabbit_env.get("RABBITMQ_DEFAULT_VHOST") != "shopware-analytics":
+              raise SystemExit(
+                  "rabbitmq vhost must be shopware-analytics, "
+                  f"got {rabbit_env.get('RABBITMQ_DEFAULT_VHOST')!r}"
+              )
+          if rabbit_env.get("RABBITMQ_DEFAULT_USER") in ("", "guest", None):
+              raise SystemExit("rabbitmq must not use guest as consumer user")
+          if rabbit_env.get("RABBITMQ_PUBLISHER_USER") in ("", "guest", None):
+              raise SystemExit("rabbitmq publisher user is missing")
+          if rabbit_env.get("RABBITMQ_DEFAULT_USER") == rabbit_env.get(
+              "RABBITMQ_PUBLISHER_USER"
+          ):
+              raise SystemExit("publisher and consumer must use different users")
+
+          worker_url = urlparse(env_map("worker").get("RABBITMQ_URL", ""))
+          if worker_url.path != "/shopware-analytics":
+              raise SystemExit(
+                  "RABBITMQ_URL vhost must be /shopware-analytics, "
+                  f"got {worker_url.path!r}"
+              )
+          if worker_url.username in ("", "guest", None):
+              raise SystemExit("RABBITMQ_URL must not use guest")
 
           backend_networks = set(service_networks("backend"))
           if backend_networks != {"database", "application"}:

@@ -1,5 +1,18 @@
 version: 1
 vhost: /shopware-analytics
+users:
+  analytics_consumer:
+    role: consumer
+    permissions:
+      configure: ".*"
+      write: ".*"
+      read: ".*"
+  shopware_publisher:
+    role: publisher
+    permissions:
+      configure: "^shopware\\.analytics\\.events$"
+      write: "^shopware\\.analytics\\.events$"
+      read: "^$"
 delivery:
   publisher_delivery_mode: 2
   publisher_delivery_mode_meaning: persistent

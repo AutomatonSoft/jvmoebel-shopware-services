@@ -9,7 +9,7 @@
 
 **Deploy.** Workflow `AR Deploy stage` проверяет и выкладывает только AR (`ar/compose.deploy.yml`, артефакт из `ar/`). Analytics в этот pipeline не входит: зелёный AR Deploy не означает, что Analytics задеплоен. Готовность Analytics к выкладке проверяет CI job `Analytics deployment validation` (`analytics/compose.deploy.yml`, image, миграции, backend, worker). На сервер Analytics этим workflow не уезжает.
 
-Production Analytics — `analytics/compose.deploy.yml`: Postgres только во внутренней сети, RabbitMQ и HTTP API — в общем `APP_NETWORK`. Shopware ходит в брокер по alias `analytics-rabbitmq`. Host ports для Postgres и RabbitMQ не публикуются.
+Production Analytics — `analytics/compose.deploy.yml`: Postgres только во внутренней сети, RabbitMQ и HTTP API — в общем `APP_NETWORK`. Shopware ходит в брокер по alias `analytics-rabbitmq` на vhost `/shopware-analytics`. Host ports для Postgres и RabbitMQ не публикуются.
 
 ## Production ports
 

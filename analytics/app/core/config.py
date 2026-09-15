@@ -37,7 +37,7 @@ class DbSettings(BaseModel):
 class RabbitMqSettings(BaseModel):
     url: str = os.getenv(
         "RABBITMQ_URL",
-        "amqp://guest:guest@localhost:5672/",
+        "amqp://analytics_consumer:change-me-consumer@localhost:5672/shopware-analytics",
     )
     events_queue: str = os.getenv(
         "RABBITMQ_EVENTS_QUEUE",

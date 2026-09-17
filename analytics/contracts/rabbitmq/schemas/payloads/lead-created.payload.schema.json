@@ -16,9 +16,7 @@
       "$ref": "../../enums/contact-channel.schema.json"
     },
     "contact_type": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 64
+      "$ref": "../../enums/contact-type.schema.json"
     },
     "provider": {
       "type": "string",

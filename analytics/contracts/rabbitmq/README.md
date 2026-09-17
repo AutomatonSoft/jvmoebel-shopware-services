@@ -43,4 +43,7 @@ The contract adds:
 `contact_received` is emitted for every confirmed contact. It requires `contact_id` and the linked `lead_id`.
 `visitor_id` remains optional because direct email/phone contacts may not have a browser identifier.
 
+`contact_type` is a closed enum: `contact_form`, `offer_request`, `callback_request`, `direct_email`, `whatsapp_message`, `qualified_call`.
+Phone contacts require `duration_seconds` and `connection_status`; other channels must omit them.
+
 Raw contact PII (name, email, phone, message text) stays in Shopware and is not published to Analytics.

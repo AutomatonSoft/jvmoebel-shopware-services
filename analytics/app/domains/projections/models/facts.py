@@ -132,6 +132,8 @@ class Contact(Base):
     tracking_reference: Mapped[str | None] = mapped_column(String(128), index=True)
     provider_reference: Mapped[str | None] = mapped_column(String(255))
     product_number: Mapped[str | None] = mapped_column(String(255))
+    duration_seconds: Mapped[int | None] = mapped_column(Integer)
+    connection_status: Mapped[str | None] = mapped_column(String(16))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 

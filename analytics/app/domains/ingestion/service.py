@@ -4,14 +4,17 @@ from typing import Literal
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from domains.ingestion.exceptions import EventIdCollisionError, EventValidationError
 from domains.ingestion.idempotency import is_same_event
 from domains.ingestion.validator import validate_http_event, validate_rabbit_event
 from domains.projections.dispatcher import dispatch
+from domains.projections.models.entities import Visitor
 from domains.projections.models.journal import Event
 from domains.projections.parsing import parse_datetime
 from domains.projections.stubs import ensure_stubs
+from domains.visitors.redact import redact_event_body
 
 IngestStatus = Literal["accepted", "duplicate"]
 
@@ -89,6 +92,15 @@ async def persist_validated_event(
         raise RuntimeError("Inserted event was not readable")
 
     await ensure_stubs(session, event)
+    if event.visitor_id is not None:
+        visitor = await session.get(
+            Visitor,
+            event.visitor_id,
+            with_for_update=True,
+        )
+        if visitor is not None and visitor.anonymized_at is not None:
+            event.body = redact_event_body(event.body)
+            flag_modified(event, "body")
     await dispatch(session, event)
     return "accepted"
 

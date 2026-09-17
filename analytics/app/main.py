@@ -11,6 +11,7 @@ from core.middleware import MaxBodySizeMiddleware
 from domains.ingestion.router import router as ingestion_router
 from domains.journeys.router import router as journeys_router
 from domains.reports.router import router as reports_router
+from domains.visitors.router import router as visitors_router
 
 configure_logging()
 
@@ -26,6 +27,7 @@ register_errors_handlers(app)
 app.include_router(ingestion_router, prefix=settings.api_v1_prefix)
 app.include_router(reports_router, prefix=settings.api_v1_prefix)
 app.include_router(journeys_router, prefix=settings.api_v1_prefix)
+app.include_router(visitors_router, prefix=settings.api_v1_prefix)
 
 app_without_middleware = app
 app = MaxBodySizeMiddleware(app, max_size=settings.max_body_size)

@@ -366,6 +366,29 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /analytics/visitors/{visitor_id}/anonymize:
+    post:
+      operationId: anonymizeVisitor
+      tags: [Visitors]
+      summary: Redact identifying visitor attributes
+      security:
+        - readBearer: []
+      parameters:
+        - $ref: "#/components/parameters/VisitorId"
+      responses:
+        "200":
+          description: Visitor identifiers redacted. Rows are kept.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/responses/anonymize-visitor.schema.json"
+              examples:
+                anonymized:
+                  $ref: "./examples/responses/anonymize-visitor.json"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /analytics/leads/{lead_id}/journey:
     get:
       operationId: getLeadJourney

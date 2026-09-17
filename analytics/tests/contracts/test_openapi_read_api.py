@@ -10,6 +10,7 @@ from domains.journeys.schemas import (
     JourneySearchHit,
     JourneySearchResponse,
 )
+from domains.visitors.schemas import AnonymizeVisitorResponse
 from domains.reports.schemas import (
     Change,
     ContactChannelRow,
@@ -80,11 +81,16 @@ MODEL_SCHEMAS: tuple[tuple[type[BaseModel], str, str | None], ...] = (
     (MoneyChange, "period-comparison.schema.json", "MoneyChange"),
     (OverviewDelta, "period-comparison.schema.json", "OverviewDelta"),
     (PaymentMethodDelta, "period-comparison.schema.json", "PaymentMethodDelta"),
-    (PaymentMethodsComparison, "period-comparison.schema.json", "PaymentMethodsComparison"),
+    (
+        PaymentMethodsComparison,
+        "period-comparison.schema.json",
+        "PaymentMethodsComparison",
+    ),
     (JourneyResponse, "journey.schema.json", None),
     (JourneyEvent, "journey.schema.json", "JourneyEvent"),
     (JourneySearchResponse, "journey-search.schema.json", None),
     (JourneySearchHit, "journey-search.schema.json", "JourneySearchHit"),
+    (AnonymizeVisitorResponse, "anonymize-visitor.schema.json", None),
 )
 
 
@@ -114,6 +120,7 @@ def test_response_examples_match_json_schema() -> None:
         "period-comparison.json": "period-comparison.schema.json",
         "journey.json": "journey.schema.json",
         "journey-search.json": "journey-search.schema.json",
+        "anonymize-visitor.json": "anonymize-visitor.schema.json",
     }
     for example_name, schema_name in examples.items():
         schema_path = RESPONSES / schema_name

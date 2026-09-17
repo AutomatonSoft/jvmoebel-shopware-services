@@ -47,6 +47,7 @@ RESPONSE_EXAMPLES = {
     "period-comparison": "period-comparison",
     "journey": "journey",
     "journey-search": "journey-search",
+    "anonymize-visitor": "anonymize-visitor",
 }
 
 

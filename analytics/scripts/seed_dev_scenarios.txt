@@ -1,0 +1,248 @@
+Сценарии seed_dev.py
+91 journey за 28 дней (days_ago 0..27). Окно dashboard 7d показывает только days_ago 0..6.
+HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон создаёт новые visitor_id.
+Время: UTC, сегодня 00:00 минус days_ago плюс час/минута (минута = index % 45).
+
+Плотность:
+- days_ago 0-6: 6 сценариев/день
+- days_ago 7-13: 3 сценария/день
+- days_ago 14-27: 2 сценария/день
+
+
+=== days_ago=0 (сегодня минус 0 дн., UTC) ===
+00. 08:00  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: checkout  |  Rabbit: paid | pay=paypal
+01. 09:01  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: checkout  |  Rabbit: paid + partial refund 12% | pay=invoice
+02. 11:02  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+    HTTP: checkout  |  Rabbit: paid + full refund | pay=installment
+03. 12:03  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: checkout  |  Rabbit: paid + lead won | pay=creditcard
+04. 14:04  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: checkout  |  Rabbit: order created + cancelled (unpaid) | pay=prepayment, qty=2
+05. 16:05  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=form  tablet/safari/ipados
+    HTTP: checkout  |  Rabbit: order created (open, unpaid) | pay=klarna
+
+=== days_ago=1 (сегодня минус 1 дн., UTC) ===
+06. 09:06  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: checkout + payment-failed  |  Rabbit: — | fail=timeout/GATEWAY_TIMEOUT/redirect, pay=paypal
+07. 11:07  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=whatsapp  desktop/chrome/windows
+    HTTP: cart  |  Rabbit: —
+08. 12:08  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=form  desktop/firefox/linux
+    HTTP: browse  |  Rabbit: — | qty=4
+09. 14:09  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=email  desktop/safari/macos
+    HTTP: browse  |  Rabbit: —
+10. 16:10  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=form  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: lead + contact (offer_request) | intent=open
+11. 18:11  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: phone call answered 240s | intent=submit
+
+=== days_ago=2 (сегодня минус 2 дн., UTC) ===
+12. 11:12  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=phone  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: phone call not_answered 0s | intent=click
+13. 12:13  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=phone  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: phone call busy 12s | intent=open
+14. 14:14  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: contact-intent  |  Rabbit: manual sale | intent=submit
+15. 16:15  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: contact-intent  |  Rabbit: manual sale + cancelled | intent=click
+16. 18:16  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=email  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: direct email contact | intent=open
+17. 20:17  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: lead + status contacted | intent=submit
+
+=== days_ago=3 (сегодня минус 3 дн., UTC) ===
+18. 12:18  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > offer_sent | intent=click, qty=2
+19. 14:19  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=form  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > lost | intent=open
+20. 16:20  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: cart  |  Rabbit: lead + contact (offer_request)
+21. 18:21  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=whatsapp  desktop/chrome/windows
+    HTTP: checkout  |  Rabbit: paid | pay=creditcard
+22. 20:22  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=phone  desktop/firefox/linux
+    HTTP: checkout + payment-failed  |  Rabbit: phone call answered 95s | fail=3ds_failed/3DS_CHALLENGE/provider, pay=prepayment, qty=4
+23. 21:23  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=form  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: lead + contact (contact_form) | intent=submit
+
+=== days_ago=4 (сегодня минус 4 дн., UTC) ===
+24. 14:24  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=form  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: lead + contact (callback_request) | intent=click
+25. 16:25  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: checkout  |  Rabbit: paid | pay=invoice
+26. 18:26  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=form  tablet/safari/ipados
+    HTTP: checkout  |  Rabbit: paid + partial refund 12% | pay=installment
+27. 20:27  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=whatsapp  tablet/chrome/android
+    HTTP: checkout  |  Rabbit: paid + full refund | pay=creditcard
+28. 21:28  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: checkout  |  Rabbit: paid + lead won | pay=prepayment
+29. 08:29  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: checkout  |  Rabbit: order created + cancelled (unpaid) | pay=klarna
+
+=== days_ago=5 (сегодня минус 5 дн., UTC) ===
+30. 16:30  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+    HTTP: checkout  |  Rabbit: order created (open, unpaid) | pay=paypal
+31. 18:31  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: checkout + payment-failed  |  Rabbit: — | fail=timeout/GATEWAY_TIMEOUT/redirect, pay=invoice
+32. 20:32  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: cart  |  Rabbit: — | qty=2
+33. 21:33  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=form  tablet/safari/ipados
+    HTTP: browse  |  Rabbit: —
+34. 08:34  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: browse  |  Rabbit: —
+35. 09:35  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=whatsapp  desktop/chrome/windows
+    HTTP: contact-intent  |  Rabbit: lead + contact (whatsapp_message) | intent=submit
+
+=== days_ago=6 (сегодня минус 6 дн., UTC) ===
+36. 18:36  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=phone  desktop/firefox/linux
+    HTTP: contact-intent  |  Rabbit: phone call answered 240s | intent=click, qty=4
+37. 20:37  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=phone  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: phone call not_answered 0s | intent=open
+38. 21:38  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=phone  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: phone call busy 12s | intent=submit
+39. 08:39  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: manual sale | intent=click
+40. 09:40  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=form  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: manual sale + cancelled | intent=open
+41. 11:41  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=email  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: direct email contact | intent=submit
+
+=== days_ago=7 (сегодня минус 7 дн., UTC) ===
+42. 20:42  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: contact-intent  |  Rabbit: lead + status contacted | intent=click
+43. 21:43  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > offer_sent | intent=open
+44. 08:44  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > lost | intent=submit
+
+=== days_ago=8 (сегодня минус 8 дн., UTC) ===
+45. 21:00  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: cart  |  Rabbit: lead + contact (offer_request)
+46. 08:01  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: checkout  |  Rabbit: paid | pay=prepayment, qty=2
+47. 09:02  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=phone  tablet/safari/ipados
+    HTTP: checkout + payment-failed  |  Rabbit: phone call answered 95s | fail=3ds_failed/3DS_CHALLENGE/provider, pay=klarna
+
+=== days_ago=9 (сегодня минус 9 дн., UTC) ===
+48. 08:03  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + contact (contact_form) | intent=click
+49. 09:04  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=form  desktop/chrome/windows
+    HTTP: contact-intent  |  Rabbit: lead + contact (callback_request) | intent=open
+50. 11:05  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=form  desktop/firefox/linux
+    HTTP: checkout  |  Rabbit: paid | pay=installment, qty=4
+
+=== days_ago=10 (сегодня минус 10 дн., UTC) ===
+51. 09:06  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=email  desktop/safari/macos
+    HTTP: checkout  |  Rabbit: paid + partial refund 12% | pay=creditcard
+52. 11:07  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=form  mobile/safari/ios
+    HTTP: checkout  |  Rabbit: paid + full refund | pay=prepayment
+53. 12:08  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: checkout  |  Rabbit: paid + lead won | pay=klarna
+
+=== days_ago=11 (сегодня минус 11 дн., UTC) ===
+54. 11:09  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=form  tablet/safari/ipados
+    HTTP: checkout  |  Rabbit: order created + cancelled (unpaid) | pay=paypal
+55. 12:10  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=whatsapp  tablet/chrome/android
+    HTTP: checkout  |  Rabbit: order created (open, unpaid) | pay=invoice
+56. 14:11  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: checkout + payment-failed  |  Rabbit: — | fail=timeout/GATEWAY_TIMEOUT/redirect, pay=installment
+
+=== days_ago=12 (сегодня минус 12 дн., UTC) ===
+57. 12:12  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: cart  |  Rabbit: —
+58. 14:13  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+    HTTP: browse  |  Rabbit: —
+59. 16:14  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: browse  |  Rabbit: —
+
+=== days_ago=13 (сегодня минус 13 дн., UTC) ===
+60. 14:15  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + contact (offer_request) | intent=click, qty=2
+61. 16:16  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=phone  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: phone call answered 240s | intent=open
+62. 18:17  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=phone  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: phone call not_answered 0s | intent=submit
+
+=== days_ago=14 (сегодня минус 14 дн., UTC) ===
+63. 16:18  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=phone  desktop/chrome/windows
+    HTTP: contact-intent  |  Rabbit: phone call busy 12s | intent=click
+64. 18:19  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=form  desktop/firefox/linux
+    HTTP: contact-intent  |  Rabbit: manual sale | intent=open, qty=4
+
+=== days_ago=15 (сегодня минус 15 дн., UTC) ===
+65. 18:20  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=email  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: manual sale + cancelled | intent=submit
+66. 20:21  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=email  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: direct email contact | intent=click
+
+=== days_ago=16 (сегодня минус 16 дн., UTC) ===
+67. 20:22  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + status contacted | intent=open
+68. 21:23  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=form  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > offer_sent | intent=submit
+
+=== days_ago=17 (сегодня минус 17 дн., UTC) ===
+69. 21:24  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=whatsapp  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + status contacted > lost | intent=click
+70. 08:25  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: cart  |  Rabbit: lead + contact (offer_request)
+
+=== days_ago=18 (сегодня минус 18 дн., UTC) ===
+71. 08:26  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: checkout  |  Rabbit: paid | pay=klarna
+72. 09:27  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=phone  desktop/safari/macos
+    HTTP: checkout + payment-failed  |  Rabbit: phone call answered 95s | fail=3ds_failed/3DS_CHALLENGE/provider, pay=paypal
+
+=== days_ago=19 (сегодня минус 19 дн., UTC) ===
+73. 09:28  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: lead + contact (contact_form) | intent=open
+74. 11:29  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=form  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: lead + contact (callback_request) | intent=submit, qty=2
+
+=== days_ago=20 (сегодня минус 20 дн., UTC) ===
+75. 11:30  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=form  tablet/safari/ipados
+    HTTP: checkout  |  Rabbit: paid | pay=creditcard
+76. 12:31  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: checkout  |  Rabbit: paid + partial refund 12% | pay=prepayment
+
+=== days_ago=21 (сегодня минус 21 дн., UTC) ===
+77. 12:32  WARD-008 Schrank Stuttgart  1890.00 EUR  utm=instagram/paid_social wardrobes-reels  channel=whatsapp  desktop/chrome/windows
+    HTTP: checkout  |  Rabbit: paid + full refund | pay=klarna
+78. 14:33  STOOL-009 Hocker Bremen  79.00 EUR  utm=organic/direct  channel=form  desktop/firefox/linux
+    HTTP: checkout  |  Rabbit: paid + lead won | pay=paypal, qty=4
+
+=== days_ago=22 (сегодня минус 22 дн., UTC) ===
+79. 14:34  MIRROR-010 Spiegel Frankfurt  229.00 EUR  utm=affiliate/referral moebel-de  channel=email  desktop/safari/macos
+    HTTP: checkout  |  Rabbit: order created + cancelled (unpaid) | pay=invoice
+80. 16:35  SHELF-011 Regal Hannover  459.00 EUR  utm=youtube/video storage-howto  channel=form  mobile/safari/ios
+    HTTP: checkout  |  Rabbit: order created (open, unpaid) | pay=installment
+
+=== days_ago=23 (сегодня минус 23 дн., UTC) ===
+81. 16:36  OUT-012 Gartenlounge Kiel  1599.00 EUR  utm=google/cpc outdoor-summer  channel=phone  mobile/chrome/android
+    HTTP: checkout + payment-failed  |  Rabbit: — | fail=timeout/GATEWAY_TIMEOUT/redirect, pay=creditcard
+82. 18:37  SOFA-US-013 Sofa Austin  1899.00 USD  utm=google/cpc sofas-us  channel=form  tablet/safari/ipados
+    HTTP: cart  |  Rabbit: —
+
+=== days_ago=24 (сегодня минус 24 дн., UTC) ===
+83. 18:38  CHAIR-014 Stuhl Dresden  199.00 EUR  utm=facebook/organic_social chairs-ugc  channel=whatsapp  tablet/chrome/android
+    HTTP: browse  |  Rabbit: —
+84. 20:39  SOFA-001 Sofa Milano  2499.00 EUR  utm=google/cpc sofas-de-2026  channel=form  desktop/chrome/windows
+    HTTP: browse  |  Rabbit: —
+
+=== days_ago=25 (сегодня минус 25 дн., UTC) ===
+85. 20:40  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
+    HTTP: contact-intent  |  Rabbit: lead + contact (direct_email) | intent=open
+86. 21:41  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=phone  desktop/safari/macos
+    HTTP: contact-intent  |  Rabbit: phone call answered 240s | intent=submit
+
+=== days_ago=26 (сегодня минус 26 дн., UTC) ===
+87. 21:42  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=phone  mobile/safari/ios
+    HTTP: contact-intent  |  Rabbit: phone call not_answered 0s | intent=click
+88. 08:43  LAMP-005 Lampe Leipzig  89.90 EUR  utm=bing/cpc lighting-brand  channel=phone  mobile/chrome/android
+    HTTP: contact-intent  |  Rabbit: phone call busy 12s | intent=open, qty=2
+
+=== days_ago=27 (сегодня минус 27 дн., UTC) ===
+89. 08:44  RUG-006 Teppich München  349.00 EUR  utm=pinterest/social rugs-inspo  channel=form  tablet/safari/ipados
+    HTTP: contact-intent  |  Rabbit: manual sale | intent=submit
+90. 09:00  DESK-007 Schreibtisch Düsseldorf  579.00 EUR  utm=google/cpc home-office  channel=form  tablet/chrome/android
+    HTTP: contact-intent  |  Rabbit: manual sale + cancelled | intent=click

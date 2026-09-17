@@ -23,6 +23,15 @@ Prod / dev / test — разные compose-проекты (`analytics`, `analyti
 
 После смены RabbitMQ vhost или users нужен `docker compose down -v`: `RABBITMQ_DEFAULT_*` применяется только на пустом volume брокера.
 
+## Seed dev (HTTP + Rabbit)
+Стек должен быть поднят, миграции применены, worker живой.
+
+```bash
+uv run python scripts/seed_dev.py
+```
+
+Потом http://127.0.0.1:8003/dashboard (логин из `.env.dev`).
+
 ## Тесты
 ```bash
 cp .env.test.example .env.test

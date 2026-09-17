@@ -5,7 +5,7 @@ from typing import Literal
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.ingestion.exceptions import EventIdCollisionError
+from domains.ingestion.exceptions import EventIdCollisionError, EventValidationError
 from domains.ingestion.idempotency import is_same_event
 from domains.ingestion.validator import validate_http_event, validate_rabbit_event
 from domains.projections.dispatcher import dispatch
@@ -14,6 +14,17 @@ from domains.projections.parsing import parse_datetime
 from domains.projections.stubs import ensure_stubs
 
 IngestStatus = Literal["accepted", "duplicate"]
+
+
+def _parse_rfc3339(field: str, value: object) -> datetime:
+    if not isinstance(value, str):
+        raise EventValidationError(detail=f"{field} must be an RFC3339 date-time")
+    try:
+        return parse_datetime(value)
+    except ValueError as exc:
+        raise EventValidationError(
+            detail=f"{field} must be an RFC3339 date-time",
+        ) from exc
 
 
 def _parse_uuid(value: object) -> uuid.UUID | None:
@@ -27,7 +38,7 @@ def event_row_values(body: dict) -> dict:
         "event_id": uuid.UUID(str(body["event_id"])),
         "event_type": body["event_type"],
         "event_version": body["event_version"],
-        "occurred_at": parse_datetime(body["occurred_at"]),
+        "occurred_at": _parse_rfc3339("occurred_at", body["occurred_at"]),
         "received_at": datetime.now(timezone.utc),
         "source": body["source"],
         "sales_channel_id": body["sales_channel_id"],

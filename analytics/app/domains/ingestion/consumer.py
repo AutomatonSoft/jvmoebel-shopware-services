@@ -81,6 +81,10 @@ async def handle_shopware_message(
         async with async_session_maker() as session:
             async with session.begin():
                 await persist_validated_event(session, validated)
+    except EventValidationError:
+        log.warning("Poison shopware message, sending to DLQ")
+        await message.reject(requeue=False)
+        return
     except EventIdCollisionError:
         log.warning("Shopware event_id collision, sending to DLQ")
         await message.reject(requeue=False)

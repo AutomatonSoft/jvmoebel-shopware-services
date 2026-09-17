@@ -21,6 +21,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    hostname: rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_CONSUMER_USER:?RABBITMQ_CONSUMER_USER is required}

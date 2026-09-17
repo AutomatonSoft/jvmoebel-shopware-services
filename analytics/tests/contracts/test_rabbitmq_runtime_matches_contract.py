@@ -126,6 +126,15 @@ def test_vhost_matches_contract(topology: dict, asyncapi: dict, routing: dict) -
     assert "-p /" not in init_users
 
 
+def test_rabbitmq_compose_hostname_is_stable() -> None:
+    for compose_path in COMPOSE_FILES:
+        services = _load_yaml(compose_path)["services"]
+        rabbit = services.get("rabbitmq") or services.get("rabbitmq_dev")
+        assert rabbit is not None, f"{compose_path.name} has no rabbitmq service"
+        hostname = rabbit.get("hostname")
+        assert hostname, f"{compose_path.name} rabbitmq hostname must be set"
+
+
 def test_exchanges_match_contract(
     topology: dict, asyncapi: dict, routing: dict
 ) -> None:

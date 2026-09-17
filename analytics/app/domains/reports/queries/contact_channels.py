@@ -8,6 +8,7 @@ from domains.projections.models.facts import Contact, ContactIntent, Refund
 from domains.reports.filters import ReportFilters
 from domains.reports.metrics import (
     apply_currency,
+    apply_matching_order_currency,
     apply_payment_method,
     apply_period_channel_market,
     apply_snapshot_attr,
@@ -192,6 +193,7 @@ async def query_contact_channels(
         .where(Lead.contact_channel.isnot(None))
         .group_by(Lead.contact_channel, Refund.currency)
     )
+    refund_stmt = apply_matching_order_currency(refund_stmt)
     refund_stmt = apply_period_channel_market(
         refund_stmt,
         filters,

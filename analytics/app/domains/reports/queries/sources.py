@@ -14,6 +14,7 @@ from domains.projections.models.facts import Contact, Refund
 from domains.reports.filters import ReportFilters, attr_column, in_period
 from domains.reports.metrics import (
     apply_currency,
+    apply_matching_order_currency,
     apply_payment_method,
     apply_period_channel_market,
     apply_snapshot_attr,
@@ -292,6 +293,7 @@ async def query_sources(
         .join(Order, Refund.order_id == Order.order_id)
         .group_by(order_source, order_campaign, Refund.currency)
     )
+    refund_stmt = apply_matching_order_currency(refund_stmt)
     refund_stmt = apply_period_channel_market(
         refund_stmt,
         filters,

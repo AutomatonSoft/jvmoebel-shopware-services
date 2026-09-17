@@ -1,9 +1,14 @@
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.exceptions import require_id
+from domains.projections.models.entities import Order
 from domains.projections.models.facts import Refund, RefundLine
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload, parse_datetime, parse_money
+
+log = logging.getLogger(__name__)
 
 
 async def handle_refund_created(
@@ -21,6 +26,17 @@ async def handle_refund_created(
         event_type=event.event_type,
     )
     payload = event_payload(event)
+    refund_currency = payload["currency"]
+    order = await session.get(Order, order_id)
+    order_currency = order.currency if order is not None else None
+    if order_currency is not None and order_currency != refund_currency:
+        log.warning(
+            "refund_created %s currency %s does not match order %s currency %s",
+            refund_id,
+            refund_currency,
+            order_id,
+            order_currency,
+        )
     session.add(
         Refund(
             refund_id=refund_id,
@@ -29,7 +45,7 @@ async def handle_refund_created(
             order_number=payload.get("order_number"),
             sales_channel_id=event.sales_channel_id,
             refund_amount=parse_money(payload["refund_amount"]),
-            currency=payload["currency"],
+            currency=refund_currency,
             refund_type=payload["refund_type"],
             payment_method=payload.get("payment_method"),
             order_state=payload.get("order_state"),

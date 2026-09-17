@@ -112,6 +112,15 @@ def copy_attribution_snapshot(
         setattr(entity, target_field, getattr(visitor, source_field))
 
 
+def copy_attribution_snapshot_if_missing(
+    visitor: Visitor,
+    entity: AttributionSnapshotMixin,
+) -> None:
+    if entity.attr_first_touch_occurred_at is not None:
+        return
+    copy_attribution_snapshot(visitor, entity)
+
+
 def _copy_pairs(
     visitor: Visitor,
     entity: AttributionSnapshotMixin,

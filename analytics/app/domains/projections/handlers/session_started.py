@@ -72,7 +72,6 @@ async def handle_session_started(
     )
 
     if not should_apply_entity_update(
-        is_stub=row.is_stub,
         stored_aggregate_version=None,
         incoming_aggregate_version=None,
         stored_occurred_at=row.last_event_occurred_at,

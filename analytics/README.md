@@ -129,6 +129,42 @@ Ingest key не подходит для read API и наоборот.
 
 ---
 
+# Dashboard
+
+Закрытый SSR UI: `GET /dashboard` (Jinja2, HTTP Basic)
+
+```env
+DASHBOARD_USER=dashboard
+DASHBOARD_PASSWORD=dev-dashboard-password
+```
+
+Dev: `http://127.0.0.1:8003/dashboard`. Local compose: `http://127.0.0.1:8002/dashboard`.
+
+| Путь | Что видно |
+| ---- | --------- |
+| `/dashboard` | Overview (метрики + money) |
+| `/dashboard/funnel` | ecommerce + lead |
+| `/dashboard/sources` | source/campaign: visitors, sessions, contacts, leads, orders_paid |
+| `/dashboard/journey` | поиск `q`, клик открывает журнал событий |
+
+Фильтры: `period_from`, `period_to`, `sales_channel`, `attribution_model`. По умолчанию последние 7 дней UTC.
+
+В UI нет contact-channels, products, payment-methods, period-comparison — они только в read API. Sources на экране урезаны относительно `GET /api/v1/analytics/sources` (нет money, конверсий, `orders_created`, `manual_sales`).
+
+Journey с поиска: номер заказа, UUID visitor/session, 32 hex Shopware id, campaign, канал, click id. После seed: `DEV-00-000` → строка `order` → лента событий. Прямой URL: `/dashboard/journey/order/{order_id}`.
+
+HTML `401`/`400`/`422`/`404` для `/dashboard*`, JSON — для `/api/v1/*`.
+
+Dev-данные: из `analytics/` при поднятом стеке и `alembic upgrade head`:
+
+```bash
+uv run python scripts/seed_dev.py
+```
+
+Скрипт шлёт HTTP ingest + Rabbit (не SQL). Повтор создаёт новые visitor_id. Сценарии: `scripts/seed_dev_scenarios.txt`. Worker должен быть живой.
+
+---
+
 # POST /api/v1/events
 
 Принять одно frontend-событие от Next.js BFF.

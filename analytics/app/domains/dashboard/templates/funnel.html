@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Funnel{% endblock %}
+{% block content %}
+<h1>Funnel</h1>
+{% if is_empty %}
+<p class="empty">No data</p>
+{% else %}
+<h2>ecommerce</h2>
+<table>
+  <thead><tr><th>step</th><th>count</th><th>conversion_from_previous</th></tr></thead>
+  <tbody>
+    {% for step in funnel.ecommerce %}
+    <tr>
+      <td>{{ step.key }}</td>
+      <td>{{ step.count }}</td>
+      <td>{{ step.conversion_from_previous or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<h2>lead</h2>
+<table>
+  <thead><tr><th>step</th><th>count</th><th>conversion_from_previous</th></tr></thead>
+  <tbody>
+    {% for step in funnel.lead %}
+    <tr>
+      <td>{{ step.key }}</td>
+      <td>{{ step.count }}</td>
+      <td>{{ step.conversion_from_previous or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

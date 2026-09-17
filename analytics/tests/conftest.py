@@ -64,9 +64,7 @@ async def client():
         async with TestSessionLocal() as session:
             yield session
 
-    app.dependency_overrides[get_async_session] = (
-        override_get_async_session
-    )
+    app.dependency_overrides[get_async_session] = override_get_async_session
 
     try:
         async with AsyncClient(
@@ -105,6 +103,14 @@ def read_auth_headers() -> dict[str, str]:
 
 
 @pytest.fixture
+def dashboard_auth() -> tuple[str, str]:
+    return (
+        settings.dashboard_user.get_secret_value(),
+        settings.dashboard_password.get_secret_value(),
+    )
+
+
+@pytest.fixture
 def invalid_auth_headers() -> dict[str, str]:
     return {
         "Authorization": "Bearer invalid-token",
@@ -113,13 +119,7 @@ def invalid_auth_headers() -> dict[str, str]:
 
 @pytest.fixture
 def session_started_event() -> dict:
-    path = (
-        CONTRACTS_DIR
-        / "http"
-        / "examples"
-        / "valid"
-        / "session-started.json"
-    )
+    path = CONTRACTS_DIR / "http" / "examples" / "valid" / "session-started.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -145,13 +145,7 @@ async def persist_event(db_session):
 @pytest.fixture
 def load_shopware_event(unique_event):
     def _load(stem: str) -> dict:
-        path = (
-            CONTRACTS_DIR
-            / "rabbitmq"
-            / "examples"
-            / "valid"
-            / f"{stem}.json"
-        )
+        path = CONTRACTS_DIR / "rabbitmq" / "examples" / "valid" / f"{stem}.json"
         return unique_event(json.loads(path.read_text(encoding="utf-8")))
 
     return _load
@@ -159,11 +153,5 @@ def load_shopware_event(unique_event):
 
 @pytest.fixture
 def shopware_order_paid_event() -> dict:
-    path = (
-        CONTRACTS_DIR
-        / "rabbitmq"
-        / "examples"
-        / "valid"
-        / "order-paid.json"
-    )
+    path = CONTRACTS_DIR / "rabbitmq" / "examples" / "valid" / "order-paid.json"
     return json.loads(path.read_text(encoding="utf-8"))

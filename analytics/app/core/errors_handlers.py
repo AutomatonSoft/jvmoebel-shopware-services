@@ -1,48 +1,105 @@
 import logging
+from collections.abc import Mapping
 
-from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, status
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.exc import ProgrammingError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from domains.dashboard.templating import templates
 
 log = logging.getLogger(__name__)
 
 
+def is_dashboard_request(request: Request) -> bool:
+    path = request.url.path
+    return path == "/dashboard" or path.startswith("/dashboard/")
+
+
+def dashboard_error(
+    request: Request,
+    status_code: int,
+    detail: str,
+    headers: Mapping[str, str] | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {
+            "status_code": status_code,
+            "detail": detail,
+        },
+        status_code=status_code,
+        headers=headers,
+    )
+
+
+def _http_detail(detail: object) -> str:
+    if isinstance(detail, str):
+        return detail
+    return "Invalid request"
+
+
 def register_errors_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(
+        request: Request,
+        exc: RequestValidationError,
+    ):
+        if is_dashboard_request(request):
+            return dashboard_error(request, 422, "Invalid query parameter")
+        return await request_validation_exception_handler(request, exc)
+
+    @app.exception_handler(StarletteHTTPException)
+    def handle_http_exception(request: Request, exc: StarletteHTTPException):
+        if is_dashboard_request(request):
+            return dashboard_error(
+                request,
+                exc.status_code,
+                _http_detail(exc.detail),
+                exc.headers,
+            )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=exc.headers,
+        )
+
     @app.exception_handler(ProgrammingError)
     def handle_programming_error(
         request: Request,
         exc: ProgrammingError,
-    ) -> JSONResponse:
+    ):
         error_msg = str(exc)
         log.error(f"Programming error: {error_msg}", exc_info=exc)
 
-        # Проверяем, является ли ошибка отсутствием таблицы
         if "UndefinedTableError" in error_msg or "does not exist" in error_msg:
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={
-                    "message": "Database schema is not ready. Apply Alembic migrations."
-                },
-            )
+            detail = "Database schema is not ready. Apply Alembic migrations."
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        else:
+            detail = "An unexpected database error has occurred."
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        # Любая другая ошибка программирования
+        if is_dashboard_request(request):
+            return dashboard_error(request, status_code, detail)
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": "An unexpected database error has occurred."},
+            status_code=status_code,
+            content={"message": detail},
         )
 
     @app.exception_handler(Exception)
-    def handle_any_other_error(
-        request: Request,
-        exc: Exception,
-    ) -> JSONResponse:
-        if isinstance(exc, HTTPException):
-            return JSONResponse(
-                status_code=exc.status_code,
-                content={"detail": exc.detail},
-            )
+    def handle_any_other_error(request: Request, exc: Exception):
         log.error(f"Unhandled error: {exc}", exc_info=exc)
+        detail = "An unexpected error has occurred."
+        if is_dashboard_request(request):
+            return dashboard_error(
+                request,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail,
+            )
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": "An unexpected error has occurred."},
+            content={"message": detail},
         )

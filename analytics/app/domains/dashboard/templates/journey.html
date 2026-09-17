@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Journey {{ entity_type }}{% endblock %}
+{% block content %}
+<h1>Journey {{ entity_type }} {{ entity_id }}</h1>
+<p><a href="/dashboard/journey?{{ filter_qs }}">Back to search</a></p>
+{% if events %}
+<table>
+  <thead>
+    <tr>
+      <th>occurred_at</th>
+      <th>event_type</th>
+      <th>source</th>
+      <th>ids</th>
+      <th>payload</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in events %}
+    <tr>
+      <td>{{ event.occurred_at }}</td>
+      <td>{{ event.event_type }}</td>
+      <td>{{ event.source }}</td>
+      <td>
+        {% if event.visitor_id %}visitor={{ event.visitor_id }}<br>{% endif %}
+        {% if event.lead_id %}lead={{ event.lead_id }}<br>{% endif %}
+        {% if event.order_id %}order={{ event.order_id }}<br>{% endif %}
+        {% if event.customer_id %}customer={{ event.customer_id }}<br>{% endif %}
+        {% if event.contact_id %}contact={{ event.contact_id }}{% endif %}
+      </td>
+      <td><pre>{{ event.payload | pretty_json }}</pre></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No data</p>
+{% endif %}
+{% endblock %}

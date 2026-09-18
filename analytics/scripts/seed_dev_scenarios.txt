@@ -14,7 +14,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
     HTTP: checkout  |  Rabbit: paid | pay=paypal
 01. 09:01  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: checkout  |  Rabbit: paid + partial refund 12% | pay=invoice
-02. 11:02  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+02. 11:02  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=whatsapp  desktop/safari/macos
     HTTP: checkout  |  Rabbit: paid + full refund | pay=installment
 03. 12:03  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
     HTTP: checkout  |  Rabbit: paid + lead won | pay=creditcard
@@ -46,7 +46,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
     HTTP: contact-intent  |  Rabbit: manual sale | intent=submit
 15. 16:15  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: contact-intent  |  Rabbit: manual sale + cancelled | intent=click
-16. 18:16  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=email  desktop/safari/macos
+16. 18:16  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=email  desktop/safari/macos
     HTTP: contact-intent  |  Rabbit: direct email contact | intent=open
 17. 20:17  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
     HTTP: contact-intent  |  Rabbit: lead + status contacted | intent=submit
@@ -80,7 +80,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
     HTTP: checkout  |  Rabbit: order created + cancelled (unpaid) | pay=klarna
 
 === days_ago=5 (сегодня минус 5 дн., UTC) ===
-30. 16:30  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+30. 16:30  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=whatsapp  desktop/safari/macos
     HTTP: checkout  |  Rabbit: order created (open, unpaid) | pay=paypal
 31. 18:31  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
     HTTP: checkout + payment-failed  |  Rabbit: — | fail=timeout/GATEWAY_TIMEOUT/redirect, pay=invoice
@@ -112,7 +112,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
     HTTP: contact-intent  |  Rabbit: lead + status contacted | intent=click
 43. 21:43  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: contact-intent  |  Rabbit: lead + status contacted > offer_sent | intent=open
-44. 08:44  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+44. 08:44  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=whatsapp  desktop/safari/macos
     HTTP: contact-intent  |  Rabbit: lead + status contacted > lost | intent=submit
 
 === days_ago=8 (сегодня минус 8 дн., UTC) ===
@@ -150,7 +150,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
 === days_ago=12 (сегодня минус 12 дн., UTC) ===
 57. 12:12  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: cart  |  Rabbit: —
-58. 14:13  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=whatsapp  desktop/safari/macos
+58. 14:13  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=whatsapp  desktop/safari/macos
     HTTP: browse  |  Rabbit: —
 59. 16:14  BED-004 Bett Köln  1299.00 EUR  utm=facebook/paid_social beds-retarget  channel=form  mobile/safari/ios
     HTTP: browse  |  Rabbit: —
@@ -190,7 +190,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
 === days_ago=18 (сегодня минус 18 дн., UTC) ===
 71. 08:26  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: checkout  |  Rabbit: paid | pay=klarna
-72. 09:27  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=phone  desktop/safari/macos
+72. 09:27  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=phone  desktop/safari/macos
     HTTP: checkout + payment-failed  |  Rabbit: phone call answered 95s | fail=3ds_failed/3DS_CHALLENGE/provider, pay=paypal
 
 === days_ago=19 (сегодня минус 19 дн., UTC) ===
@@ -232,7 +232,7 @@ HTTP: frontend ingest. Rabbit: Shopware events. Повторный прогон 
 === days_ago=25 (сегодня минус 25 дн., UTC) ===
 85. 20:40  TABLE-002 Esstisch Berlin  890.00 EUR  utm=newsletter/email tables-sep  channel=email  desktop/firefox/linux
     HTTP: contact-intent  |  Rabbit: lead + contact (direct_email) | intent=open
-86. 21:41  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=organic/direct  channel=phone  desktop/safari/macos
+86. 21:41  CHAIR-003 Stuhl Hamburg  149.00 EUR  utm=seo/google-referrer  channel=phone  desktop/safari/macos
     HTTP: contact-intent  |  Rabbit: phone call answered 240s | intent=submit
 
 === days_ago=26 (сегодня минус 26 дн., UTC) ===

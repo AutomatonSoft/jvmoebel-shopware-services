@@ -394,7 +394,7 @@ rejected
 | `period_to` | yes | Конец периода, `date-time` |
 | `sales_channel` | no | Shopware sales channel ID, 32 hex |
 | `market` | no | `de`, `at`, `ch`, `uk`, `it`, `pl` |
-| `source` | no | Источник атрибуции, например `google_ads` |
+| `source` | no | Источник атрибуции: `google_ads`, `seo`, `social`, `referral`, `direct`, `email`, `paid`, `other` |
 | `campaign` | no | Campaign |
 | `sku` | no | SKU |
 | `channel` | no | `form`, `email`, `whatsapp`, `phone` |

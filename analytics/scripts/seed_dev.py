@@ -126,6 +126,7 @@ REFERRERS = {
     "affiliate": "https://www.moebel.de/",
 }
 
+_AUTO_REFERRER = object()
 Journey = tuple[int, int, tuple[str, ...], tuple[str, ...], dict[str, Any]]
 
 
@@ -148,10 +149,12 @@ def product(
     utm_content: str | None = None,
     utm_term: str | None = None,
     click_id: str | None = None,
+    referrer: object = _AUTO_REFERRER,
 ) -> dict[str, Any]:
-    referrer = REFERRERS.get(utm_source or "", "https://www.jvmoebel.de/")
-    if utm_source is None:
-        referrer = None
+    if referrer is _AUTO_REFERRER:
+        referrer = REFERRERS.get(utm_source or "", "https://www.jvmoebel.de/")
+        if utm_source is None:
+            referrer = None
     return {
         "sku": sku,
         "name": name,
@@ -204,6 +207,7 @@ CATALOGS = (
         utm_medium=None,
         utm_campaign=None,
         channel="whatsapp",
+        referrer="https://www.google.com/",
     ),
     product(
         "BED-004",
@@ -327,9 +331,7 @@ CATALOGS = (
     ),
 )
 
-TEMPLATES: tuple[
-    tuple[tuple[str, ...], tuple[str, ...], dict[str, Any]], ...
-] = (
+TEMPLATES: tuple[tuple[tuple[str, ...], tuple[str, ...], dict[str, Any]], ...] = (
     (CHECKOUT, PAID, {}),
     (CHECKOUT, PAID_REFUND, {}),
     (CHECKOUT, PAID_REFUND, {"refund_full": True}),
@@ -342,8 +344,16 @@ TEMPLATES: tuple[
     (BROWSE, (), {}),
     (INTENT, LEAD_ONLY, {}),
     (INTENT, PHONE, {"channel": "phone", "call_duration": 240}),
-    (INTENT, PHONE, {"channel": "phone", "call_duration": 0, "connection_status": "not_answered"}),
-    (INTENT, PHONE, {"channel": "phone", "call_duration": 12, "connection_status": "busy"}),
+    (
+        INTENT,
+        PHONE,
+        {"channel": "phone", "call_duration": 0, "connection_status": "not_answered"},
+    ),
+    (
+        INTENT,
+        PHONE,
+        {"channel": "phone", "call_duration": 12, "connection_status": "busy"},
+    ),
     (INTENT, MANUAL, {}),
     (INTENT, MANUAL_CANCEL, {}),
     (INTENT, DIRECT, {"channel": "email"}),
@@ -407,7 +417,11 @@ def set_click_ids(payload: dict[str, Any], catalog: dict[str, Any], tag: str) ->
 
 
 def apply_utm(payload: dict[str, Any], catalog: dict[str, Any], tag: str) -> None:
-    if "utm" not in payload and "click_ids" not in payload and "referrer" not in payload:
+    if (
+        "utm" not in payload
+        and "click_ids" not in payload
+        and "referrer" not in payload
+    ):
         return
     if catalog["utm_source"] is None:
         payload.pop("utm", None)
@@ -445,9 +459,9 @@ def apply_contact_received(payload: dict[str, Any], catalog: dict[str, Any]) -> 
         payload.pop("connection_status", None)
         return
     payload["contact_channel"] = catalog["channel"]
-    payload["contact_type"] = catalog.get("lead_contact_type") or CONTACT_TYPE_BY_CHANNEL[
-        catalog["channel"]
-    ]
+    payload["contact_type"] = (
+        catalog.get("lead_contact_type") or CONTACT_TYPE_BY_CHANNEL[catalog["channel"]]
+    )
     payload.pop("duration_seconds", None)
     payload.pop("connection_status", None)
 
@@ -482,7 +496,9 @@ def apply_catalog(event: dict[str, Any], catalog: dict[str, Any], tag: str) -> N
         payload["product_number"] = sku
     if "landing_page" in payload:
         slug = sku.lower()
-        payload["landing_page"] = f"https://www.jvmoebel.de/{catalog['category']}/{slug}"
+        payload["landing_page"] = (
+            f"https://www.jvmoebel.de/{catalog['category']}/{slug}"
+        )
     if "device" in payload and catalog.get("device"):
         payload["device"] = catalog["device"]
     if "channel" in payload:
@@ -491,9 +507,10 @@ def apply_catalog(event: dict[str, Any], catalog: dict[str, Any], tag: str) -> N
         payload["action"] = catalog["intent_action"]
     if "contact_channel" in payload and event.get("event_type") == "lead_created":
         payload["contact_channel"] = catalog["channel"]
-        payload["contact_type"] = catalog.get("lead_contact_type") or CONTACT_TYPE_BY_CHANNEL[
-            catalog["channel"]
-        ]
+        payload["contact_type"] = (
+            catalog.get("lead_contact_type")
+            or CONTACT_TYPE_BY_CHANNEL[catalog["channel"]]
+        )
     if event.get("event_type") == "contact_received":
         apply_contact_received(payload, catalog)
     apply_utm(payload, catalog, tag)
@@ -502,7 +519,9 @@ def apply_catalog(event: dict[str, Any], catalog: dict[str, Any], tag: str) -> N
         extras = [item for item in PAYMENTS if item != selected]
         payload["methods"] = [selected, *extras[:2]]
     if "payment_method" in payload and event.get("event_type") != "refund_created":
-        payload["payment_method"] = catalog.get("payment_method") or payload["payment_method"]
+        payload["payment_method"] = (
+            catalog.get("payment_method") or payload["payment_method"]
+        )
     if "error_category" in payload:
         category, code, stage = catalog.get("payment_error") or PAYMENT_ERRORS[0]
         payload["error_category"] = category
@@ -570,7 +589,11 @@ def apply_lead_path(events: list[dict[str, Any]], catalog: dict[str, Any]) -> No
         None,
     )
     manual_sale_id = next(
-        (event.get("manual_sale_id") for event in events if event.get("manual_sale_id")),
+        (
+            event.get("manual_sale_id")
+            for event in events
+            if event.get("manual_sale_id")
+        ),
         None,
     )
     previous = "new"
@@ -584,7 +607,9 @@ def apply_lead_path(events: list[dict[str, Any]], catalog: dict[str, Any]) -> No
             elif manual_sale_id:
                 event["manual_sale_id"] = manual_sale_id
             else:
-                raise SystemExit("won lead_status_changed requires order_id or manual_sale_id")
+                raise SystemExit(
+                    "won lead_status_changed requires order_id or manual_sale_id"
+                )
         previous = new_status
 
 
@@ -669,9 +694,7 @@ def build_journeys(
         mapping = id_mapping()
         visitor_ids.append(mapping["550e8400-e29b-41d4-a716-446655440000"])
         start = (
-            today
-            - timedelta(days=days_ago)
-            + timedelta(hours=hour, minutes=index % 45)
+            today - timedelta(days=days_ago) + timedelta(hours=hour, minutes=index % 45)
         )
         tag = f"{days_ago:02d}-{index:03d}"
         for offset, stem in enumerate(http_stems):

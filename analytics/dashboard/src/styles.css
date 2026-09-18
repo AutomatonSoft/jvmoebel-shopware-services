@@ -160,7 +160,10 @@ th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: 
 .bar > i { display: block; height: 100%; background: var(--accent); }
 .timeline { list-style: none; padding: 0; margin: 0; }
 .timeline li { border-left: 3px solid var(--accent); padding: 0 0 1rem 1rem; }
-.timeline time { color: var(--muted); font-size: 0.8rem; }
+.timeline time { display: block; color: var(--muted); font-size: 0.8rem; }
+.timeline p { margin: 0.2rem 0 0; }
+.timeline details { margin-top: 0.35rem; }
+.timeline summary { color: var(--muted); cursor: pointer; font-size: 0.8rem; }
 pre { background: #f6f1e8; padding: 0.6rem; overflow: auto; border-radius: 8px; font-size: 0.78rem; }
 
 .search { display: flex; gap: 0.5rem; margin-bottom: 1rem; }

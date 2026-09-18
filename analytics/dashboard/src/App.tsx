@@ -43,8 +43,11 @@ export function App() {
               <ComparePage filters={filters} shops={shops} onChange={setFilters} />
             }
           />
-          <Route path="/journey" element={<JourneyPage />} />
-          <Route path="/journey/:entity/:id" element={<JourneyPage />} />
+          <Route path="/journey" element={<JourneyPage shops={shops} />} />
+          <Route
+            path="/journey/:entity/:id"
+            element={<JourneyPage shops={shops} />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

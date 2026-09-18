@@ -10,7 +10,7 @@ import {
   formatPp,
   formatRate,
   formatSignedInt,
-  PAYMENT_LABELS,
+  labelPayment,
   tone,
 } from "../format";
 import { Panel } from "../states";
@@ -261,7 +261,7 @@ export function ComparePage({
                   {delta.money.map((row) => (
                     <MetricRow
                       key={row.currency}
-                      label={`Выручка без возвратов (${row.currency})`}
+                      label={`Выручка (без возвратов), ${row.currency}`}
                       period1={formatMoney(
                         current.money.find((item) => item.currency === row.currency)?.net,
                         row.currency,
@@ -306,7 +306,7 @@ export function ComparePage({
                       <th>Доля выбора</th>
                       <th>Ошибки оплаты</th>
                       <th>Выбрали и оплатили</th>
-                      <th>Выручка без возвратов</th>
+                      <th>Выручка (без возвратов)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,7 +316,7 @@ export function ComparePage({
                       return (
                         <tr key={row.payment_method}>
                           <td>
-                            {PAYMENT_LABELS[row.payment_method] ?? row.payment_method}
+                            {labelPayment(row.payment_method)}
                           </td>
                           <PairCell
                             period1={formatInt(now?.shown ?? 0)}

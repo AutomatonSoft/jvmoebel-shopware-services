@@ -1,5 +1,13 @@
 import { api } from "../api";
-import { CHANNEL_LABELS, formatDays, formatInt, formatMoneyList, formatRate } from "../format";
+import {
+  CHANNEL_LABELS,
+  formatDays,
+  formatInt,
+  formatMoneyList,
+  formatRate,
+  labelPayment,
+  labelSource,
+} from "../format";
 import { Panel } from "../states";
 import type { Filters } from "../types";
 import { useApi } from "../useApi";
@@ -12,29 +20,29 @@ export function SourcesPage({ filters }: { filters: Filters }) {
     <>
       <h1>Источники</h1>
       <p className="lead">
-        Кампании по модели атрибуции из фильтра: Visitors, Leads, Sales, conversion,
-        revenue, средний чек и время до Sale.
+        Кампании по модели атрибуции из фильтра: посетители, лиды, продажи, конверсия,
+        выручка без возвратов, средний чек до возвратов и время до продажи.
       </p>
       <Panel loading={loading} error={error} empty={items.length === 0}>
         <section className="card">
           <table>
             <thead>
               <tr>
-                <th>Source</th>
-                <th>Campaign</th>
-                <th>Visitors</th>
-                <th>Leads</th>
-                <th>Sales</th>
-                <th>Conv.</th>
-                <th>Revenue</th>
-                <th>AOV</th>
-                <th>До Sale</th>
+                <th>Источник</th>
+                <th>Кампания</th>
+                <th>Посетители</th>
+                <th>Лиды</th>
+                <th>Продажи</th>
+                <th>Конверсия</th>
+                <th>Выручка (без возвратов)</th>
+                <th>Средний чек (до возвратов)</th>
+                <th>До продажи</th>
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
                 <tr key={`${row.source}:${row.campaign ?? ""}`}>
-                  <td>{row.source}</td>
+                  <td>{labelSource(row.source)}</td>
                   <td>{row.campaign ?? "—"}</td>
                   <td>{formatInt(row.visitors)}</td>
                   <td>{formatInt(row.leads)}</td>
@@ -67,11 +75,11 @@ export function ChannelsPage({ filters }: { filters: Filters }) {
             <thead>
               <tr>
                 <th>Канал</th>
-                <th>Intents</th>
-                <th>Contacts</th>
-                <th>Leads</th>
-                <th>Sales</th>
-                <th>Revenue</th>
+                <th>Нажатия «написать»</th>
+                <th>Обращения</th>
+                <th>Лиды</th>
+                <th>Продажи</th>
+                <th>Выручка (без возвратов)</th>
               </tr>
             </thead>
             <tbody>
@@ -100,18 +108,18 @@ export function ProductsPage({ filters }: { filters: Filters }) {
   return (
     <>
       <h1>Товары</h1>
-      <p className="lead">SKU: просмотры, корзина, покупки, conversion и revenue.</p>
+      <p className="lead">Артикул: просмотры, корзина, покупки, конверсия и выручка без возвратов.</p>
       <Panel loading={loading} error={error} empty={items.length === 0}>
         <section className="card">
           <table>
             <thead>
               <tr>
-                <th>SKU</th>
-                <th>Views</th>
-                <th>Add to cart</th>
-                <th>Purchases</th>
-                <th>Conversion</th>
-                <th>Revenue</th>
+                <th>Артикул</th>
+                <th>Просмотры</th>
+                <th>В корзину</th>
+                <th>Покупки</th>
+                <th>Конверсия</th>
+                <th>Выручка (без возвратов)</th>
               </tr>
             </thead>
             <tbody>
@@ -140,27 +148,29 @@ export function PaymentsPage({ filters }: { filters: Filters }) {
   return (
     <>
       <h1>Способы оплаты</h1>
-      <p className="lead">Доступность, выбор, ошибки, успешные оплаты, conversion и средний чек.</p>
+      <p className="lead">
+        Доступность, выбор, ошибки, успешные оплаты, конверсия и средний чек до возвратов.
+      </p>
       <Panel loading={loading} error={error} empty={items.length === 0}>
         <section className="card">
           <table>
             <thead>
               <tr>
-                <th>Метод</th>
-                <th>Shown</th>
-                <th>Selected</th>
-                <th>Errors</th>
-                <th>Paid</th>
-                <th>Select rate</th>
-                <th>Selected → Paid</th>
-                <th>Revenue</th>
-                <th>AOV</th>
+                <th>Способ</th>
+                <th>Показан</th>
+                <th>Выбран</th>
+                <th>Ошибки</th>
+                <th>Оплачен</th>
+                <th>Доля выбора</th>
+                <th>Выбрали и оплатили</th>
+                <th>Выручка (без возвратов)</th>
+                <th>Средний чек (до возвратов)</th>
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
                 <tr key={row.payment_method}>
-                  <td>{row.payment_method}</td>
+                  <td>{labelPayment(row.payment_method)}</td>
                   <td>{formatInt(row.shown)}</td>
                   <td>{formatInt(row.selected)}</td>
                   <td>{formatInt(row.failed)}</td>

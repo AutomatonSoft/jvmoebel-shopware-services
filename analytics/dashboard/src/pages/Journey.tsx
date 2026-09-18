@@ -1,9 +1,15 @@
 import { FormEvent, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
-import { ENTITY_LABELS, EVENT_LABELS, formatDateTime } from "../format";
+import {
+  ENTITY_LABELS,
+  EVENT_LABELS,
+  formatDateTime,
+  shopName,
+  summarizeJourneyEvent,
+} from "../format";
 import { Panel } from "../states";
-import type { JourneyEvent, JourneyHit } from "../types";
+import type { JourneyEvent, JourneyHit, Shop } from "../types";
 import { useApi } from "../useApi";
 
 const DETAIL: Record<string, (id: string) => Promise<{ events: JourneyEvent[] }>> = {
@@ -17,22 +23,25 @@ function Timeline({ events }: { events: JourneyEvent[] }) {
   if (!events.length) return <div className="state">Событий нет</div>;
   return (
     <ol className="timeline">
-      {events.map((event) => (
-        <li key={event.event_id}>
-          <time>{formatDateTime(event.occurred_at)}</time>
-          <div>
+      {events.map((event) => {
+        const summary = summarizeJourneyEvent(event.payload, event.event_type);
+        return (
+          <li key={event.event_id}>
+            <time>{formatDateTime(event.occurred_at)}</time>
             <strong>{EVENT_LABELS[event.event_type] ?? event.event_type}</strong>
-            {" · "}
-            {event.source}
-          </div>
-          <pre>{JSON.stringify(event.payload, null, 2)}</pre>
-        </li>
-      ))}
+            {summary ? <p>{summary}</p> : null}
+            <details>
+              <summary>JSON</summary>
+              <pre>{JSON.stringify(event.payload, null, 2)}</pre>
+            </details>
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
-export function JourneyPage() {
+export function JourneyPage({ shops }: { shops: Shop[] }) {
   const { entity, id } = useParams();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") ?? "");
@@ -59,7 +68,7 @@ export function JourneyPage() {
 
   return (
     <>
-      <h1>Customer Journey</h1>
+      <h1>Путь клиента</h1>
       <p className="lead">
         Поиск по Order ID/Number, Lead ID, Visitor ID, Customer ID, GCLID/GBRAID/WBRAID,
         campaign, каналу или tracking reference.
@@ -101,7 +110,7 @@ export function JourneyPage() {
                 <tr>
                   <th>Тип</th>
                   <th>ID</th>
-                  <th>Канал</th>
+                  <th>Магазин</th>
                   <th>Время</th>
                   <th></th>
                 </tr>
@@ -111,7 +120,7 @@ export function JourneyPage() {
                   <tr key={`${hit.entity_type}:${hit.id}`}>
                     <td>{ENTITY_LABELS[hit.entity_type] ?? hit.entity_type}</td>
                     <td>{hit.id}</td>
-                    <td>{hit.sales_channel_id}</td>
+                    <td>{shopName(shops, hit.sales_channel_id)}</td>
                     <td>{formatDateTime(hit.occurred_at)}</td>
                     <td>
                       {DETAIL[hit.entity_type] ? (

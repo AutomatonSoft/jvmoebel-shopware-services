@@ -76,19 +76,31 @@ export function OverviewPage({ filters }: { filters: Filters }) {
   return (
     <>
       <h1>Обзор</h1>
-      <p className="lead">KPI, воронки и динамика Paid Sales за выбранный период.</p>
+      <p className="lead">KPI, воронки и динамика оплаченных продаж за выбранный период.</p>
       <Panel loading={overview.loading} error={overview.error} empty={false}>
         {data ? (
           <div className="kpis">
-            <Kpi label="Visitors" value={formatInt(data.visitors)} />
-            <Kpi label="Sessions" value={formatInt(data.sessions)} />
-            <Kpi label="Leads" value={formatInt(data.leads)} />
-            <Kpi label="Paid Sales" value={formatInt(data.orders_paid + data.manual_sales)} />
-            <Kpi label="Revenue" value={formatMoneyList(data.money, "net")} />
-            <Kpi label="Средний чек" value={formatMoneyList(data.money, "aov")} />
-            <Kpi label="Session → Lead" value={formatRate(data.session_to_lead)} />
-            <Kpi label="Lead → Sale" value={formatRate(data.lead_to_paid_sale)} />
-            <Kpi label="До Sale" value={formatDays(data.first_visit_to_paid_sale_seconds)} />
+            <Kpi label="Посетители" value={formatInt(data.visitors)} />
+            <Kpi label="Сессии" value={formatInt(data.sessions)} />
+            <Kpi label="Лиды" value={formatInt(data.leads)} />
+            <Kpi
+              label="Оплаченные продажи"
+              value={formatInt(data.orders_paid + data.manual_sales)}
+            />
+            <Kpi
+              label="Выручка (без возвратов)"
+              value={formatMoneyList(data.money, "net")}
+            />
+            <Kpi
+              label="Средний чек (до возвратов)"
+              value={formatMoneyList(data.money, "aov")}
+            />
+            <Kpi label="Сессия → лид" value={formatRate(data.session_to_lead)} />
+            <Kpi label="Лид → продажа" value={formatRate(data.lead_to_paid_sale)} />
+            <Kpi
+              label="До продажи"
+              value={formatDays(data.first_visit_to_paid_sale_seconds)}
+            />
           </div>
         ) : null}
       </Panel>
@@ -101,14 +113,14 @@ export function OverviewPage({ filters }: { filters: Filters }) {
         ) : null}
       </Panel>
       <section className="card">
-        <h2>Paid Sales и revenue</h2>
+        <h2>Оплаченные продажи и выручка</h2>
         <Panel loading={daily.loading} error={daily.error} empty={points.length === 0}>
           <Line
             data={{
               labels: points.map((point) => point.date),
               datasets: [
                 {
-                  label: "Paid Sales",
+                  label: "Оплаченные продажи",
                   data: points.map((point) => point.paid_sales),
                   borderColor: "#215c3a",
                   backgroundColor: "#215c3a",
@@ -116,7 +128,7 @@ export function OverviewPage({ filters }: { filters: Filters }) {
                   tension: 0.2,
                 },
                 {
-                  label: "Revenue",
+                  label: "Выручка (без возвратов)",
                   data: revenue,
                   borderColor: "#c46a2b",
                   backgroundColor: "#c46a2b",
@@ -135,7 +147,7 @@ export function OverviewPage({ filters }: { filters: Filters }) {
                   beginAtZero: true,
                   position: "right",
                   grid: { drawOnChartArea: false },
-                  title: { display: true, text: "Revenue" },
+                  title: { display: true, text: "Выручка" },
                 },
               },
             }}

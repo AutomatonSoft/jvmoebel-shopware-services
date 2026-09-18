@@ -96,7 +96,7 @@ export const FUNNEL_LABELS: Record<string, string> = {
   contact_intent: "Нажатие «написать»",
   contact_received: "Подтверждённое обращение",
   lead_created: "Лид",
-  lead_won: "Статус won",
+  lead_won: "Сделка выиграна",
   paid_sale: "Оплаченная продажа",
 };
 
@@ -125,6 +125,7 @@ export const EVENT_LABELS: Record<string, string> = {
   order_cancelled: "Заказ отменён",
   refund_created: "Возврат",
   manual_sale_created: "Ручная продажа",
+  manual_sale_cancelled: "Ручная продажа отменена",
   customer_linked: "Покупатель связан",
 };
 
@@ -143,6 +144,200 @@ export const PAYMENT_LABELS: Record<string, string> = {
   invoice: "Счёт",
   installment: "Рассрочка",
   creditcard: "Карта",
+  card: "Карта",
   prepayment: "Предоплата",
   klarna: "Klarna",
 };
+
+export const SOURCE_LABELS: Record<string, string> = {
+  google_ads: "Google Ads",
+  google: "Google",
+  seo: "SEO",
+  social: "Соцсети",
+  email: "Email",
+  newsletter: "Email",
+  paid: "Платная реклама",
+  referral: "Реферальный",
+  affiliate: "Реферальный",
+  direct: "Прямой заход",
+  other: "Другое",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  bing: "Bing",
+  pinterest: "Pinterest",
+  youtube: "YouTube",
+};
+
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  new: "новый",
+  contacted: "связались",
+  offer_sent: "оферта отправлена",
+  won: "сделка выиграна",
+  lost: "потерян",
+};
+
+const CONTACT_TYPE_LABELS: Record<string, string> = {
+  offer_request: "запрос предложения",
+  contact_form: "форма",
+  callback_request: "обратный звонок",
+  whatsapp_message: "WhatsApp",
+  direct_email: "письмо",
+  qualified_call: "звонок",
+};
+
+export function labelSource(source: string | null | undefined): string {
+  if (!source) return "—";
+  return SOURCE_LABELS[source] ?? source;
+}
+
+export function labelPayment(method: string | null | undefined): string {
+  if (!method) return "—";
+  return PAYMENT_LABELS[method] ?? method;
+}
+
+export function shopName(
+  shops: { id: string; label: string }[],
+  salesChannelId: string,
+): string {
+  return shops.find((shop) => shop.id === salesChannelId)?.label ?? salesChannelId;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
+
+function textOf(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function payloadText(payload: Record<string, unknown>, key: string): string | null {
+  return textOf(payload[key]);
+}
+
+function joinParts(parts: Array<string | null | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part)).join(", ");
+}
+
+function trafficOrigin(payload: Record<string, unknown>): string {
+  const utm = asRecord(payload.utm);
+  const clickIds = asRecord(payload.click_ids);
+  const source = utm ? payloadText(utm, "utm_source") : null;
+  const medium = utm ? payloadText(utm, "utm_medium") : null;
+  const paid = Boolean(medium && /cpc|ppc|paid|display/i.test(medium));
+  if (clickIds && (clickIds.gclid || clickIds.gbraid || clickIds.wbraid)) {
+    return "Google Ads";
+  }
+  if (source === "google" && paid) return "Google Ads";
+  if (source) return labelSource(source);
+  return "прямой заход";
+}
+
+function productName(payload: Record<string, unknown>): string | null {
+  return payloadText(payload, "name") ?? payloadText(payload, "sku");
+}
+
+function payloadPrice(payload: Record<string, unknown>): string | null {
+  const amount =
+    payloadText(payload, "total_amount") ??
+    payloadText(payload, "unit_price") ??
+    payloadText(payload, "amount") ??
+    payloadText(payload, "refund_amount");
+  if (!amount) return null;
+  return formatMoney(amount, payloadText(payload, "currency") ?? "EUR");
+}
+
+export function summarizeJourneyEvent(payload: Record<string, unknown>, eventType: string): string {
+  const utm = asRecord(payload.utm);
+  const campaign = utm ? payloadText(utm, "utm_campaign") : null;
+  const product = productName(payload);
+  const sku = payloadText(payload, "sku") ?? payloadText(payload, "product_number");
+  const price = payloadPrice(payload);
+  const orderNumber = payloadText(payload, "order_number");
+  const paymentRaw = payloadText(payload, "payment_method");
+  const payment = paymentRaw ? labelPayment(paymentRaw) : null;
+  const channelRaw =
+    payloadText(payload, "channel") ?? payloadText(payload, "contact_channel");
+  const channel = channelRaw
+    ? (CHANNEL_LABELS[channelRaw] ?? channelRaw)
+    : null;
+  const statusRaw = payloadText(payload, "new_status");
+  const status = statusRaw ? (LEAD_STATUS_LABELS[statusRaw] ?? statusRaw) : null;
+  const contactTypeRaw = payloadText(payload, "contact_type");
+  const contactType = contactTypeRaw
+    ? (CONTACT_TYPE_LABELS[contactTypeRaw] ?? contactTypeRaw)
+    : null;
+  const methods = Array.isArray(payload.methods)
+    ? payload.methods
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => labelPayment(item))
+        .join(", ")
+    : null;
+
+  switch (eventType) {
+    case "session_started":
+      return joinParts([
+        `Пришёл из ${trafficOrigin(payload)}`,
+        campaign ? `кампания ${campaign}` : null,
+      ]);
+    case "product_viewed":
+      return joinParts([product ? `Смотрел ${product}` : null, price]);
+    case "add_to_cart":
+      return joinParts([product ? `В корзину: ${product}` : null, price]);
+    case "checkout_started":
+      return joinParts(["Начал оформление", price]);
+    case "payment_methods_shown":
+      return methods ? `Показаны: ${methods}` : "";
+    case "payment_method_selected":
+      return payment ? `Выбрал ${payment}` : "";
+    case "payment_failed":
+      return joinParts([
+        payment ? `Ошибка оплаты ${payment}` : "Ошибка оплаты",
+        payloadText(payload, "error_code"),
+      ]);
+    case "contact_intent":
+      return joinParts([channel ? `Нажал «написать» (${channel})` : null]);
+    case "lead_created":
+      return joinParts(["Создан лид", channel, contactType]);
+    case "contact_received":
+      return joinParts([channel, contactType, sku]);
+    case "lead_status_changed":
+      return status ? `Статус: ${status}` : "";
+    case "order_created":
+      return joinParts([
+        orderNumber ? `Заказ ${orderNumber} создан` : "Заказ создан",
+        payment,
+        price,
+      ]);
+    case "order_paid":
+      return joinParts([
+        orderNumber ? `Заказ ${orderNumber} оплачен` : "Заказ оплачен",
+        payment,
+        price,
+      ]);
+    case "order_updated":
+      return joinParts([orderNumber ? `Заказ ${orderNumber} обновлён` : null, payment]);
+    case "order_cancelled":
+      return orderNumber ? `Заказ ${orderNumber} отменён` : "Заказ отменён";
+    case "refund_created":
+      return joinParts([
+        orderNumber ? `Возврат по заказу ${orderNumber}` : "Возврат",
+        price,
+      ]);
+    case "manual_sale_created": {
+      const reference = payloadText(payload, "reference");
+      return joinParts([
+        reference ? `Ручная продажа ${reference}` : "Ручная продажа",
+        price,
+      ]);
+    }
+    case "manual_sale_cancelled":
+      return "Ручная продажа отменена";
+    case "customer_linked":
+      return "Покупатель связан с посетителем";
+    default:
+      return joinParts([product, orderNumber, payment, campaign]);
+  }
+}

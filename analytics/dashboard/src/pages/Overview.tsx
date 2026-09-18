@@ -9,7 +9,13 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { api } from "../api";
-import { formatDays, formatInt, formatMoneyList, formatRate, FUNNEL_LABELS } from "../format";
+import {
+  formatDays,
+  formatInt,
+  formatMoneyList,
+  formatRate,
+  FUNNEL_LABELS,
+} from "../format";
 import { Panel } from "../states";
 import type { Filters, FunnelStep } from "../types";
 import { useApi } from "../useApi";
@@ -25,11 +31,20 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-function FunnelCard({ title, steps }: { title: string; steps: FunnelStep[] }) {
+function FunnelCard({
+  title,
+  steps,
+  showRates,
+}: {
+  title: string;
+  steps: FunnelStep[];
+  showRates: boolean;
+}) {
   const max = Math.max(1, ...steps.map((step) => step.count));
   return (
     <section className="card">
       <h2>{title}</h2>
+      <p className="hint">Количество за период</p>
       <div className="funnel">
         {steps.map((step) => (
           <div className="funnel-row" key={step.key}>
@@ -39,7 +54,7 @@ function FunnelCard({ title, steps }: { title: string; steps: FunnelStep[] }) {
             </div>
             <strong>
               {formatInt(step.count)}
-              {step.conversion_from_previous
+              {showRates && step.conversion_from_previous
                 ? ` · ${formatRate(step.conversion_from_previous)}`
                 : ""}
             </strong>
@@ -80,8 +95,8 @@ export function OverviewPage({ filters }: { filters: Filters }) {
       <Panel loading={funnel.loading} error={funnel.error} empty={false}>
         {funnel.data ? (
           <div className="grid-2">
-            <FunnelCard title="Ecommerce-воронка" steps={funnel.data.ecommerce} />
-            <FunnelCard title="Lead-воронка" steps={funnel.data.lead} />
+            <FunnelCard title="Ecommerce-воронка" steps={funnel.data.ecommerce} showRates />
+            <FunnelCard title="Lead-воронка" steps={funnel.data.lead} showRates={false} />
           </div>
         ) : null}
       </Panel>

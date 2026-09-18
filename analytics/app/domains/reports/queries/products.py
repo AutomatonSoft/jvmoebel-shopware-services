@@ -4,10 +4,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.entities import Order, Visitor
-from domains.projections.models.facts import CartAdd, OrderLine, ProductView, Refund, RefundLine
+from domains.projections.models.facts import (
+    CartAdd,
+    OrderLine,
+    ProductView,
+    Refund,
+    RefundLine,
+)
 from domains.reports.filters import ReportFilters
 from domains.reports.metrics import (
     apply_currency,
+    apply_matching_order_currency,
     apply_payment_method,
     apply_period_channel_market,
     apply_sku,
@@ -189,6 +196,7 @@ async def query_products(
         .where(RefundLine.product_number.isnot(None))
         .group_by(RefundLine.product_number, Refund.currency)
     )
+    refund_stmt = apply_matching_order_currency(refund_stmt)
     refund_stmt = apply_period_channel_market(
         refund_stmt,
         filters,

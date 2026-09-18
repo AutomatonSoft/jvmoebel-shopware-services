@@ -54,6 +54,7 @@ Analytics в этом репозитории можно разрабатыват
 - RabbitMQ consumer подтверждённых Shopware events
 - projections, attribution, reports, Customer Journey
 - JSON Schema / OpenAPI / AsyncAPI contracts
+- закрытый Jinja dashboard `/dashboard` (HTTP Basic): Overview, Funnel, Sources, Journey
 
 ## Что не входит в этот PR (отдельные задачи, другие репозитории)
 
@@ -76,7 +77,7 @@ Frontend (Next.js):
 - retry/batching
 - безопасная доставка через BFF
 
-Закрытый dashboard UI в этом PR не реализован.
+Закрытый dashboard в этом репозитории — SSR Jinja на `/dashboard`, логин `DASHBOARD_USER` / `DASHBOARD_PASSWORD`. Read API key в браузер не кладётся. Нет экранов products, payment-methods, contact-channels, period-comparison (только `GET /api/v1/analytics/*`). Conversion operations UI — вторая поставка.
 
 ## Критерии готовности второй поставки
 

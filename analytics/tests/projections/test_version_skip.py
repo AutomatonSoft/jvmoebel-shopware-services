@@ -3,16 +3,25 @@ from decimal import Decimal
 
 from sqlalchemy import func, select
 
-from domains.projections.models.entities import Lead, Order
-from domains.projections.models.facts import LeadStatusHistory
+from domains.projections.models.entities import Lead, ManualSale, Order
+from domains.projections.models.facts import LeadStatusHistory, OrderLine
 from domains.projections.versioning import should_apply_entity_update
 
 NOW = datetime(2026, 8, 24, 9, 0, tzinfo=timezone.utc)
 
 
+def test_empty_projection_is_applied() -> None:
+    assert should_apply_entity_update(
+        stored_aggregate_version=None,
+        incoming_aggregate_version=1,
+        stored_occurred_at=None,
+        incoming_occurred_at=NOW,
+        has_version_column=True,
+    ) is True
+
+
 def test_equal_aggregate_version_is_not_applied() -> None:
     assert should_apply_entity_update(
-        is_stub=False,
         stored_aggregate_version=2,
         incoming_aggregate_version=2,
         stored_occurred_at=NOW,
@@ -23,7 +32,6 @@ def test_equal_aggregate_version_is_not_applied() -> None:
 
 def test_greater_aggregate_version_is_applied() -> None:
     assert should_apply_entity_update(
-        is_stub=False,
         stored_aggregate_version=2,
         incoming_aggregate_version=3,
         stored_occurred_at=NOW,
@@ -34,7 +42,6 @@ def test_greater_aggregate_version_is_applied() -> None:
 
 def test_equal_aggregate_version_is_applied_when_allowed() -> None:
     assert should_apply_entity_update(
-        is_stub=False,
         stored_aggregate_version=1,
         incoming_aggregate_version=1,
         stored_occurred_at=NOW,
@@ -46,12 +53,22 @@ def test_equal_aggregate_version_is_applied_when_allowed() -> None:
 
 def test_equal_occurred_at_is_not_applied() -> None:
     assert should_apply_entity_update(
-        is_stub=False,
         stored_aggregate_version=None,
         incoming_aggregate_version=None,
         stored_occurred_at=NOW,
         incoming_occurred_at=NOW,
         has_version_column=False,
+    ) is False
+
+
+def test_occurred_at_is_compared_when_version_missing() -> None:
+    earlier = datetime(2026, 8, 24, 8, 0, tzinfo=timezone.utc)
+    assert should_apply_entity_update(
+        stored_aggregate_version=None,
+        incoming_aggregate_version=1,
+        stored_occurred_at=NOW,
+        incoming_occurred_at=earlier,
+        has_version_column=True,
     ) is False
 
 

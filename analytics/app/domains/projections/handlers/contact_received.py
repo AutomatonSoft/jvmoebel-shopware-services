@@ -36,6 +36,8 @@ async def handle_contact_received(
             tracking_reference=payload.get("tracking_reference"),
             provider_reference=payload.get("provider_reference"),
             product_number=payload.get("product_number"),
+            duration_seconds=payload.get("duration_seconds"),
+            connection_status=payload.get("connection_status"),
             occurred_at=event.occurred_at,
         )
         .on_conflict_do_nothing(index_elements=["contact_id"])

@@ -9,6 +9,7 @@ from domains.projections.models.facts import Refund
 from domains.reports.filters import ReportFilters
 from domains.reports.metrics import (
     apply_currency,
+    apply_matching_order_currency,
     apply_payment_method,
     apply_period_channel_market,
     apply_snapshot_attr,
@@ -161,6 +162,7 @@ async def _add_refunds(
         .where(Refund.currency.isnot(None))
         .group_by(Refund.currency)
     )
+    stmt = apply_matching_order_currency(stmt)
     stmt = apply_period_channel_market(
         stmt,
         filters,

@@ -13,10 +13,7 @@
       "$ref": "../../enums/contact-channel.schema.json"
     },
     "contact_type": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 64,
-      "description": "Stable technical contact type, e.g. contact_form, offer_request, callback_request, direct_email, whatsapp_message, qualified_call."
+      "$ref": "../../enums/contact-type.schema.json"
     },
     "tracking_reference": {
       "type": "string",
@@ -35,6 +32,41 @@
       "minLength": 1,
       "maxLength": 255,
       "description": "Related product/SKU when the contact is explicitly product-specific."
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Call duration in seconds. Required for phone, forbidden otherwise."
+    },
+    "connection_status": {
+      "$ref": "../../enums/connection-status.schema.json",
+      "description": "Call connection result. Required for phone, forbidden otherwise."
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "contact_channel": {
+            "const": "phone"
+          }
+        },
+        "required": [
+          "contact_channel"
+        ]
+      },
+      "then": {
+        "required": [
+          "duration_seconds",
+          "connection_status"
+        ]
+      },
+      "else": {
+        "properties": {
+          "duration_seconds": false,
+          "connection_status": false
+        }
+      }
+    }
+  ]
 }

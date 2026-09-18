@@ -16,6 +16,7 @@ from domains.projections.models.facts import (
     Contact,
     ContactIntent,
     ProductView,
+    Refund,
 )
 from domains.reports.filters import ReportFilters, attr_column, in_period
 
@@ -121,6 +122,13 @@ def apply_currency(stmt: Select, column, filters: ReportFilters) -> Select:
     if filters.currency is None:
         return stmt
     return stmt.where(column == filters.currency)
+
+
+def apply_matching_order_currency(stmt: Select) -> Select:
+    return stmt.where(
+        Order.currency.isnot(None),
+        Refund.currency == Order.currency,
+    )
 
 
 def apply_payment_method(stmt: Select, column, filters: ReportFilters) -> Select:

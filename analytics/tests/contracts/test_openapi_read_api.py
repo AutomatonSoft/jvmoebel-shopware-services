@@ -10,15 +10,18 @@ from domains.journeys.schemas import (
     JourneySearchHit,
     JourneySearchResponse,
 )
+from domains.visitors.schemas import AnonymizeVisitorResponse
 from domains.reports.schemas import (
     Change,
     ContactChannelRow,
     ContactChannelsResponse,
+    DailyPoint,
     FunnelResponse,
     FunnelStep,
     IntChange,
     MoneyBreakdown,
     MoneyChange,
+    OverviewDailyResponse,
     OverviewDelta,
     OverviewResponse,
     PaymentMethodDelta,
@@ -64,6 +67,8 @@ def _assert_fields_match(model: type[BaseModel], schema: dict) -> None:
 MODEL_SCHEMAS: tuple[tuple[type[BaseModel], str, str | None], ...] = (
     (MoneyBreakdown, "money-breakdown.schema.json", None),
     (OverviewResponse, "overview.schema.json", None),
+    (OverviewDailyResponse, "overview-daily.schema.json", None),
+    (DailyPoint, "overview-daily.schema.json", "DailyPoint"),
     (FunnelResponse, "funnel.schema.json", None),
     (FunnelStep, "funnel.schema.json", "FunnelStep"),
     (SourcesResponse, "sources.schema.json", None),
@@ -80,11 +85,16 @@ MODEL_SCHEMAS: tuple[tuple[type[BaseModel], str, str | None], ...] = (
     (MoneyChange, "period-comparison.schema.json", "MoneyChange"),
     (OverviewDelta, "period-comparison.schema.json", "OverviewDelta"),
     (PaymentMethodDelta, "period-comparison.schema.json", "PaymentMethodDelta"),
-    (PaymentMethodsComparison, "period-comparison.schema.json", "PaymentMethodsComparison"),
+    (
+        PaymentMethodsComparison,
+        "period-comparison.schema.json",
+        "PaymentMethodsComparison",
+    ),
     (JourneyResponse, "journey.schema.json", None),
     (JourneyEvent, "journey.schema.json", "JourneyEvent"),
     (JourneySearchResponse, "journey-search.schema.json", None),
     (JourneySearchHit, "journey-search.schema.json", "JourneySearchHit"),
+    (AnonymizeVisitorResponse, "anonymize-visitor.schema.json", None),
 )
 
 
@@ -96,16 +106,21 @@ def test_read_api_schemas_match_pydantic() -> None:
 def test_openapi_lists_read_paths_and_response_schema_refs() -> None:
     openapi = (CONTRACTS / "openapi.yaml").read_text(encoding="utf-8")
     assert "./schemas/responses/overview.schema.json" in openapi
+    assert "./schemas/responses/overview-daily.schema.json" in openapi
+    assert "  /analytics/overview:" in openapi
+    assert "  /analytics/overview/daily:" in openapi
     assert "./schemas/responses/funnel.schema.json" in openapi
     assert "./schemas/responses/sources.schema.json" in openapi
     assert "  /analytics/overview:" in openapi
     assert "  /analytics/customers/{customer_id}/journey:" in openapi
     assert "readBearer:" in openapi
+    assert "adminBearer:" in openapi
 
 
 def test_response_examples_match_json_schema() -> None:
     examples = {
         "overview.json": "overview.schema.json",
+        "overview-daily.json": "overview-daily.schema.json",
         "funnel.json": "funnel.schema.json",
         "sources.json": "sources.schema.json",
         "contact-channels.json": "contact-channels.schema.json",
@@ -114,6 +129,7 @@ def test_response_examples_match_json_schema() -> None:
         "period-comparison.json": "period-comparison.schema.json",
         "journey.json": "journey.schema.json",
         "journey-search.json": "journey-search.schema.json",
+        "anonymize-visitor.json": "anonymize-visitor.schema.json",
     }
     for example_name, schema_name in examples.items():
         schema_path = RESPONSES / schema_name

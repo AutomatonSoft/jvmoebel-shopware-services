@@ -47,6 +47,7 @@ RESPONSE_EXAMPLES = {
     "period-comparison": "period-comparison",
     "journey": "journey",
     "journey-search": "journey-search",
+    "anonymize-visitor": "anonymize-visitor",
 }
 
 
@@ -113,6 +114,12 @@ def extra_invariants() -> bool:
         ok = False
     if "readBearer:" not in openapi:
         print("FAIL openapi.yaml: missing readBearer security scheme")
+        ok = False
+    if "adminBearer:" not in openapi:
+        print("FAIL openapi.yaml: missing adminBearer security scheme")
+        ok = False
+    if "anonymizeVisitor" in openapi and "- adminBearer: []" not in openapi:
+        print("FAIL openapi.yaml: anonymize must use adminBearer")
         ok = False
     for path in READ_PATHS:
         if f"  {path}:" not in openapi:

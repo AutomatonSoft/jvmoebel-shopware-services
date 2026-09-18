@@ -124,6 +124,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: analytics/dashboard/package-lock.json
+
+      - name: Build dashboard
+        working-directory: analytics/dashboard
+        run: npm ci && npm run build
+
       - name: Run Alembic migrations
         run: uv run alembic upgrade head
 
@@ -164,7 +175,9 @@ jobs:
             rabbitmq/entrypoint.sh \
             rabbitmq/init-users.sh \
             app/main.py \
-            app/worker.py
+            app/worker.py \
+            dashboard/package.json \
+            dashboard/package-lock.json
           do
             if [[ ! -f "${required}" ]]; then
               echo "::error::Analytics is missing ${required}"

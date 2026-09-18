@@ -14,6 +14,7 @@ from domains.reports.filters import PeriodComparisonQuery, ReportFilters
 from domains.reports.schemas import (
     ContactChannelsResponse,
     FunnelResponse,
+    OverviewDailyResponse,
     OverviewResponse,
     PaymentMethodsResponse,
     PeriodComparisonResponse,
@@ -73,6 +74,18 @@ async def get_overview(
     session: DbSession,
 ) -> OverviewResponse:
     return await service.overview(session, filters)
+
+
+@router.get(
+    "/overview/daily",
+    response_model=OverviewDailyResponse,
+    responses=REPORT_RESPONSES,
+)
+async def get_overview_daily(
+    filters: Filters,
+    session: DbSession,
+) -> OverviewDailyResponse:
+    return await service.overview_daily(session, filters)
 
 
 @router.get(

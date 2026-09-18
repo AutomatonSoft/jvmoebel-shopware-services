@@ -1,3 +1,12 @@
+FROM node:22-alpine AS dashboard
+
+WORKDIR /ui
+
+COPY dashboard/package.json dashboard/package-lock.json ./
+RUN npm ci
+COPY dashboard/ ./
+RUN npm run build
+
 FROM python:3.13-slim
 
 WORKDIR /app
@@ -12,6 +21,7 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY contracts ./contracts
+COPY --from=dashboard /ui/dist ./dashboard/dist
 
 ENV PYTHONPATH=/app/app
 

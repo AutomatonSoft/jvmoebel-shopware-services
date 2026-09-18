@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Overview daily series",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/DailyPoint" }
+    }
+  },
+  "$defs": {
+    "DailyPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "orders_paid",
+        "manual_sales",
+        "paid_sales",
+        "money"
+      ],
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "orders_paid": { "type": "integer", "minimum": 0 },
+        "manual_sales": { "type": "integer", "minimum": 0 },
+        "paid_sales": { "type": "integer", "minimum": 0 },
+        "money": {
+          "type": "array",
+          "items": { "$ref": "money-breakdown.schema.json" }
+        }
+      }
+    }
+  }
+}

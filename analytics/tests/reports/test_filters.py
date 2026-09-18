@@ -85,6 +85,7 @@ async def test_source_filter_excludes_other_source(
 
 REPORT_PATHS = (
     "/api/v1/analytics/overview",
+    "/api/v1/analytics/overview/daily",
     "/api/v1/analytics/funnel",
     "/api/v1/analytics/sources",
     "/api/v1/analytics/contact-channels",

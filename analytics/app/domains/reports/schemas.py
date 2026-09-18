@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel
 
 
@@ -27,6 +29,18 @@ class OverviewResponse(BaseModel):
     checkout_to_paid_order: str | None
     first_visit_to_lead_seconds: str | None
     first_visit_to_paid_sale_seconds: str | None
+
+
+class DailyPoint(BaseModel):
+    date: date
+    orders_paid: int
+    manual_sales: int
+    paid_sales: int
+    money: list[MoneyBreakdown]
+
+
+class OverviewDailyResponse(BaseModel):
+    items: list[DailyPoint]
 
 
 class FunnelStep(BaseModel):

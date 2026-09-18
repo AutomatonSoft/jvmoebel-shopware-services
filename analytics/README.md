@@ -131,29 +131,34 @@ Ingest key не подходит для read API и наоборот.
 
 # Dashboard
 
-Закрытый SSR UI: `GET /dashboard` (Jinja2, HTTP Basic)
+Закрытый SPA (`analytics/dashboard`, React + Vite), раздаётся FastAPI с `GET /dashboard`. HTTP Basic. Read API key в браузер не кладётся: те же Basic-учётки принимаются на `GET /api/v1/analytics/*`.
 
 ```env
 DASHBOARD_USER=dashboard
 DASHBOARD_PASSWORD=dev-dashboard-password
 ```
 
+Перед локальным открытием UI: `npm ci && npm run build` в `analytics/dashboard`. Dev-compose монтирует исходники, поэтому нужен собранный `dashboard/dist`. Prod-образ собирает SPA в Docker.
+
 Dev: `http://127.0.0.1:8003/dashboard`. Local compose: `http://127.0.0.1:8002/dashboard`.
 
 | Путь | Что видно |
 | ---- | --------- |
-| `/dashboard` | Overview (метрики + money) |
-| `/dashboard/funnel` | ecommerce + lead |
-| `/dashboard/sources` | source/campaign: visitors, sessions, contacts, leads, orders_paid |
-| `/dashboard/journey` | поиск `q`, клик открывает журнал событий |
+| `/dashboard` | Обзор: KPI, ecommerce/lead воронки, график Paid Sales и revenue |
+| `/dashboard/sources` | Source/campaign, First Touch / Last Non-Direct |
+| `/dashboard/channels` | form / email / WhatsApp / phone |
+| `/dashboard/products` | SKU: views, cart, purchases, conversion, revenue |
+| `/dashboard/payments` | Способы оплаты |
+| `/dashboard/compare` | Два периода, абсолютное и процентное изменение |
+| `/dashboard/journey` | Поиск и лента событий |
 
-Фильтры: `period_from`, `period_to`, `sales_channel`, `attribution_model`. По умолчанию последние 7 дней UTC.
+Фильтры: период, магазин (hostname), атрибуция. По умолчанию последние 7 дней UTC. Деньги и % форматируются в UI, JSON контракт не меняется.
 
-В UI нет contact-channels, products, payment-methods, period-comparison — они только в read API. Sources на экране урезаны относительно `GET /api/v1/analytics/sources` (нет money, конверсий, `orders_created`, `manual_sales`).
+Google conversions в UI нет — read API для них ещё нет.
 
-Journey с поиска: номер заказа, UUID visitor/session, 32 hex Shopware id, campaign, канал, click id. После seed: `DEV-00-000` → строка `order` → лента событий. Прямой URL: `/dashboard/journey/order/{order_id}`.
+Journey: Order ID/Number, Lead/Visitor/Customer ID, GCLID/GBRAID/WBRAID, campaign, канал, tracking reference. После seed: `DEV-00-000` → `order` → лента. Прямой URL: `/dashboard/journey/order/{order_id}`.
 
-HTML `401`/`400`/`422`/`404` для `/dashboard*`, JSON — для `/api/v1/*`.
+HTML `401`/`400`/`422`/`404`/`503` для `/dashboard*`. `/dashboard/config` и `/api/v1/*` — JSON. Без `dashboard/dist` UI отвечает `503`.
 
 Dev-данные: из `analytics/` при поднятом стеке и `alembic upgrade head`:
 

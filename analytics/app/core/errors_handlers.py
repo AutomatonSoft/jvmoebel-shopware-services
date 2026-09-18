@@ -1,3 +1,4 @@
+import html
 import logging
 from collections.abc import Mapping
 
@@ -8,8 +9,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.exc import ProgrammingError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from domains.dashboard.templating import templates
-
 log = logging.getLogger(__name__)
 
 
@@ -19,21 +18,17 @@ def is_dashboard_request(request: Request) -> bool:
 
 
 def dashboard_error(
-    request: Request,
     status_code: int,
     detail: str,
     headers: Mapping[str, str] | None = None,
 ) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "error.html",
-        {
-            "status_code": status_code,
-            "detail": detail,
-        },
-        status_code=status_code,
-        headers=headers,
+    body = (
+        '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">'
+        "<title>Analytics</title></head><body>"
+        f"<h1>{status_code}</h1><p>{html.escape(detail)}</p>"
+        '<p><a href="/dashboard">Analytics</a></p></body></html>'
     )
+    return HTMLResponse(content=body, status_code=status_code, headers=headers)
 
 
 def _http_detail(detail: object) -> str:
@@ -49,14 +44,13 @@ def register_errors_handlers(app: FastAPI) -> None:
         exc: RequestValidationError,
     ):
         if is_dashboard_request(request):
-            return dashboard_error(request, 422, "Invalid query parameter")
+            return dashboard_error(422, "Некорректный запрос")
         return await request_validation_exception_handler(request, exc)
 
     @app.exception_handler(StarletteHTTPException)
     def handle_http_exception(request: Request, exc: StarletteHTTPException):
         if is_dashboard_request(request):
             return dashboard_error(
-                request,
                 exc.status_code,
                 _http_detail(exc.detail),
                 exc.headers,
@@ -83,7 +77,7 @@ def register_errors_handlers(app: FastAPI) -> None:
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
         if is_dashboard_request(request):
-            return dashboard_error(request, status_code, detail)
+            return dashboard_error(status_code, detail)
         return JSONResponse(
             status_code=status_code,
             content={"message": detail},
@@ -95,7 +89,6 @@ def register_errors_handlers(app: FastAPI) -> None:
         detail = "An unexpected error has occurred."
         if is_dashboard_request(request):
             return dashboard_error(
-                request,
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail,
             )

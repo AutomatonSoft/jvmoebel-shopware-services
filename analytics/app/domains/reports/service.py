@@ -4,6 +4,7 @@ from domains.reports.filters import PeriodComparisonQuery, ReportFilters
 from domains.reports.queries.contact_channels import query_contact_channels
 from domains.reports.queries.funnel import query_funnel
 from domains.reports.queries.overview import query_overview
+from domains.reports.queries.overview_daily import query_overview_daily
 from domains.reports.queries.payment_methods import query_payment_methods
 from domains.reports.queries.period_comparison import query_period_comparison
 from domains.reports.queries.products import query_products
@@ -11,6 +12,7 @@ from domains.reports.queries.sources import query_sources
 from domains.reports.schemas import (
     ContactChannelsResponse,
     FunnelResponse,
+    OverviewDailyResponse,
     OverviewResponse,
     PaymentMethodsResponse,
     PeriodComparisonResponse,
@@ -24,6 +26,13 @@ async def overview(
     filters: ReportFilters,
 ) -> OverviewResponse:
     return await query_overview(session, filters)
+
+
+async def overview_daily(
+    session: AsyncSession,
+    filters: ReportFilters,
+) -> OverviewDailyResponse:
+    return await query_overview_daily(session, filters)
 
 
 async def funnel(

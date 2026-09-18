@@ -15,11 +15,13 @@ from domains.reports.schemas import (
     Change,
     ContactChannelRow,
     ContactChannelsResponse,
+    DailyPoint,
     FunnelResponse,
     FunnelStep,
     IntChange,
     MoneyBreakdown,
     MoneyChange,
+    OverviewDailyResponse,
     OverviewDelta,
     OverviewResponse,
     PaymentMethodDelta,
@@ -65,6 +67,8 @@ def _assert_fields_match(model: type[BaseModel], schema: dict) -> None:
 MODEL_SCHEMAS: tuple[tuple[type[BaseModel], str, str | None], ...] = (
     (MoneyBreakdown, "money-breakdown.schema.json", None),
     (OverviewResponse, "overview.schema.json", None),
+    (OverviewDailyResponse, "overview-daily.schema.json", None),
+    (DailyPoint, "overview-daily.schema.json", "DailyPoint"),
     (FunnelResponse, "funnel.schema.json", None),
     (FunnelStep, "funnel.schema.json", "FunnelStep"),
     (SourcesResponse, "sources.schema.json", None),
@@ -102,6 +106,9 @@ def test_read_api_schemas_match_pydantic() -> None:
 def test_openapi_lists_read_paths_and_response_schema_refs() -> None:
     openapi = (CONTRACTS / "openapi.yaml").read_text(encoding="utf-8")
     assert "./schemas/responses/overview.schema.json" in openapi
+    assert "./schemas/responses/overview-daily.schema.json" in openapi
+    assert "  /analytics/overview:" in openapi
+    assert "  /analytics/overview/daily:" in openapi
     assert "./schemas/responses/funnel.schema.json" in openapi
     assert "./schemas/responses/sources.schema.json" in openapi
     assert "  /analytics/overview:" in openapi
@@ -112,6 +119,7 @@ def test_openapi_lists_read_paths_and_response_schema_refs() -> None:
 def test_response_examples_match_json_schema() -> None:
     examples = {
         "overview.json": "overview.schema.json",
+        "overview-daily.json": "overview-daily.schema.json",
         "funnel.json": "funnel.schema.json",
         "sources.json": "sources.schema.json",
         "contact-channels.json": "contact-channels.schema.json",

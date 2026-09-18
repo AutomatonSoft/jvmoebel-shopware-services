@@ -31,12 +31,13 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv
 uv run python scripts/seed_dev.py
 ```
 
-Dashboard: http://127.0.0.1:8003/dashboard  
+Dashboard SPA: из `analytics/dashboard` выполнить `npm ci && npm run build`, затем
+http://127.0.0.1:8003/dashboard  
 Логин `DASHBOARD_USER` / `DASHBOARD_PASSWORD` из `.env.dev`. Read API key в браузер не класть.
 
-Вкладки: Overview, Funnel, Sources, Journey. Products / payments / contact-channels / period-comparison — только API.
+Вкладки: Обзор, Источники, Каналы, Товары, Оплата, Сравнение, Путь клиента.
 
-Journey: поиск, потом клик по хиту. После seed вставь `DEV-00-000` (order_number). Список сценариев: `scripts/seed_dev_scenarios.txt`. Повтор seed копирует данные. Окно 7 дней прячет `days_ago >= 8`.
+Journey: поиск, потом «Открыть». После seed вставь `DEV-00-000` (order_number). Список сценариев: `scripts/seed_dev_scenarios.txt`. Повтор seed копирует данные. Окно 7 дней прячет `days_ago >= 8`.
 
 ## Тесты
 ```bash

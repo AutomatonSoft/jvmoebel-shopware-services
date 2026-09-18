@@ -116,6 +116,39 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /analytics/overview/daily:
+    get:
+      operationId: getOverviewDaily
+      tags: [Reports]
+      summary: Daily paid sales and revenue
+      security:
+        - readBearer: []
+      parameters:
+        - $ref: "#/components/parameters/PeriodFrom"
+        - $ref: "#/components/parameters/PeriodTo"
+        - $ref: "#/components/parameters/SalesChannel"
+        - $ref: "#/components/parameters/Market"
+        - $ref: "#/components/parameters/Source"
+        - $ref: "#/components/parameters/Campaign"
+        - $ref: "#/components/parameters/Sku"
+        - $ref: "#/components/parameters/Channel"
+        - $ref: "#/components/parameters/PaymentMethod"
+        - $ref: "#/components/parameters/Currency"
+        - $ref: "#/components/parameters/AttributionModel"
+      responses:
+        "200":
+          description: Paid sales and money by UTC day.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/responses/overview-daily.schema.json"
+              examples:
+                googleAdsDe:
+                  $ref: "./examples/responses/overview-daily.json"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /analytics/funnel:
     get:
       operationId: getFunnel

@@ -17,18 +17,31 @@ def _payload(event: Event) -> dict:
     return {}
 
 
-async def test_anonymize_requires_read_key(client) -> None:
+async def test_anonymize_requires_auth(client) -> None:
     response = await client.post(ANONYMIZE_PATH)
+    assert response.status_code == 401
+
+
+async def test_anonymize_rejects_dashboard_basic(client, dashboard_auth) -> None:
+    response = await client.post(ANONYMIZE_PATH, auth=dashboard_auth)
+    assert response.status_code == 401
+
+
+async def test_anonymize_rejects_read_key(
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    response = await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
     assert response.status_code == 401
 
 
 async def test_unknown_visitor_anonymize_is_404(
     client,
-    read_auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
 ) -> None:
     response = await client.post(
         f"/api/v1/analytics/visitors/{uuid4()}/anonymize",
-        headers=read_auth_headers,
+        headers=admin_auth_headers,
     )
     assert response.status_code == 404
 
@@ -38,7 +51,7 @@ async def test_anonymize_redacts_identifiers_and_keeps_entities(
     session_started_event: dict,
     load_shopware_event,
     client,
-    read_auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
     db_session,
 ) -> None:
     await persist_event(session_started_event)
@@ -49,7 +62,7 @@ async def test_anonymize_redacts_identifiers_and_keeps_entities(
     paid = load_shopware_event("order-paid")
     await persist_event(paid)
 
-    response = await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
+    response = await client.post(ANONYMIZE_PATH, headers=admin_auth_headers)
     assert response.status_code == 200
     assert response.json() == {"status": "anonymized"}
 
@@ -118,11 +131,11 @@ async def test_anonymize_is_idempotent(
     persist_event,
     session_started_event: dict,
     client,
-    read_auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
 ) -> None:
     await persist_event(session_started_event)
-    first = await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
-    second = await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
+    first = await client.post(ANONYMIZE_PATH, headers=admin_auth_headers)
+    second = await client.post(ANONYMIZE_PATH, headers=admin_auth_headers)
     assert first.json() == {"status": "anonymized"}
     assert second.json() == {"status": "already_anonymized"}
 
@@ -132,6 +145,7 @@ async def test_search_by_gclid_fails_after_anonymize(
     session_started_event: dict,
     client,
     read_auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
 ) -> None:
     await persist_event(session_started_event)
     before = await client.get(
@@ -142,7 +156,7 @@ async def test_search_by_gclid_fails_after_anonymize(
     assert before.status_code == 200
     assert before.json()["items"]
 
-    await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
+    await client.post(ANONYMIZE_PATH, headers=admin_auth_headers)
 
     after = await client.get(
         "/api/v1/analytics/journey/search",
@@ -165,11 +179,11 @@ async def test_session_started_after_anonymize_does_not_restore_click_ids(
     session_started_event: dict,
     unique_event,
     client,
-    read_auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
     db_session,
 ) -> None:
     await persist_event(session_started_event)
-    await client.post(ANONYMIZE_PATH, headers=read_auth_headers)
+    await client.post(ANONYMIZE_PATH, headers=admin_auth_headers)
 
     later = unique_event(session_started_event)
     later["session_id"] = str(uuid4())

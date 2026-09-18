@@ -75,6 +75,10 @@ class Settings(BaseSettings):
         min_length=1,
         description="API key for dashboard read API",
     )
+    analytics_admin_api_key: SecretStr = Field(
+        min_length=1,
+        description="Server-side API key for visitor anonymize",
+    )
     dashboard_user: SecretStr = Field(
         min_length=1,
         description="HTTP Basic username for the closed dashboard",

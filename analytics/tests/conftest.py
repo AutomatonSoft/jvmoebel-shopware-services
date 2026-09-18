@@ -103,6 +103,15 @@ def read_auth_headers() -> dict[str, str]:
 
 
 @pytest.fixture
+def admin_auth_headers() -> dict[str, str]:
+    return {
+        "Authorization": (
+            f"Bearer {settings.analytics_admin_api_key.get_secret_value()}"
+        ),
+    }
+
+
+@pytest.fixture
 def dashboard_auth() -> tuple[str, str]:
     return (
         settings.dashboard_user.get_secret_value(),

@@ -1,7 +1,7 @@
 from secrets import compare_digest
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBasic,
@@ -11,6 +11,8 @@ from fastapi.security import (
 
 from core.config import settings
 from domains.base.exceptions import UnauthorizedException
+
+SAFE_METHODS = {"GET", "HEAD"}
 
 bearer_scheme = HTTPBearer(
     auto_error=False,
@@ -67,6 +69,7 @@ async def require_ingest_access(
 
 
 async def require_read_access(
+    request: Request,
     bearer: Annotated[
         HTTPAuthorizationCredentials | None,
         Security(bearer_scheme),
@@ -76,7 +79,7 @@ async def require_read_access(
         Security(basic_scheme),
     ],
 ) -> None:
-    if basic is not None:
+    if request.method in SAFE_METHODS and basic is not None:
         if dashboard_credentials_ok(basic.username, basic.password):
             return
         raise UnauthorizedException(
@@ -85,6 +88,17 @@ async def require_read_access(
     _validate_bearer_token(
         bearer,
         settings.analytics_read_api_key.get_secret_value(),
+    )
+
+
+async def require_admin_access(
+    credentials: HTTPAuthorizationCredentials | None = Security(
+        bearer_scheme,
+    ),
+) -> None:
+    _validate_bearer_token(
+        credentials,
+        settings.analytics_admin_api_key.get_secret_value(),
     )
 
 

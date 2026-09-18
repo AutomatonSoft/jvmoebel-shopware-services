@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db.postgres import get_async_session
-from domains.base.dependencies import require_read_access
+from domains.base.dependencies import require_admin_access
 from domains.journeys.dependencies import VisitorId
 from domains.visitors.schemas import AnonymizeVisitorResponse
 from domains.visitors.service import anonymize_visitor
@@ -12,14 +12,14 @@ from domains.visitors.service import anonymize_visitor
 router = APIRouter(
     prefix="/analytics",
     tags=["Visitors"],
-    dependencies=[Depends(require_read_access)],
+    dependencies=[Depends(require_admin_access)],
 )
 
 DbSession = Annotated[AsyncSession, Depends(get_async_session)]
 
 ANONYMIZE_RESPONSES: dict[int | str, dict[str, Any]] = {
     401: {
-        "description": "Missing or invalid read API key",
+        "description": "Missing or invalid admin API key",
     },
     404: {
         "description": "Visitor not found",

@@ -405,7 +405,7 @@ paths:
       tags: [Visitors]
       summary: Redact identifying visitor attributes
       security:
-        - readBearer: []
+        - adminBearer: []
       parameters:
         - $ref: "#/components/parameters/VisitorId"
       responses:
@@ -482,6 +482,12 @@ components:
       type: http
       scheme: bearer
       description: analytics_read_api_key
+    adminBearer:
+      type: http
+      scheme: bearer
+      description: >
+        Server-side ANALYTICS_ADMIN_API_KEY for visitor anonymize.
+        Must not be embedded in browser JavaScript.
   parameters:
     PeriodFrom:
       name: period_from

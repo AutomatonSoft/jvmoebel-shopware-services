@@ -102,6 +102,7 @@ jobs:
       POSTGRES_PORT: 5432
       ANALYTICS_INGEST_API_KEY: ci-analytics-ingest-token
       ANALYTICS_READ_API_KEY: ci-analytics-read-token
+      ANALYTICS_ADMIN_API_KEY: ci-analytics-admin-token
       DASHBOARD_USER: dashboard
       DASHBOARD_PASSWORD: ci-dashboard-password
       SALES_CHANNELS: '[{"id":"018f1a2b3c4d5e6f7890abcdef123456","origins":["http://test","https://www.jvmoebel.de"],"market_code":"de"},{"id":"018f1a2b3c4d5e6f7890abcdef0000a1","origins":["http://test","https://www.jvmoebel.at"],"market_code":"at"},{"id":"018f1a2b3c4d5e6f7890abcdef0000c1","origins":["http://test","https://www.jvmoebel.ch"],"market_code":"ch"},{"id":"018f1a2b3c4d5e6f7890abcdef0000e1","origins":["http://test","https://www.jvfurniture.co.uk"],"market_code":"uk"},{"id":"018f1a2b3c4d5e6f7890abcdef0000f1","origins":["http://test","https://www.jvmobili.it"],"market_code":"it"},{"id":"018f1a2b3c4d5e6f7890abcdef0000b1","origins":["http://test","https://www.jvmeble.pl"],"market_code":"pl"}]'

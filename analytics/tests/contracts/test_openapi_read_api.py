@@ -114,6 +114,7 @@ def test_openapi_lists_read_paths_and_response_schema_refs() -> None:
     assert "  /analytics/overview:" in openapi
     assert "  /analytics/customers/{customer_id}/journey:" in openapi
     assert "readBearer:" in openapi
+    assert "adminBearer:" in openapi
 
 
 def test_response_examples_match_json_schema() -> None:

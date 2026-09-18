@@ -17,20 +17,53 @@ import { Panel } from "../states";
 import type { Change, Filters, IntChange, PaymentRow, Shop } from "../types";
 import { useApi } from "../useApi";
 
-function Cell({
-  now,
-  was,
+function Flow({ period1, period2 }: { period1: string; period2: string }) {
+  return (
+    <span className="flow">
+      {period2}
+      <span className="flow-arrow">→</span>
+      {period1}
+    </span>
+  );
+}
+
+function MetricRow({
+  label,
+  period1,
+  period2,
   delta,
 }: {
-  now: string;
-  was: string;
+  label: string;
+  period1: string;
+  period2: string;
+  delta: { text: string; cls: string };
+}) {
+  return (
+    <tr>
+      <td>{label}</td>
+      <td>
+        <Flow period1={period1} period2={period2} />
+      </td>
+      <td className={delta.cls}>{delta.text}</td>
+    </tr>
+  );
+}
+
+function PairCell({
+  period1,
+  period2,
+  delta,
+}: {
+  period1: string;
+  period2: string;
   delta: { text: string; cls: string };
 }) {
   return (
     <td>
-      <div className="pair-now">{now}</div>
-      <div className="pair-was">было {was}</div>
-      <div className={`pair-delta ${delta.cls}`}>{delta.text}</div>
+      <div className="pair">
+        <Flow period1={period1} period2={period2} />
+        <span className={delta.cls}>{delta.text}</span>
+      </div>
     </td>
   );
 }
@@ -186,106 +219,85 @@ export function ComparePage({
           <>
             <section className="card">
               <h2>Основные показатели</h2>
-              <table className="compare-table">
+              <table className="compare-table compare-metrics">
                 <thead>
                   <tr>
                     <th>Показатель</th>
-                    <th>Значение</th>
+                    <th>Период 2 → период 1</th>
+                    <th>Разница</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Посетители</td>
-                    <Cell
-                      now={formatInt(current.visitors)}
-                      was={formatInt(previous.visitors)}
-                      delta={intDelta(delta.visitors)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Сессии</td>
-                    <Cell
-                      now={formatInt(current.sessions)}
-                      was={formatInt(previous.sessions)}
-                      delta={intDelta(delta.sessions)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Лиды</td>
-                    <Cell
-                      now={formatInt(current.leads)}
-                      was={formatInt(previous.leads)}
-                      delta={intDelta(delta.leads)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Оплаченные заказы</td>
-                    <Cell
-                      now={formatInt(current.orders_paid)}
-                      was={formatInt(previous.orders_paid)}
-                      delta={intDelta(delta.orders_paid)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Ручные продажи</td>
-                    <Cell
-                      now={formatInt(current.manual_sales)}
-                      was={formatInt(previous.manual_sales)}
-                      delta={intDelta(delta.manual_sales)}
-                    />
-                  </tr>
+                  <MetricRow
+                    label="Посетители"
+                    period1={formatInt(current.visitors)}
+                    period2={formatInt(previous.visitors)}
+                    delta={intDelta(delta.visitors)}
+                  />
+                  <MetricRow
+                    label="Сессии"
+                    period1={formatInt(current.sessions)}
+                    period2={formatInt(previous.sessions)}
+                    delta={intDelta(delta.sessions)}
+                  />
+                  <MetricRow
+                    label="Лиды"
+                    period1={formatInt(current.leads)}
+                    period2={formatInt(previous.leads)}
+                    delta={intDelta(delta.leads)}
+                  />
+                  <MetricRow
+                    label="Оплаченные заказы"
+                    period1={formatInt(current.orders_paid)}
+                    period2={formatInt(previous.orders_paid)}
+                    delta={intDelta(delta.orders_paid)}
+                  />
+                  <MetricRow
+                    label="Ручные продажи"
+                    period1={formatInt(current.manual_sales)}
+                    period2={formatInt(previous.manual_sales)}
+                    delta={intDelta(delta.manual_sales)}
+                  />
                   {delta.money.map((row) => (
-                    <tr key={row.currency}>
-                      <td>Выручка без возвратов ({row.currency})</td>
-                      <Cell
-                        now={formatMoney(
-                          current.money.find((item) => item.currency === row.currency)
-                            ?.net,
-                          row.currency,
-                        )}
-                        was={formatMoney(
-                          previous.money.find((item) => item.currency === row.currency)
-                            ?.net,
-                          row.currency,
-                        )}
-                        delta={moneyDelta(row.net.abs, row.net.pct, row.currency)}
-                      />
-                    </tr>
+                    <MetricRow
+                      key={row.currency}
+                      label={`Выручка без возвратов (${row.currency})`}
+                      period1={formatMoney(
+                        current.money.find((item) => item.currency === row.currency)?.net,
+                        row.currency,
+                      )}
+                      period2={formatMoney(
+                        previous.money.find((item) => item.currency === row.currency)
+                          ?.net,
+                        row.currency,
+                      )}
+                      delta={moneyDelta(row.net.abs, row.net.pct, row.currency)}
+                    />
                   ))}
-                  <tr>
-                    <td>Сессия → лид</td>
-                    <Cell
-                      now={formatRate(current.session_to_lead)}
-                      was={formatRate(previous.session_to_lead)}
-                      delta={rateDelta(delta.session_to_lead)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Лид → продажа</td>
-                    <Cell
-                      now={formatRate(current.lead_to_paid_sale)}
-                      was={formatRate(previous.lead_to_paid_sale)}
-                      delta={rateDelta(delta.lead_to_paid_sale)}
-                    />
-                  </tr>
-                  <tr>
-                    <td>Время до продажи</td>
-                    <Cell
-                      now={formatDays(current.first_visit_to_paid_sale_seconds)}
-                      was={formatDays(previous.first_visit_to_paid_sale_seconds)}
-                      delta={daysDelta(delta.first_visit_to_paid_sale_seconds)}
-                    />
-                  </tr>
+                  <MetricRow
+                    label="Сессия → лид"
+                    period1={formatRate(current.session_to_lead)}
+                    period2={formatRate(previous.session_to_lead)}
+                    delta={rateDelta(delta.session_to_lead)}
+                  />
+                  <MetricRow
+                    label="Лид → продажа"
+                    period1={formatRate(current.lead_to_paid_sale)}
+                    period2={formatRate(previous.lead_to_paid_sale)}
+                    delta={rateDelta(delta.lead_to_paid_sale)}
+                  />
+                  <MetricRow
+                    label="Время до продажи"
+                    period1={formatDays(current.first_visit_to_paid_sale_seconds)}
+                    period2={formatDays(previous.first_visit_to_paid_sale_seconds)}
+                    delta={daysDelta(delta.first_visit_to_paid_sale_seconds)}
+                  />
                 </tbody>
               </table>
             </section>
             {methods?.delta.length ? (
               <section className="card">
                 <h2>Способы оплаты</h2>
-                <p className="hint">
-                  Одна строка — один метод. В ячейке: сейчас, было, разница. Конверсии — в
-                  пунктах (п.п.).
-                </p>
                 <table className="compare-table">
                   <thead>
                     <tr>
@@ -306,29 +318,29 @@ export function ComparePage({
                           <td>
                             {PAYMENT_LABELS[row.payment_method] ?? row.payment_method}
                           </td>
-                          <Cell
-                            now={formatInt(now?.shown ?? 0)}
-                            was={formatInt(then?.shown ?? 0)}
+                          <PairCell
+                            period1={formatInt(now?.shown ?? 0)}
+                            period2={formatInt(then?.shown ?? 0)}
                             delta={intDelta(row.shown)}
                           />
-                          <Cell
-                            now={formatRate(now?.selected_rate)}
-                            was={formatRate(then?.selected_rate)}
+                          <PairCell
+                            period1={formatRate(now?.selected_rate)}
+                            period2={formatRate(then?.selected_rate)}
                             delta={rateDelta(row.selected_rate)}
                           />
-                          <Cell
-                            now={formatInt(now?.failed ?? 0)}
-                            was={formatInt(then?.failed ?? 0)}
+                          <PairCell
+                            period1={formatInt(now?.failed ?? 0)}
+                            period2={formatInt(then?.failed ?? 0)}
                             delta={intDelta(row.failed)}
                           />
-                          <Cell
-                            now={formatRate(now?.selected_to_paid)}
-                            was={formatRate(then?.selected_to_paid)}
+                          <PairCell
+                            period1={formatRate(now?.selected_to_paid)}
+                            period2={formatRate(then?.selected_to_paid)}
                             delta={rateDelta(row.selected_to_paid)}
                           />
-                          <Cell
-                            now={formatMoneyList(now?.money ?? [], "net")}
-                            was={formatMoneyList(then?.money ?? [], "net")}
+                          <PairCell
+                            period1={formatMoneyList(now?.money ?? [], "net")}
+                            period2={formatMoneyList(then?.money ?? [], "net")}
                             delta={
                               row.money[0]
                                 ? moneyDelta(

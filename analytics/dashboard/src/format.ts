@@ -27,6 +27,13 @@ export function formatChangePct(value: string | null | undefined): string {
   return `${sign}${pct} %`;
 }
 
+export function formatPp(value: string | null | undefined): string {
+  if (value == null) return "—";
+  const points = Math.round(Number(value) * 100);
+  const sign = points > 0 ? "+" : "";
+  return `${sign}${points} п.п.`;
+}
+
 export function formatMoney(amount: string | null | undefined, currency: string): string {
   if (amount == null) return "—";
   const symbol = SYMBOLS[currency] ?? currency;
@@ -61,6 +68,15 @@ export function formatDateTime(iso: string): string {
     timeStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(iso))} UTC`;
+}
+
+export function formatRange(from: string, to: string): string {
+  const fmt = new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "UTC",
+  });
+  return `${fmt.format(new Date(from))} – ${fmt.format(new Date(to))}`;
 }
 
 export function tone(value: number | string | null | undefined): string {
@@ -120,4 +136,13 @@ export const ENTITY_LABELS: Record<string, string> = {
   customer: "Покупатель",
   contact: "Обращение",
   manual_sale: "Ручная продажа",
+};
+
+export const PAYMENT_LABELS: Record<string, string> = {
+  paypal: "PayPal",
+  invoice: "Счёт",
+  installment: "Рассрочка",
+  creditcard: "Карта",
+  prepayment: "Предоплата",
+  klarna: "Klarna",
 };

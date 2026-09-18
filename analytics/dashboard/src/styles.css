@@ -71,6 +71,23 @@ body { background: var(--bg); color: var(--ink); }
   font: inherit;
   cursor: pointer;
 }
+.compare-form fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem 0.7rem;
+  display: flex;
+  gap: 0.7rem;
+  margin: 0;
+}
+.compare-form legend {
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 0 0.3rem;
+}
+.pair-now { font-weight: 700; }
+.pair-was { color: var(--muted); font-size: 0.8rem; }
+.pair-delta { font-size: 0.82rem; margin-top: 0.15rem; }
+.compare-table th:first-child, .compare-table td:first-child { white-space: nowrap; }
 
 h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
 .lead { color: var(--muted); margin: 0 0 1rem; }
@@ -103,7 +120,7 @@ h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
 }
 .card h2 { margin: 0 0 0.35rem; font-size: 1.05rem; }
 .hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 0.8rem; }
-.card a { color: var(--accent); }
+.card table + table { margin-top: 1.25rem; }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 th, td { text-align: left; padding: 0.5rem 0.45rem; border-bottom: 1px solid var(--line); vertical-align: top; }

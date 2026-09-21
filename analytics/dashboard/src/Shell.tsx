@@ -1,6 +1,7 @@
 import { FormEvent } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { toInput } from "./filters";
+import { ATTRIBUTION_LABELS } from "./format";
 import type { Filters, Shop } from "./types";
 
 const NAV = [
@@ -94,8 +95,10 @@ export function Shell({ filters, shops, onChange }: Props) {
                   defaultValue={filters.attribution_model}
                   key={filters.attribution_model}
                 >
-                  <option value="last_non_direct">Last Non-Direct</option>
-                  <option value="first_touch">First Touch</option>
+                  <option value="last_non_direct">
+                    {ATTRIBUTION_LABELS.last_non_direct}
+                  </option>
+                  <option value="first_touch">{ATTRIBUTION_LABELS.first_touch}</option>
                 </select>
               </label>
               <button type="submit">Показать</button>
@@ -106,9 +109,7 @@ export function Shell({ filters, shops, onChange }: Props) {
               {shops.find((shop) => shop.id === filters.sales_channel)?.label ??
                 "все магазины"}{" "}
               ·{" "}
-              {filters.attribution_model === "first_touch"
-                ? "First Touch"
-                : "Last Non-Direct Touch"}
+              {ATTRIBUTION_LABELS[filters.attribution_model]}
             </p>
           </>
         )}

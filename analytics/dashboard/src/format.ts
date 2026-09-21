@@ -149,6 +149,11 @@ export const PAYMENT_LABELS: Record<string, string> = {
   klarna: "Klarna",
 };
 
+export const ATTRIBUTION_LABELS = {
+  last_non_direct: "Последний источник",
+  first_touch: "Первый источник",
+} as const;
+
 export const SOURCE_LABELS: Record<string, string> = {
   google_ads: "Google Ads",
   google: "Google",

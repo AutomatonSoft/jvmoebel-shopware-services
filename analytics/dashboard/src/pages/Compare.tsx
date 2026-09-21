@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { api } from "../api";
 import { previousPeriod, toInput } from "../filters";
 import {
+  ATTRIBUTION_LABELS,
   formatChangePct,
   formatDays,
   formatInt,
@@ -145,7 +146,7 @@ export function ComparePage({
       </p>
       <form className="filters compare-form" onSubmit={submit}>
         <fieldset>
-          <legend>Период 1</legend>
+          <legend>Стало</legend>
           <label>
             С
             <input
@@ -166,7 +167,7 @@ export function ComparePage({
           </label>
         </fieldset>
         <fieldset>
-          <legend>Период 2</legend>
+          <legend>Было</legend>
           <label>
             С
             <input
@@ -208,8 +209,10 @@ export function ComparePage({
             defaultValue={filters.attribution_model}
             key={filters.attribution_model}
           >
-            <option value="last_non_direct">Last Non-Direct</option>
-            <option value="first_touch">First Touch</option>
+            <option value="last_non_direct">
+              {ATTRIBUTION_LABELS.last_non_direct}
+            </option>
+            <option value="first_touch">{ATTRIBUTION_LABELS.first_touch}</option>
           </select>
         </label>
         <button type="submit">Сравнить</button>
@@ -223,7 +226,7 @@ export function ComparePage({
                 <thead>
                   <tr>
                     <th>Показатель</th>
-                    <th>Период 2 → период 1</th>
+                    <th>Было → Стало</th>
                     <th>Разница</th>
                   </tr>
                 </thead>

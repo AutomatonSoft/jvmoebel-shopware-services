@@ -221,18 +221,10 @@ function joinParts(parts: Array<string | null | undefined>): string {
   return parts.filter((part): part is string => Boolean(part)).join(", ");
 }
 
-function trafficOrigin(payload: Record<string, unknown>): string {
-  const utm = asRecord(payload.utm);
-  const clickIds = asRecord(payload.click_ids);
-  const source = utm ? payloadText(utm, "utm_source") : null;
-  const medium = utm ? payloadText(utm, "utm_medium") : null;
-  const paid = Boolean(medium && /cpc|ppc|paid|display/i.test(medium));
-  if (clickIds && (clickIds.gclid || clickIds.gbraid || clickIds.wbraid)) {
-    return "Google Ads";
-  }
-  if (source === "google" && paid) return "Google Ads";
-  if (source) return labelSource(source);
-  return "прямой заход";
+function sessionOrigin(trafficSource: string | null | undefined): string | null {
+  if (!trafficSource) return null;
+  if (trafficSource === "direct") return "Прямой заход";
+  return `Пришёл из ${labelSource(trafficSource)}`;
 }
 
 function productName(payload: Record<string, unknown>): string | null {
@@ -249,7 +241,11 @@ function payloadPrice(payload: Record<string, unknown>): string | null {
   return formatMoney(amount, payloadText(payload, "currency") ?? "EUR");
 }
 
-export function summarizeJourneyEvent(payload: Record<string, unknown>, eventType: string): string {
+export function summarizeJourneyEvent(
+  payload: Record<string, unknown>,
+  eventType: string,
+  trafficSource?: string | null,
+): string {
   const utm = asRecord(payload.utm);
   const campaign = utm ? payloadText(utm, "utm_campaign") : null;
   const product = productName(payload);
@@ -279,7 +275,7 @@ export function summarizeJourneyEvent(payload: Record<string, unknown>, eventTyp
   switch (eventType) {
     case "session_started":
       return joinParts([
-        `Пришёл из ${trafficOrigin(payload)}`,
+        sessionOrigin(trafficSource),
         campaign ? `кампания ${campaign}` : null,
       ]);
     case "product_viewed":

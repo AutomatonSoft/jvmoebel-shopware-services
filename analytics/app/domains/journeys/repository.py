@@ -1,13 +1,20 @@
+from uuid import UUID
+
 from sqlalchemy import ColumnElement, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.base.exceptions import NotFoundException
 from domains.journeys.schemas import JourneyEvent, JourneyResponse
+from domains.projections.models.entities import Session
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload
 
 
-def to_journey_event(event: Event) -> JourneyEvent:
+def to_journey_event(
+    event: Event,
+    *,
+    traffic_source: str | None = None,
+) -> JourneyEvent:
     return JourneyEvent(
         event_id=event.event_id,
         event_type=event.event_type,
@@ -23,6 +30,7 @@ def to_journey_event(event: Event) -> JourneyEvent:
         contact_id=event.contact_id,
         manual_sale_id=event.manual_sale_id,
         refund_id=event.refund_id,
+        traffic_source=traffic_source,
         payload=event_payload(event),
     )
 
@@ -44,6 +52,25 @@ async def list_events(
     return list(result.all())
 
 
+async def _session_traffic_sources(
+    session: AsyncSession,
+    events: list[Event],
+) -> dict[UUID, str]:
+    session_ids = [
+        event.session_id
+        for event in events
+        if event.event_type == "session_started" and event.session_id is not None
+    ]
+    if not session_ids:
+        return {}
+    stmt = select(Session.session_id, Session.source).where(
+        Session.session_id.in_(session_ids),
+        Session.source.isnot(None),
+    )
+    result = await session.execute(stmt)
+    return {session_id: source for session_id, source in result.all()}
+
+
 async def load_journey(
     session: AsyncSession,
     clause: ColumnElement[bool],
@@ -51,4 +78,17 @@ async def load_journey(
     events = await list_events(session, clause)
     if not events:
         raise NotFoundException(detail="Journey not found")
-    return JourneyResponse(events=[to_journey_event(event) for event in events])
+    traffic_by_session = await _session_traffic_sources(session, events)
+    return JourneyResponse(
+        events=[
+            to_journey_event(
+                event,
+                traffic_source=(
+                    traffic_by_session.get(event.session_id)
+                    if event.event_type == "session_started"
+                    else None
+                ),
+            )
+            for event in events
+        ]
+    )

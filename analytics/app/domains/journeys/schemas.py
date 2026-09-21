@@ -30,6 +30,7 @@ class JourneyEvent(BaseModel):
     contact_id: str | None = None
     manual_sale_id: str | None = None
     refund_id: str | None = None
+    traffic_source: str | None = None
     payload: dict[str, Any]
 
 

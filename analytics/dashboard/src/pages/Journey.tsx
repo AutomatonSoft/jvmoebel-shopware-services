@@ -24,7 +24,11 @@ function Timeline({ events }: { events: JourneyEvent[] }) {
   return (
     <ol className="timeline">
       {events.map((event) => {
-        const summary = summarizeJourneyEvent(event.payload, event.event_type);
+        const summary = summarizeJourneyEvent(
+          event.payload,
+          event.event_type,
+          event.traffic_source,
+        );
         return (
           <li key={event.event_id}>
             <time>{formatDateTime(event.occurred_at)}</time>

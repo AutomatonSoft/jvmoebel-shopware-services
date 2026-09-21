@@ -83,6 +83,12 @@
             { "type": "null" }
           ]
         },
+        "traffic_source": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "payload": {
           "type": "object"
         }

@@ -119,6 +119,7 @@ export type JourneyEvent = {
   contact_id: string | null;
   manual_sale_id: string | null;
   refund_id: string | null;
+  traffic_source: string | null;
   payload: Record<string, unknown>;
 };
 

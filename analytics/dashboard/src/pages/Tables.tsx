@@ -68,7 +68,10 @@ export function ChannelsPage({ filters }: { filters: Filters }) {
   return (
     <>
       <h1>Каналы обращений</h1>
-      <p className="lead">Сравнение form / email / WhatsApp / phone. Количество за период.</p>
+      <p className="lead">
+        Сравнение form / email / WhatsApp / phone. Конверсия обращение → лид и лид → продажа
+        за период.
+      </p>
       <Panel loading={loading} error={error} empty={items.length === 0}>
         <section className="card">
           <table>
@@ -78,7 +81,9 @@ export function ChannelsPage({ filters }: { filters: Filters }) {
                 <th>Нажатия «написать»</th>
                 <th>Обращения</th>
                 <th>Лиды</th>
+                <th>Обращение → лид</th>
                 <th>Продажи</th>
+                <th>Лид → продажа</th>
                 <th>Выручка (без возвратов)</th>
               </tr>
             </thead>
@@ -89,7 +94,9 @@ export function ChannelsPage({ filters }: { filters: Filters }) {
                   <td>{formatInt(row.intents)}</td>
                   <td>{formatInt(row.contacts)}</td>
                   <td>{formatInt(row.leads)}</td>
+                  <td>{formatRate(row.contact_to_lead)}</td>
                   <td>{formatInt(row.orders_paid + row.manual_sales)}</td>
+                  <td>{formatRate(row.lead_to_paid_sale)}</td>
                   <td>{formatMoneyList(row.money, "net")}</td>
                 </tr>
               ))}

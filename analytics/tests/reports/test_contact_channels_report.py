@@ -47,3 +47,34 @@ async def test_contact_channels_separates_contacts_and_leads(
     assert whatsapp["leads"] == 0
     assert whatsapp["contact_to_lead"] is None
     assert whatsapp["lead_to_paid_sale"] is None
+
+
+async def test_contact_channels_lead_to_sale_is_unique_leads(
+    persist_event,
+    session_started_event: dict,
+    load_shopware_event,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    await persist_event(session_started_event)
+    lead = load_shopware_event("lead-created")
+    first = load_shopware_event("order-paid")
+    first["occurred_at"] = "2026-08-24T11:00:00Z"
+    second = load_shopware_event("order-paid")
+    second["occurred_at"] = "2026-08-24T12:00:00Z"
+    second["order_id"] = "018f3333333333333333333333333334"
+    second["aggregate_id"] = second["order_id"]
+    await persist_event(lead)
+    await persist_event(first)
+    await persist_event(second)
+
+    response = await client.get(
+        "/api/v1/analytics/contact-channels",
+        params=report_params(),
+        headers=read_auth_headers,
+    )
+    assert response.status_code == 200
+    form = next(row for row in response.json()["items"] if row["channel"] == "form")
+    assert form["leads"] == 1
+    assert form["orders_paid"] == 2
+    assert form["lead_to_paid_sale"] == "1.0000"

@@ -91,7 +91,7 @@ class Settings(BaseSettings):
         default_factory=list,
         description="Allowlist of sales channels (id, origins, market_code)",
     )
-    referral_exclusion_hosts: Json[list[str]] = Field(
+    referral_exclusion_hosts: list[str] = Field(
         default_factory=list,
         description=(
             "Extra referrer hostnames treated as direct, on top of sales-channel "

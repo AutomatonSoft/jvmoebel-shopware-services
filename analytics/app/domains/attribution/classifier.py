@@ -37,6 +37,35 @@ _SEARCH_HOSTS = {
     "yandex.ru",
     "yandex.com",
 }
+_SOCIAL_HOSTS = {
+    "instagram.com",
+    "facebook.com",
+    "fb.com",
+    "tiktok.com",
+    "pinterest.com",
+    "linkedin.com",
+    "twitter.com",
+    "x.com",
+    "youtube.com",
+    "youtu.be",
+    "whatsapp.com",
+    "telegram.org",
+    "telegram.me",
+    "t.me",
+}
+_SOCIAL_ROOTS = frozenset(
+    {
+        "instagram",
+        "facebook",
+        "tiktok",
+        "pinterest",
+        "linkedin",
+        "twitter",
+        "youtube",
+        "whatsapp",
+        "telegram",
+    }
+)
 _SKIP_ORIGIN_HOSTS = {"test", "localhost"}
 DEFAULT_REFERRAL_EXCLUSION_HOSTS = frozenset(
     {
@@ -93,6 +122,17 @@ def _is_search_referrer(referrer: str | None) -> bool:
     if host.endswith(".bing.com") or host.endswith(".yahoo.com"):
         return True
     return host.split(".", 1)[0] == "google"
+
+
+def _is_social_referrer(referrer: str | None) -> bool:
+    host = _hostname(referrer)
+    if not host:
+        return False
+    if host in _SOCIAL_HOSTS:
+        return True
+    if any(host.endswith("." + domain) for domain in _SOCIAL_HOSTS):
+        return True
+    return host.split(".", 1)[0] in _SOCIAL_ROOTS
 
 
 def _is_google_source(utm_source: str | None) -> bool:
@@ -158,9 +198,7 @@ def referral_exclusion_hosts() -> frozenset[str]:
     return collect_referral_exclusion_hosts(
         extra=settings.referral_exclusion_hosts,
         origin_urls=[
-            origin
-            for channel in settings.sales_channels
-            for origin in channel.origins
+            origin for channel in settings.sales_channels for origin in channel.origins
         ],
     )
 
@@ -197,6 +235,8 @@ def classify_source(
         or _contains_social(utm_medium)
         or _contains_social(utm_source)
     ):
+        return "social"
+    if not has_utm and _is_social_referrer(referrer):
         return "social"
 
     if medium in _EMAIL_MEDIUMS:

@@ -75,6 +75,33 @@ def test_social_source() -> None:
     )
 
 
+def test_social_referrer_without_utm_is_social() -> None:
+    for referrer in (
+        "https://www.instagram.com/",
+        "https://l.instagram.com/",
+        "https://www.facebook.com/",
+        "https://l.facebook.com/",
+        "https://www.tiktok.com/@shop",
+        "https://www.pinterest.com/pin/1",
+        "https://www.pinterest.de/pin/1",
+    ):
+        assert classify_source(**{**EMPTY, "referrer": referrer}) == "social"
+
+
+def test_utm_wins_over_social_referrer() -> None:
+    assert (
+        classify_source(
+            **{
+                **EMPTY,
+                "utm_source": "bing",
+                "utm_medium": "cpc",
+                "referrer": "https://l.facebook.com/",
+            }
+        )
+        == "paid"
+    )
+
+
 def test_referrer_without_utm_is_referral() -> None:
     assert (
         classify_source(**{**EMPTY, "referrer": "https://example.com/blog"})

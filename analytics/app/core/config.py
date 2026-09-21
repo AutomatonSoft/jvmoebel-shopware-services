@@ -91,6 +91,13 @@ class Settings(BaseSettings):
         default_factory=list,
         description="Allowlist of sales channels (id, origins, market_code)",
     )
+    referral_exclusion_hosts: Json[list[str]] = Field(
+        default_factory=list,
+        description=(
+            "Extra referrer hostnames treated as direct, on top of sales-channel "
+            "origins and built-in payment providers"
+        ),
+    )
     max_body_size: int = Field(
         default=256 * 1024,
         description="Maximum HTTP request body size in bytes",

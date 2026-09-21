@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.attribution.classifier import classify_source
+from domains.attribution.classifier import classify_source, referral_exclusion_hosts
 from domains.attribution.rules import Touch, apply_first_touch, apply_last_non_direct
 from domains.attribution.service import refresh_dependent_snapshots
 from domains.projections.exceptions import require_id, require_row
@@ -72,6 +72,7 @@ async def handle_session_started(
         utm_source=utm_source,
         utm_medium=utm_medium,
         referrer=referrer,
+        excluded_hosts=referral_exclusion_hosts(),
     )
 
     if not should_apply_entity_update(

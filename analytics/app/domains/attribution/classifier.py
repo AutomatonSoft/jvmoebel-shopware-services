@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from urllib.parse import urlsplit
 
 _SOCIAL_TOKENS = (
@@ -36,6 +37,35 @@ _SEARCH_HOSTS = {
     "yandex.ru",
     "yandex.com",
 }
+_SKIP_ORIGIN_HOSTS = {"test", "localhost"}
+DEFAULT_REFERRAL_EXCLUSION_HOSTS = frozenset(
+    {
+        "paypal.com",
+        "paypal.me",
+        "paypalobjects.com",
+        "klarna.com",
+        "klarnacdn.net",
+        "klarnapayments.com",
+        "stripe.com",
+        "adyen.com",
+        "payone.com",
+        "payone.de",
+        "sofort.com",
+        "giropay.de",
+        "amazonpay.com",
+        "payments-amazon.com",
+        "verifiedbyvisa.com",
+        "securecode.com",
+        "paypal",
+        "klarna",
+        "stripe",
+        "3dsecure",
+        "3d-secure",
+        "verifiedbyvisa",
+        "securecode",
+        "acs",
+    }
+)
 
 
 def _contains_social(value: str | None) -> bool:
@@ -70,6 +100,71 @@ def _is_google_source(utm_source: str | None) -> bool:
     return value in _GOOGLE_SOURCES or value.startswith("google_")
 
 
+def _is_ipv4(host: str) -> bool:
+    parts = host.split(".")
+    return len(parts) == 4 and all(part.isdigit() for part in parts)
+
+
+def _normalize_exclusion_rule(value: str) -> str:
+    stripped = value.strip().lower()
+    if not stripped:
+        return ""
+    if "://" in stripped:
+        return _hostname(stripped)
+    return stripped.removeprefix("www.")
+
+
+def _is_excluded_host(host: str, excluded: Collection[str]) -> bool:
+    if not host:
+        return False
+    labels = host.split(".")
+    for rule in excluded:
+        if not rule:
+            continue
+        if rule == "acs":
+            if host.startswith("acs.") and host.count(".") >= 2:
+                return True
+            continue
+        if "." in rule:
+            if host == rule or host.endswith("." + rule):
+                return True
+            continue
+        if rule in labels:
+            return True
+    return False
+
+
+def collect_referral_exclusion_hosts(
+    *,
+    extra: Collection[str] = (),
+    origin_urls: Collection[str] = (),
+) -> frozenset[str]:
+    hosts = set(DEFAULT_REFERRAL_EXCLUSION_HOSTS)
+    for item in extra:
+        rule = _normalize_exclusion_rule(item)
+        if rule:
+            hosts.add(rule)
+    for origin in origin_urls:
+        host = _hostname(origin)
+        if not host or host in _SKIP_ORIGIN_HOSTS or _is_ipv4(host):
+            continue
+        hosts.add(host)
+    return frozenset(hosts)
+
+
+def referral_exclusion_hosts() -> frozenset[str]:
+    from core.config import settings
+
+    return collect_referral_exclusion_hosts(
+        extra=settings.referral_exclusion_hosts,
+        origin_urls=[
+            origin
+            for channel in settings.sales_channels
+            for origin in channel.origins
+        ],
+    )
+
+
 def classify_source(
     *,
     gclid: str | None,
@@ -78,9 +173,13 @@ def classify_source(
     utm_source: str | None,
     utm_medium: str | None,
     referrer: str | None,
+    excluded_hosts: Collection[str] = (),
 ) -> str:
     if gclid or gbraid or wbraid:
         return "google_ads"
+
+    if _is_excluded_host(_hostname(referrer), excluded_hosts):
+        referrer = None
 
     medium = (utm_medium or "").lower()
     has_utm = bool(utm_source or utm_medium)

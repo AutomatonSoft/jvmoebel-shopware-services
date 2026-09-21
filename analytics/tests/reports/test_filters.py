@@ -51,6 +51,42 @@ async def test_unknown_sales_channel_is_empty(
     assert matched.json()["sessions"] == 1
 
 
+async def test_shop_filter_keeps_direct_visitors_for_both_models(
+    persist_event,
+    session_started_event: dict,
+    client,
+    read_auth_headers: dict[str, str],
+) -> None:
+    ads = uniquify_ids(session_started_event, visitor=True, session=True)
+    direct = uniquify_ids(session_started_event, visitor=True, session=True)
+    direct["payload"] = {
+        **direct["payload"],
+        "utm": {},
+        "click_ids": {},
+        "referrer": None,
+    }
+    await persist_event(ads)
+    await persist_event(direct)
+
+    params = {"sales_channel": ALLOWED_CHANNEL}
+    last = await client.get(
+        "/api/v1/analytics/overview",
+        params=report_params(attribution_model="last_non_direct", **params),
+        headers=read_auth_headers,
+    )
+    first = await client.get(
+        "/api/v1/analytics/overview",
+        params=report_params(attribution_model="first_touch", **params),
+        headers=read_auth_headers,
+    )
+    assert last.status_code == 200
+    assert first.status_code == 200
+    assert last.json()["visitors"] == 2
+    assert first.json()["visitors"] == 2
+    assert last.json()["sessions"] == 2
+    assert first.json()["sessions"] == 2
+
+
 async def test_source_filter_excludes_other_source(
     persist_event,
     session_started_event: dict,

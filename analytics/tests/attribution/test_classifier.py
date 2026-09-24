@@ -84,6 +84,9 @@ def test_social_referrer_without_utm_is_social() -> None:
         "https://www.tiktok.com/@shop",
         "https://www.pinterest.com/pin/1",
         "https://www.pinterest.de/pin/1",
+        "https://t.co/abc",
+        "https://lnkd.in/abc",
+        "https://pin.it/abc",
     ):
         assert classify_source(**{**EMPTY, "referrer": referrer}) == "social"
 

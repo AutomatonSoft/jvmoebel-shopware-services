@@ -49,6 +49,8 @@ async def test_read_api_still_returns_json_401(client) -> None:
     )
     assert response.status_code == 401
     assert response.headers["content-type"].startswith("application/json")
+    assert response.headers["www-authenticate"].startswith("Basic")
+    assert "dashboard" in response.headers["www-authenticate"]
     assert response.json()["detail"] == "Authentication required"
 
 

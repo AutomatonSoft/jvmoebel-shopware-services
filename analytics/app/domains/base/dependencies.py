@@ -37,15 +37,19 @@ def dashboard_credentials_ok(username: str, password: str) -> bool:
 def _validate_bearer_token(
     credentials: HTTPAuthorizationCredentials | None,
     expected_token: str,
+    *,
+    headers: dict[str, str] | None = None,
 ) -> None:
     if credentials is None:
         raise UnauthorizedException(
             detail="Authentication required",
+            headers=headers,
         )
 
     if credentials.scheme.lower() != "bearer":
         raise UnauthorizedException(
             detail="Invalid authentication scheme",
+            headers=headers,
         )
 
     if not compare_digest(
@@ -54,6 +58,7 @@ def _validate_bearer_token(
     ):
         raise UnauthorizedException(
             detail="Invalid authentication token",
+            headers=headers,
         )
 
 
@@ -84,10 +89,12 @@ async def require_read_access(
             return
         raise UnauthorizedException(
             detail="Invalid authentication token",
+            headers=WWW_AUTHENTICATE,
         )
     _validate_bearer_token(
         bearer,
         settings.analytics_read_api_key.get_secret_value(),
+        headers=WWW_AUTHENTICATE,
     )
 
 

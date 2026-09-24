@@ -40,6 +40,13 @@ async function request<T>(path: string, params?: Record<string, string>): Promis
   }
   const response = await fetch(url.toString(), { credentials: "same-origin" });
   if (!response.ok) {
+    if (response.status === 401) {
+      const path = window.location.pathname;
+      if (path !== "/dashboard" && path !== "/dashboard/") {
+        window.location.assign("/dashboard/");
+      }
+      throw new ApiError(401, errorMessage(401, undefined));
+    }
     let detail: unknown;
     try {
       const body = await response.json();

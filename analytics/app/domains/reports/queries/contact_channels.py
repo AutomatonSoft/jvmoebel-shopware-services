@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.entities import Lead, ManualSale, Order, Visitor
@@ -27,10 +27,11 @@ def _empty_channel() -> dict:
     return {
         "intents": 0,
         "contacts": 0,
+        "leads_from_contacts": 0,
         "leads": 0,
         "orders_paid": 0,
         "manual_sales": 0,
-        "converting_leads": set(),
+        "converting_leads": 0,
         "money": empty_money_buckets(),
     }
 
@@ -39,6 +40,44 @@ def _apply_channel(stmt, column, filters: ReportFilters):
     if filters.channel is None:
         return stmt
     return stmt.where(column == filters.channel)
+
+
+def _apply_contact_filters(stmt, filters: ReportFilters):
+    stmt = apply_period_channel_market(
+        stmt,
+        filters,
+        occurred_at=Contact.occurred_at,
+        sales_channel_id=Contact.sales_channel_id,
+        market_code=Contact.market_code,
+    )
+    stmt = _apply_channel(stmt, Contact.contact_channel, filters)
+    if filters.source is not None or filters.campaign is not None:
+        stmt = stmt.join(Lead, Contact.lead_id == Lead.lead_id)
+        stmt = apply_snapshot_attr(stmt, Lead, filters)
+    return stmt
+
+
+def _paid_order_exists(filters: ReportFilters):
+    conditions = [
+        Order.lead_id == Lead.lead_id,
+        Order.paid_event_id.isnot(None),
+    ]
+    if filters.payment_method is not None:
+        conditions.append(Order.payment_method == filters.payment_method)
+    if filters.currency is not None:
+        conditions.append(Order.currency == filters.currency)
+    return exists().where(*conditions)
+
+
+def _confirmed_manual_sale_exists(filters: ReportFilters):
+    conditions = [
+        ManualSale.lead_id == Lead.lead_id,
+        ManualSale.event_id.isnot(None),
+        ManualSale.cancelled_at.is_(None),
+    ]
+    if filters.currency is not None:
+        conditions.append(ManualSale.currency == filters.currency)
+    return exists().where(*conditions)
 
 
 async def query_contact_channels(
@@ -77,20 +116,23 @@ async def query_contact_channels(
         .select_from(Contact)
         .group_by(Contact.contact_channel)
     )
-    contact_stmt = apply_period_channel_market(
-        contact_stmt,
-        filters,
-        occurred_at=Contact.occurred_at,
-        sales_channel_id=Contact.sales_channel_id,
-        market_code=Contact.market_code,
-    )
-    contact_stmt = _apply_channel(contact_stmt, Contact.contact_channel, filters)
-    if filters.source is not None or filters.campaign is not None:
-        contact_stmt = contact_stmt.join(Lead, Contact.lead_id == Lead.lead_id)
-        contact_stmt = apply_snapshot_attr(contact_stmt, Lead, filters)
+    contact_stmt = _apply_contact_filters(contact_stmt, filters)
     contacts = await session.execute(contact_stmt)
     for channel, count in contacts.all():
         items[str(channel)]["contacts"] = int(count or 0)
+
+    contact_leads_stmt = (
+        select(
+            Contact.contact_channel,
+            func.count(func.distinct(Contact.lead_id)),
+        )
+        .select_from(Contact)
+        .group_by(Contact.contact_channel)
+    )
+    contact_leads_stmt = _apply_contact_filters(contact_leads_stmt, filters)
+    contact_leads = await session.execute(contact_leads_stmt)
+    for channel, count in contact_leads.all():
+        items[str(channel)]["leads_from_contacts"] = int(count or 0)
 
     lead_stmt = (
         select(Lead.contact_channel, func.count())
@@ -182,75 +224,31 @@ async def query_contact_channels(
             paid_count=count,
         )
 
-    converting_order_stmt = (
-        select(Lead.contact_channel, Lead.lead_id)
-        .select_from(Order)
-        .join(Lead, Order.lead_id == Lead.lead_id)
-        .where(Order.paid_event_id.isnot(None))
+    converting_stmt = (
+        select(Lead.contact_channel, func.count())
+        .select_from(Lead)
+        .where(Lead.event_id.isnot(None))
         .where(Lead.contact_channel.isnot(None))
-        .distinct()
+        .where(
+            or_(
+                _paid_order_exists(filters),
+                _confirmed_manual_sale_exists(filters),
+            )
+        )
+        .group_by(Lead.contact_channel)
     )
-    converting_order_stmt = apply_period_channel_market(
-        converting_order_stmt,
+    converting_stmt = apply_period_channel_market(
+        converting_stmt,
         filters,
-        occurred_at=Order.paid_at,
-        sales_channel_id=Order.sales_channel_id,
-        market_code=Order.market_code,
+        occurred_at=Lead.created_at,
+        sales_channel_id=Lead.sales_channel_id,
+        market_code=Lead.market_code,
     )
-    converting_order_stmt = apply_snapshot_attr(converting_order_stmt, Order, filters)
-    converting_order_stmt = apply_payment_method(
-        converting_order_stmt,
-        Order.payment_method,
-        filters,
-    )
-    converting_order_stmt = apply_currency(
-        converting_order_stmt,
-        Order.currency,
-        filters,
-    )
-    converting_order_stmt = _apply_channel(
-        converting_order_stmt,
-        Lead.contact_channel,
-        filters,
-    )
-    converting_orders = await session.execute(converting_order_stmt)
-    for channel, lead_id in converting_orders.all():
-        items[str(channel)]["converting_leads"].add(lead_id)
-
-    converting_sale_stmt = (
-        select(Lead.contact_channel, Lead.lead_id)
-        .select_from(ManualSale)
-        .join(Lead, ManualSale.lead_id == Lead.lead_id)
-        .where(ManualSale.event_id.isnot(None))
-        .where(ManualSale.cancelled_at.is_(None))
-        .where(Lead.contact_channel.isnot(None))
-        .distinct()
-    )
-    converting_sale_stmt = apply_period_channel_market(
-        converting_sale_stmt,
-        filters,
-        occurred_at=ManualSale.confirmed_at,
-        sales_channel_id=ManualSale.sales_channel_id,
-        market_code=ManualSale.market_code,
-    )
-    converting_sale_stmt = apply_snapshot_attr(
-        converting_sale_stmt,
-        ManualSale,
-        filters,
-    )
-    converting_sale_stmt = apply_currency(
-        converting_sale_stmt,
-        ManualSale.currency,
-        filters,
-    )
-    converting_sale_stmt = _apply_channel(
-        converting_sale_stmt,
-        Lead.contact_channel,
-        filters,
-    )
-    converting_sales = await session.execute(converting_sale_stmt)
-    for channel, lead_id in converting_sales.all():
-        items[str(channel)]["converting_leads"].add(lead_id)
+    converting_stmt = apply_snapshot_attr(converting_stmt, Lead, filters)
+    converting_stmt = _apply_channel(converting_stmt, Lead.contact_channel, filters)
+    converting_rows = await session.execute(converting_stmt)
+    for channel, count in converting_rows.all():
+        items[str(channel)]["converting_leads"] = int(count or 0)
 
     refund_stmt = (
         select(
@@ -292,9 +290,12 @@ async def query_contact_channels(
                 orders_paid=data["orders_paid"],
                 manual_sales=data["manual_sales"],
                 money=money_breakdowns(data["money"]),
-                contact_to_lead=format_rate(data["leads"], data["contacts"]),
+                contact_to_lead=format_rate(
+                    data["leads_from_contacts"],
+                    data["contacts"],
+                ),
                 lead_to_paid_sale=format_rate(
-                    len(data["converting_leads"]),
+                    data["converting_leads"],
                     data["leads"],
                 ),
             )

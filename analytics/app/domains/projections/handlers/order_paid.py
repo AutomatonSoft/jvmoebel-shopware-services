@@ -7,6 +7,7 @@ from domains.projections.models.entities import Order, Visitor
 from domains.projections.models.journal import Event
 from domains.projections.order_lines import replace_order_lines
 from domains.projections.parsing import event_payload, parse_money
+from domains.projections.refund_currency import sync_refund_currency_validity
 from domains.projections.versioning import (
     order_identity_values,
     overlay_attributes,
@@ -78,3 +79,4 @@ async def handle_order_paid(
         source_event_type=event.event_type,
         is_paid_snapshot=True,
     )
+    await sync_refund_currency_validity(session, order)

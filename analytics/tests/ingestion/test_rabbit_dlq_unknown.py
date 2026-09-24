@@ -239,6 +239,36 @@ async def test_projection_invariant_goes_to_dlq_without_retry(
     assert retry.published == []
 
 
+async def test_mismatched_refund_after_order_goes_to_dlq(
+    load_shopware_event,
+    db_session,
+) -> None:
+    paid = load_shopware_event("order-paid")
+    refund = load_shopware_event("refund-created")
+    refund["order_id"] = paid["order_id"]
+    refund["payload"]["currency"] = "USD"
+    retry = FakeRetryExchange()
+    first = FakeIncomingMessage(json.dumps(paid).encode("utf-8"))
+    second = FakeIncomingMessage(json.dumps(refund).encode("utf-8"))
+
+    await handle_shopware_message(
+        cast(AbstractIncomingMessage, first),
+        cast(AbstractExchange, retry),
+    )
+    await handle_shopware_message(
+        cast(AbstractIncomingMessage, second),
+        cast(AbstractExchange, retry),
+    )
+
+    assert first.acked is True
+    assert second.rejected is True
+    assert second.requeue is False
+    assert second.acked is False
+    assert retry.published == []
+    stored = await db_session.get(Refund, refund["refund_id"])
+    assert stored is None
+
+
 async def test_operational_error_retries(
     shopware_order_paid_event: dict,
     monkeypatch,

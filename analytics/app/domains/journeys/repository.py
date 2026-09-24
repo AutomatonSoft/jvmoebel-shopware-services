@@ -84,7 +84,7 @@ async def load_journey(
             to_journey_event(
                 event,
                 traffic_source=(
-                    traffic_by_session.get(event.session_id)
+                    traffic_by_session.get(event.session_id) # type: ignore
                     if event.event_type == "session_started"
                     else None
                 ),

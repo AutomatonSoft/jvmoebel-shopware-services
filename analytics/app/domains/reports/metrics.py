@@ -130,6 +130,7 @@ def apply_matching_order_currency(stmt: Select) -> Select:
     return stmt.where(
         Order.currency.isnot(None),
         Refund.currency == Order.currency,
+        Refund.invalid_reason.is_(None),
     )
 
 

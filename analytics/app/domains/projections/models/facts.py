@@ -179,6 +179,7 @@ class Refund(Base):
     order_state: Mapped[str | None] = mapped_column(String(64))
     payment_state: Mapped[str | None] = mapped_column(String(64))
     refunded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    invalid_reason: Mapped[str | None] = mapped_column(String(64))
 
 
 class RefundLine(Base):

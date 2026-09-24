@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { api } from "./api";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useSearchParams,
+} from "react-router-dom";
+import { api, safeDashboardNext } from "./api";
 import { defaultFilters } from "./filters";
 import { ComparePage } from "./pages/Compare";
 import { JourneyPage } from "./pages/Journey";
@@ -13,6 +19,13 @@ import {
 } from "./pages/Tables";
 import { Shell } from "./Shell";
 import type { Filters, Shop } from "./types";
+
+function RestorePath({ children }: { children: ReactNode }) {
+  const [params] = useSearchParams();
+  const next = safeDashboardNext(params.get("next"));
+  if (next) return <Navigate to={next} replace />;
+  return children;
+}
 
 export function App() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -29,7 +42,11 @@ export function App() {
     <BrowserRouter basename="/dashboard">
       <Routes>
         <Route
-          element={<Shell filters={filters} shops={shops} onChange={setFilters} />}
+          element={
+            <RestorePath>
+              <Shell filters={filters} shops={shops} onChange={setFilters} />
+            </RestorePath>
+          }
         >
           <Route path="/" element={<OverviewPage filters={filters} />} />
           <Route path="/funnel" element={<Navigate to="/" replace />} />

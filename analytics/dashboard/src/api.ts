@@ -31,6 +31,44 @@ function errorMessage(status: number, detail: unknown): string {
   return "Не удалось загрузить данные. Попробуйте ещё раз.";
 }
 
+const DASHBOARD_PREFIX = "/dashboard";
+const AUTH_RETURN_KEY = "dashboard-auth-return";
+
+function dashboardRelativePath(): string {
+  const { pathname, search, hash } = window.location;
+  let rest = pathname;
+  if (rest === DASHBOARD_PREFIX || rest === `${DASHBOARD_PREFIX}/`) {
+    rest = "/";
+  } else if (rest.startsWith(`${DASHBOARD_PREFIX}/`)) {
+    rest = rest.slice(DASHBOARD_PREFIX.length);
+  }
+  if (!rest.startsWith("/")) rest = `/${rest}`;
+  return `${rest}${search}${hash}`;
+}
+
+export function safeDashboardNext(raw: string | null): string | null {
+  if (!raw) return null;
+  let next = raw;
+  if (next.startsWith(`${DASHBOARD_PREFIX}/`)) {
+    next = next.slice(DASHBOARD_PREFIX.length);
+  } else if (next === DASHBOARD_PREFIX || next === `${DASHBOARD_PREFIX}/`) {
+    return null;
+  }
+  if (!next.startsWith("/") || next.startsWith("//") || next === "/") {
+    return null;
+  }
+  return next;
+}
+
+function redirectToDashboardLogin(): void {
+  const next = safeDashboardNext(dashboardRelativePath());
+  if (!next || sessionStorage.getItem(AUTH_RETURN_KEY) === "1") return;
+  sessionStorage.setItem(AUTH_RETURN_KEY, "1");
+  window.location.assign(
+    `${DASHBOARD_PREFIX}/?next=${encodeURIComponent(next)}`,
+  );
+}
+
 async function request<T>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(path, window.location.origin);
   if (params) {
@@ -41,10 +79,7 @@ async function request<T>(path: string, params?: Record<string, string>): Promis
   const response = await fetch(url.toString(), { credentials: "same-origin" });
   if (!response.ok) {
     if (response.status === 401) {
-      const path = window.location.pathname;
-      if (path !== "/dashboard" && path !== "/dashboard/") {
-        window.location.assign("/dashboard/");
-      }
+      redirectToDashboardLogin();
       throw new ApiError(401, errorMessage(401, undefined));
     }
     let detail: unknown;
@@ -56,6 +91,7 @@ async function request<T>(path: string, params?: Record<string, string>): Promis
     }
     throw new ApiError(response.status, errorMessage(response.status, detail));
   }
+  sessionStorage.removeItem(AUTH_RETURN_KEY);
   return response.json() as Promise<T>;
 }
 

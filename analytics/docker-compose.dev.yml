@@ -21,6 +21,7 @@ services:
   rabbitmq_dev:
     image: rabbitmq:3-management
     container_name: jvmoebel_analytics_rabbitmq_dev
+    hostname: rabbitmq_dev
     restart: always
     env_file:
       - .env.dev

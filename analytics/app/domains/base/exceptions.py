@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from fastapi import HTTPException, status
 
 
@@ -16,10 +18,12 @@ class UnauthorizedException(HTTPException):
     def __init__(
         self,
         detail: str = "Unauthorized",
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
+            headers=headers,
         )
 
 

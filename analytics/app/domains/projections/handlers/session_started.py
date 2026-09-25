@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domains.attribution.classifier import classify_source
+from domains.attribution.classifier import classify_source, referral_exclusion_hosts
 from domains.attribution.rules import Touch, apply_first_touch, apply_last_non_direct
 from domains.attribution.service import refresh_dependent_snapshots
 from domains.projections.exceptions import require_id, require_row
@@ -51,17 +51,20 @@ async def handle_session_started(
     utm = raw_utm if isinstance(raw_utm, dict) else {}
     raw_click_ids = payload.get("click_ids")
     click_ids = raw_click_ids if isinstance(raw_click_ids, dict) else {}
+    keep_identifiers = visitor.anonymized_at is None
 
-    utm_source = _optional_str(utm.get("utm_source"))
-    utm_medium = _optional_str(utm.get("utm_medium"))
-    utm_campaign = _optional_str(utm.get("utm_campaign"))
-    utm_content = _optional_str(utm.get("utm_content"))
-    utm_term = _optional_str(utm.get("utm_term"))
-    gclid = _optional_str(click_ids.get("gclid"))
-    gbraid = _optional_str(click_ids.get("gbraid"))
-    wbraid = _optional_str(click_ids.get("wbraid"))
-    landing_page = _optional_str(payload.get("landing_page"))
-    referrer = _optional_str(payload.get("referrer"))
+    utm_source = _optional_str(utm.get("utm_source")) if keep_identifiers else None
+    utm_medium = _optional_str(utm.get("utm_medium")) if keep_identifiers else None
+    utm_campaign = _optional_str(utm.get("utm_campaign")) if keep_identifiers else None
+    utm_content = _optional_str(utm.get("utm_content")) if keep_identifiers else None
+    utm_term = _optional_str(utm.get("utm_term")) if keep_identifiers else None
+    gclid = _optional_str(click_ids.get("gclid")) if keep_identifiers else None
+    gbraid = _optional_str(click_ids.get("gbraid")) if keep_identifiers else None
+    wbraid = _optional_str(click_ids.get("wbraid")) if keep_identifiers else None
+    landing_page = (
+        _optional_str(payload.get("landing_page")) if keep_identifiers else None
+    )
+    referrer = _optional_str(payload.get("referrer")) if keep_identifiers else None
     source = classify_source(
         gclid=gclid,
         gbraid=gbraid,
@@ -69,10 +72,10 @@ async def handle_session_started(
         utm_source=utm_source,
         utm_medium=utm_medium,
         referrer=referrer,
+        excluded_hosts=referral_exclusion_hosts(),
     )
 
     if not should_apply_entity_update(
-        is_stub=row.is_stub,
         stored_aggregate_version=None,
         incoming_aggregate_version=None,
         stored_occurred_at=row.last_event_occurred_at,

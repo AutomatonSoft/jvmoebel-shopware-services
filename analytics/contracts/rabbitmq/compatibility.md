@@ -24,3 +24,11 @@ Shopware must not silently switch versions before Analytics supports the new ver
 
 ## v3 note
 `contact_received` is a new event type with its own v1 schema. Adding a new event type does not mutate any previously agreed event v1 schema, so existing event versions remain unchanged.
+
+## Pre-production v1 revision
+The Shopware production publisher is not live. This package revises `event_version` 1 in place instead of introducing a parallel v2:
+
+- `contact_type` is a closed enum;
+- `contact_received` requires `duration_seconds` and `connection_status` when `contact_channel=phone` and forbids them otherwise.
+
+`customer_linked` is unchanged: `visitor_id` and `customer_id` remain required.

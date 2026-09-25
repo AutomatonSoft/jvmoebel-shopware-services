@@ -8,8 +8,13 @@ def parse_datetime(value: str) -> datetime:
     # Контракт шлёт RFC3339 с суффиксом Z (UTC), например 2026-08-24T09:00:00Z.
     # datetime.fromisoformat до версии Python 3.11 не принимает Z, только смещение +00:00.
     # Без tzinfo сравнение occurred_at с timestamptz в Postgres падает.
-    # В Python 3.11+ можно просто return datetime.fromisoformat(value) но на всякий случай добавил replace
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("must be an RFC3339 date-time") from exc
+    if parsed.tzinfo is None:
+        raise ValueError("must be an RFC3339 date-time")
+    return parsed
 
 
 def parse_money(value: str | None) -> Decimal | None:

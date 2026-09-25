@@ -96,11 +96,20 @@ GET /api/v1/analytics/*
 Authorization: Bearer <ANALYTICS_READ_API_KEY>
 ```
 
+```text
+POST /api/v1/analytics/visitors/{visitor_id}/anonymize
+```
+
+```http
+Authorization: Bearer <ANALYTICS_ADMIN_API_KEY>
+```
+
 Ключи хранятся в environment variables:
 
 ```env
 ANALYTICS_INGEST_API_KEY=your-ingest-secret-token
 ANALYTICS_READ_API_KEY=your-read-secret-token
+ANALYTICS_ADMIN_API_KEY=your-admin-secret-token
 ```
 
 При отсутствии credentials или неверном token API возвращает:
@@ -123,9 +132,50 @@ Invalid authentication scheme
 Invalid authentication token
 ```
 
-Ingest key не подходит для read API и наоборот.
+Ingest key не подходит для read API и наоборот. Admin key не подходит для read/ingest. HTTP Basic дашборда принимается только на `GET`/`HEAD` read API, не на anonymize.
 
-`ANALYTICS_INGEST_API_KEY` нельзя класть в browser JS, `NEXT_PUBLIC_*` или GTM. Его держит только Next.js BFF. Примеры `curl` ниже — серверные вызовы, не код витрины.
+`ANALYTICS_INGEST_API_KEY` и `ANALYTICS_ADMIN_API_KEY` нельзя класть в browser JS, `NEXT_PUBLIC_*` или GTM. Их держит только сервер. Примеры `curl` ниже — серверные вызовы, не код витрины.
+
+---
+
+# Dashboard
+
+Закрытый SPA (`analytics/dashboard`, React + Vite), раздаётся FastAPI с `GET /dashboard`. HTTP Basic. Read API key в браузер не кладётся: те же Basic-учётки принимаются только на `GET /api/v1/analytics/*`. `POST .../anonymize` требует `ANALYTICS_ADMIN_API_KEY`.
+
+```env
+DASHBOARD_USER=dashboard
+DASHBOARD_PASSWORD=dev-dashboard-password
+```
+
+Перед локальным открытием UI: `npm ci && npm run build` в `analytics/dashboard`. Dev-compose монтирует исходники, поэтому нужен собранный `dashboard/dist`. Prod-образ собирает SPA в Docker.
+
+Dev: `http://127.0.0.1:8003/dashboard`. Local compose: `http://127.0.0.1:8002/dashboard`.
+
+| Путь | Что видно |
+| ---- | --------- |
+| `/dashboard` | Обзор: KPI, ecommerce/lead воронки, график Paid Sales и revenue |
+| `/dashboard/sources` | Source/campaign, First Touch / Last Non-Direct |
+| `/dashboard/channels` | form / email / WhatsApp / phone |
+| `/dashboard/products` | SKU: views, cart, purchases, conversion, revenue |
+| `/dashboard/payments` | Способы оплаты |
+| `/dashboard/compare` | Два периода, абсолютное и процентное изменение |
+| `/dashboard/journey` | Поиск и лента событий |
+
+Фильтры: период, магазин (hostname), атрибуция. По умолчанию последние 7 дней UTC. Деньги и % форматируются в UI, JSON контракт не меняется.
+
+Google conversions в UI нет — read API для них ещё нет.
+
+Journey: Order ID/Number, Lead/Visitor/Customer ID, GCLID/GBRAID/WBRAID, campaign, канал, tracking reference. После seed: `DEV-00-000` → `order` → лента. Прямой URL: `/dashboard/journey/order/{order_id}`.
+
+HTML `401`/`400`/`422`/`404`/`503` для `/dashboard*`. `/dashboard/config` и `/api/v1/*` — JSON. Без `dashboard/dist` UI отвечает `503`.
+
+Dev-данные: из `analytics/` при поднятом стеке и `alembic upgrade head`:
+
+```bash
+uv run python scripts/seed_dev.py
+```
+
+Скрипт шлёт HTTP ingest + Rabbit (не SQL). Повтор создаёт новые visitor_id. Сценарии: `scripts/seed_dev_scenarios.txt`. Worker должен быть живой.
 
 ---
 
@@ -344,7 +394,7 @@ rejected
 | `period_to` | yes | Конец периода, `date-time` |
 | `sales_channel` | no | Shopware sales channel ID, 32 hex |
 | `market` | no | `de`, `at`, `ch`, `uk`, `it`, `pl` |
-| `source` | no | Источник атрибуции, например `google_ads` |
+| `source` | no | Источник атрибуции: `google_ads`, `seo`, `social`, `referral`, `direct`, `email`, `paid`, `other` |
 | `campaign` | no | Campaign |
 | `sku` | no | SKU |
 | `channel` | no | `form`, `email`, `whatsapp`, `phone` |
@@ -849,6 +899,27 @@ HTTP/1.1 200 OK
 | ------ | ----------- |
 | `401` | Missing or invalid read API key |
 | `404` | Journey not found |
+| `422` | Invalid path identifier |
+
+---
+
+# POST /api/v1/analytics/visitors/{visitor_id}/anonymize
+
+Стереть идентификаторы посетителя. Строки сущностей остаются. Только `ANALYTICS_ADMIN_API_KEY`, не read-ключ и не Basic дашборда.
+
+### Example
+
+```bash
+curl -X POST http://localhost:8002/api/v1/analytics/visitors/550e8400-e29b-41d4-a716-446655440000/anonymize \
+  -H "Authorization: Bearer $ANALYTICS_ADMIN_API_KEY"
+```
+
+### Errors
+
+| Status | Description |
+| ------ | ----------- |
+| `401` | Missing or invalid admin API key |
+| `404` | Visitor not found |
 | `422` | Invalid path identifier |
 
 ---

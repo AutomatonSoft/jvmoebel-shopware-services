@@ -75,9 +75,28 @@ class Settings(BaseSettings):
         min_length=1,
         description="API key for dashboard read API",
     )
+    analytics_admin_api_key: SecretStr = Field(
+        min_length=1,
+        description="Server-side API key for visitor anonymize",
+    )
+    dashboard_user: SecretStr = Field(
+        min_length=1,
+        description="HTTP Basic username for the closed dashboard",
+    )
+    dashboard_password: SecretStr = Field(
+        min_length=1,
+        description="HTTP Basic password for the closed dashboard",
+    )
     sales_channels: Json[list[SalesChannelSettings]] = Field(
         default_factory=list,
         description="Allowlist of sales channels (id, origins, market_code)",
+    )
+    referral_exclusion_hosts: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Extra referrer hostnames treated as direct, on top of sales-channel "
+            "origins and built-in payment providers"
+        ),
     )
     max_body_size: int = Field(
         default=256 * 1024,

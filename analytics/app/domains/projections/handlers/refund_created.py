@@ -1,9 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.exceptions import require_id
+from domains.projections.models.entities import Order
 from domains.projections.models.facts import Refund, RefundLine
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload, parse_datetime, parse_money
+from domains.projections.refund_currency import require_matching_order_currency
 
 
 async def handle_refund_created(
@@ -21,6 +23,13 @@ async def handle_refund_created(
         event_type=event.event_type,
     )
     payload = event_payload(event)
+    refund_currency = payload["currency"]
+    order = await session.get(Order, order_id)
+    require_matching_order_currency(
+        order,
+        refund_id=refund_id,
+        refund_currency=refund_currency,
+    )
     session.add(
         Refund(
             refund_id=refund_id,
@@ -29,7 +38,7 @@ async def handle_refund_created(
             order_number=payload.get("order_number"),
             sales_channel_id=event.sales_channel_id,
             refund_amount=parse_money(payload["refund_amount"]),
-            currency=payload["currency"],
+            currency=refund_currency,
             refund_type=payload["refund_type"],
             payment_method=payload.get("payment_method"),
             order_state=payload.get("order_state"),

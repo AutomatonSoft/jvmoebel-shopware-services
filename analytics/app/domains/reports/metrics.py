@@ -16,22 +16,25 @@ from domains.projections.models.facts import (
     Contact,
     ContactIntent,
     ProductView,
+    Refund,
 )
 from domains.reports.filters import ReportFilters, attr_column, in_period
 
 RATE_QUANT = Decimal("0.0001")
 
 
-def apply_visitor_market(stmt: Select, filters: ReportFilters) -> Select:
-    if filters.market is None:
+def apply_visitor_channel_market(stmt: Select, filters: ReportFilters) -> Select:
+    if filters.sales_channel is None and filters.market is None:
         return stmt
-    return stmt.where(
-        exists().where(
-            Session.visitor_id == Visitor.visitor_id,
-            Session.event_id.isnot(None),
-            Session.market_code == filters.market,
-        )
-    )
+    conditions = [
+        Session.visitor_id == Visitor.visitor_id,
+        Session.event_id.isnot(None),
+    ]
+    if filters.sales_channel is not None:
+        conditions.append(Session.sales_channel_id == filters.sales_channel)
+    if filters.market is not None:
+        conditions.append(Session.market_code == filters.market)
+    return stmt.where(exists().where(*conditions))
 
 
 async def scalar_int(session: AsyncSession, stmt: Select) -> int:
@@ -123,6 +126,14 @@ def apply_currency(stmt: Select, column, filters: ReportFilters) -> Select:
     return stmt.where(column == filters.currency)
 
 
+def apply_matching_order_currency(stmt: Select) -> Select:
+    return stmt.where(
+        Order.currency.isnot(None),
+        Refund.currency == Order.currency,
+        Refund.invalid_reason.is_(None),
+    )
+
+
 def apply_payment_method(stmt: Select, column, filters: ReportFilters) -> Select:
     if filters.payment_method is None:
         return stmt
@@ -144,11 +155,6 @@ async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
             in_period(Visitor.first_seen_at, filters),
         )
     )
-    if filters.sales_channel is not None:
-        stmt = stmt.where(
-            attr_column(Visitor, filters, "sales_channel_id", snapshot=False)
-            == filters.sales_channel
-        )
     if filters.source is not None:
         stmt = stmt.where(
             attr_column(Visitor, filters, "source", snapshot=False) == filters.source
@@ -158,7 +164,7 @@ async def count_visitors(session: AsyncSession, filters: ReportFilters) -> int:
             attr_column(Visitor, filters, "campaign", snapshot=False)
             == filters.campaign
         )
-    stmt = apply_visitor_market(stmt, filters)
+    stmt = apply_visitor_channel_market(stmt, filters)
     return await scalar_int(session, stmt)
 
 

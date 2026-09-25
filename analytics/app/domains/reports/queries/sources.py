@@ -14,10 +14,11 @@ from domains.projections.models.facts import Contact, Refund
 from domains.reports.filters import ReportFilters, attr_column, in_period
 from domains.reports.metrics import (
     apply_currency,
+    apply_matching_order_currency,
     apply_payment_method,
     apply_period_channel_market,
     apply_snapshot_attr,
-    apply_visitor_market,
+    apply_visitor_channel_market,
     duration_seconds,
     format_avg_seconds,
     format_rate,
@@ -95,12 +96,7 @@ async def query_sources(
         .where(in_period(Visitor.first_seen_at, filters))
         .group_by(visitor_source, visitor_campaign)
     )
-    if filters.sales_channel is not None:
-        visitor_stmt = visitor_stmt.where(
-            attr_column(Visitor, filters, "sales_channel_id", snapshot=False)
-            == filters.sales_channel
-        )
-    visitor_stmt = apply_visitor_market(visitor_stmt, filters)
+    visitor_stmt = apply_visitor_channel_market(visitor_stmt, filters)
     visitor_stmt = _apply_source_campaign(
         visitor_stmt,
         visitor_source,
@@ -292,6 +288,7 @@ async def query_sources(
         .join(Order, Refund.order_id == Order.order_id)
         .group_by(order_source, order_campaign, Refund.currency)
     )
+    refund_stmt = apply_matching_order_currency(refund_stmt)
     refund_stmt = apply_period_channel_market(
         refund_stmt,
         filters,

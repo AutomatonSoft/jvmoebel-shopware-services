@@ -1,8 +1,20 @@
-from sqlalchemy import delete
+from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domains.projections.models.facts import OrderLine
 from domains.projections.parsing import parse_money
+
+
+async def has_unpaid_lines(session: AsyncSession, order_id: str) -> bool:
+    result = await session.scalar(
+        select(
+            exists().where(
+                OrderLine.order_id == order_id,
+                OrderLine.is_paid_snapshot.is_(False),
+            )
+        )
+    )
+    return bool(result)
 
 
 async def replace_order_lines(

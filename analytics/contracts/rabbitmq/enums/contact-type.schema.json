@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contact Type",
+  "type": "string",
+  "enum": [
+    "contact_form",
+    "offer_request",
+    "callback_request",
+    "direct_email",
+    "whatsapp_message",
+    "qualified_call"
+  ]
+}

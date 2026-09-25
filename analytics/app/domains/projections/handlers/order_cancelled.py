@@ -5,7 +5,7 @@ from domains.projections.locking import get_aggregate_for_update
 from domains.projections.models.entities import Order
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload
-from domains.projections.versioning import should_apply_entity_update
+from domains.projections.versioning import overlay_attributes, should_apply_entity_update
 
 
 async def handle_order_cancelled(
@@ -25,7 +25,6 @@ async def handle_order_cancelled(
         event_type=event.event_type,
     )
     if not should_apply_entity_update(
-        is_stub=order.is_stub,
         stored_aggregate_version=order.aggregate_version,
         incoming_aggregate_version=event.aggregate_version,
         stored_occurred_at=order.last_event_occurred_at,
@@ -35,7 +34,18 @@ async def handle_order_cancelled(
         return
 
     payload = event_payload(event)
-    order.order_number = payload.get("order_number")
+    overlay_attributes(
+        order,
+        {
+            "order_number": payload.get("order_number"),
+            "visitor_id": event.visitor_id,
+            "lead_id": event.lead_id,
+            "customer_id": event.customer_id,
+            "sales_channel_id": event.sales_channel_id,
+            "market_code": event.market_code,
+        },
+        only_empty=True,
+    )
     order.order_state = payload.get("order_state")
     order.payment_state = payload.get("payment_state")
     order.cancelled_at = event.occurred_at

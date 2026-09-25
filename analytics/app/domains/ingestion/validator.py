@@ -17,6 +17,18 @@ from domains.ingestion.sales_channels import (
     assert_http_channel_allowed,
     assert_rabbit_channel_allowed,
 )
+from domains.projections.parsing import parse_datetime
+
+
+def _assert_rfc3339(field: str, value: object) -> None:
+    if not isinstance(value, str):
+        raise EventValidationError(detail=f"{field} must be an RFC3339 date-time")
+    try:
+        parse_datetime(value)
+    except ValueError as exc:
+        raise EventValidationError(
+            detail=f"{field} must be an RFC3339 date-time",
+        ) from exc
 
 
 @lru_cache(maxsize=None)
@@ -37,8 +49,8 @@ def _http_event_validator(event_type: str) -> Draft202012Validator:
         # resolver - куда идти, если в схеме $ref
         resolver=resolver,
         # format_checker - проверять format (date-time, uri, uuid)
-        # без него jsonschema смотрит только type: string,
-        # и occurred_at="вчера" пройдёт.
+        # без rfc3339-validator jsonschema смотрит только type: string,
+        # и occurred_at="yesterday" пройдёт.
         format_checker=Draft202012Validator.FORMAT_CHECKER,
     )
 
@@ -72,6 +84,8 @@ def validate_http_event(
         path = "/".join(str(part) for part in error.absolute_path)
         detail = error.message if not path else f"{path}: {error.message}"
         raise EventValidationError(detail=detail)
+
+    _assert_rfc3339("occurred_at", body.get("occurred_at"))
 
     sales_channel_id = body.get("sales_channel_id")
     if not isinstance(sales_channel_id, str):
@@ -157,6 +171,7 @@ def validate_rabbit_event(body: object) -> dict:
         detail = error.message if not path else f"{path}: {error.message}"
         raise EventValidationError(detail=detail)
 
+    _assert_rfc3339("occurred_at", body.get("occurred_at"))
     _assert_aggregate_id_matches(body)
 
     sales_channel_id = body.get("sales_channel_id")

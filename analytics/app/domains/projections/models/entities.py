@@ -17,6 +17,7 @@ class Visitor(VisitorAttributionMixin, Base):
     first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_event_occurred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    anonymized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Session(Base):

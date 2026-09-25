@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "date": "2026-08-24",
+      "orders_paid": 1,
+      "manual_sales": 0,
+      "paid_sales": 1,
+      "money": [
+        {
+          "currency": "EUR",
+          "gross": "2499.0000",
+          "refunds": "0.0000",
+          "net": "2499.0000",
+          "aov": "2499.0000"
+        }
+      ]
+    }
+  ]
+}

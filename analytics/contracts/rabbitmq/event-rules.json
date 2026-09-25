@@ -75,6 +75,19 @@
       "Email/phone equality alone is not sufficient for automatic Lead merging."
     ],
     "publishing": "If a new Lead is created, publish both lead_created and contact_received. If an existing Lead is reused, publish contact_received only.",
-    "pii": "Raw name, email, phone and message text remain inside Shopware and are not published."
+    "pii": "Raw name, email, phone and message text remain inside Shopware and are not published.",
+    "phone": {
+      "required_payload": [
+        "duration_seconds",
+        "connection_status"
+      ],
+      "connection_status": [
+        "answered",
+        "not_answered",
+        "busy",
+        "failed"
+      ],
+      "rule": "duration_seconds and connection_status are required for contact_channel=phone and forbidden otherwise."
+    }
   }
 }

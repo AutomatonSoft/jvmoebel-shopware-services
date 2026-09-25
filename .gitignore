@@ -176,3 +176,4 @@ ar/app/storage/ar_models_test/*
 ar/tests/validators/generated/
 
 /_scratch/
+node_modules/

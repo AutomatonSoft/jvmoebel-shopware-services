@@ -23,6 +23,22 @@ Prod / dev / test — разные compose-проекты (`analytics`, `analyti
 
 После смены RabbitMQ vhost или users нужен `docker compose down -v`: `RABBITMQ_DEFAULT_*` применяется только на пустом volume брокера.
 
+## Seed + dashboard
+Стек должен быть поднят, worker живой. В `docker-compose.dev.yml` нет сервиса migrations:
+
+```bash
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec backend_dev uv run alembic upgrade head
+uv run python scripts/seed_dev.py
+```
+
+Dashboard SPA: из `analytics/dashboard` выполнить `npm ci && npm run build`, затем
+http://127.0.0.1:8003/dashboard  
+Логин `DASHBOARD_USER` / `DASHBOARD_PASSWORD` из `.env.dev`. Read API key в браузер не класть.
+
+Вкладки: Обзор, Источники, Каналы, Товары, Оплата, Сравнение, Путь клиента.
+
+Journey: поиск, потом «Открыть». После seed вставь `DEV-00-000` (order_number). Список сценариев: `scripts/seed_dev_scenarios.txt`. Повтор seed копирует данные. Окно 7 дней прячет `days_ago >= 8`.
+
 ## Тесты
 ```bash
 cp .env.test.example .env.test

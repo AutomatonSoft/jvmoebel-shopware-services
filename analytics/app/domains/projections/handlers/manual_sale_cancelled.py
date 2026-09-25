@@ -25,7 +25,6 @@ async def handle_manual_sale_cancelled(
         event_type=event.event_type,
     )
     if not should_apply_entity_update(
-        is_stub=sale.is_stub,
         stored_aggregate_version=sale.aggregate_version,
         incoming_aggregate_version=event.aggregate_version,
         stored_occurred_at=sale.last_event_occurred_at,

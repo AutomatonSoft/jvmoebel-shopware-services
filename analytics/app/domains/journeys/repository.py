@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from domains.base.exceptions import NotFoundException
 from domains.journeys.schemas import JourneyEvent, JourneyResponse
 from domains.projections.models.entities import Session
+from domains.projections.models.facts import Refund
 from domains.projections.models.journal import Event
 from domains.projections.parsing import event_payload
 
@@ -14,6 +15,7 @@ def to_journey_event(
     event: Event,
     *,
     traffic_source: str | None = None,
+    invalid_reason: str | None = None,
 ) -> JourneyEvent:
     return JourneyEvent(
         event_id=event.event_id,
@@ -31,6 +33,7 @@ def to_journey_event(
         manual_sale_id=event.manual_sale_id,
         refund_id=event.refund_id,
         traffic_source=traffic_source,
+        invalid_reason=invalid_reason,
         payload=event_payload(event),
     )
 
@@ -71,6 +74,25 @@ async def _session_traffic_sources(
     return {session_id: source for session_id, source in result.all()}
 
 
+async def _refund_invalid_reasons(
+    session: AsyncSession,
+    events: list[Event],
+) -> dict[str, str]:
+    refund_ids = [
+        event.refund_id
+        for event in events
+        if event.event_type == "refund_created" and event.refund_id is not None
+    ]
+    if not refund_ids:
+        return {}
+    stmt = select(Refund.refund_id, Refund.invalid_reason).where(
+        Refund.refund_id.in_(refund_ids),
+        Refund.invalid_reason.isnot(None),
+    )
+    result = await session.execute(stmt)
+    return {refund_id: reason for refund_id, reason in result.all()}
+
+
 async def load_journey(
     session: AsyncSession,
     clause: ColumnElement[bool],
@@ -79,13 +101,19 @@ async def load_journey(
     if not events:
         raise NotFoundException(detail="Journey not found")
     traffic_by_session = await _session_traffic_sources(session, events)
+    refund_reasons = await _refund_invalid_reasons(session, events)
     return JourneyResponse(
         events=[
             to_journey_event(
                 event,
                 traffic_source=(
-                    traffic_by_session.get(event.session_id) # type: ignore
+                    traffic_by_session.get(event.session_id)  # type: ignore
                     if event.event_type == "session_started"
+                    else None
+                ),
+                invalid_reason=(
+                    refund_reasons.get(event.refund_id)
+                    if event.event_type == "refund_created" and event.refund_id
                     else None
                 ),
             )

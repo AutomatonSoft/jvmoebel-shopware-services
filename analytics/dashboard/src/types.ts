@@ -120,6 +120,7 @@ export type JourneyEvent = {
   manual_sale_id: string | null;
   refund_id: string | null;
   traffic_source: string | null;
+  invalid_reason: string | null;
   payload: Record<string, unknown>;
 };
 

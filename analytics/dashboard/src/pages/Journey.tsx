@@ -28,6 +28,7 @@ function Timeline({ events }: { events: JourneyEvent[] }) {
           event.payload,
           event.event_type,
           event.traffic_source,
+          event.invalid_reason,
         );
         return (
           <li key={event.event_id}>

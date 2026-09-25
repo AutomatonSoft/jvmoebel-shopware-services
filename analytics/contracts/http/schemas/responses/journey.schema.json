@@ -89,6 +89,12 @@
             { "type": "null" }
           ]
         },
+        "invalid_reason": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
         "payload": {
           "type": "object"
         }

@@ -16,6 +16,7 @@
       "manual_sale_id": null,
       "refund_id": null,
       "traffic_source": "google_ads",
+      "invalid_reason": null,
       "payload": {
         "landing_page": "https://www.jvmoebel.de/sofas/sofa-001",
         "utm": {

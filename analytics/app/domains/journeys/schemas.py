@@ -31,6 +31,7 @@ class JourneyEvent(BaseModel):
     manual_sale_id: str | None = None
     refund_id: str | None = None
     traffic_source: str | None = None
+    invalid_reason: str | None = None
     payload: dict[str, Any]
 
 

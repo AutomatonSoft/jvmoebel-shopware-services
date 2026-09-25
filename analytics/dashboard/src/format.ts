@@ -250,6 +250,7 @@ export function summarizeJourneyEvent(
   payload: Record<string, unknown>,
   eventType: string,
   trafficSource?: string | null,
+  invalidReason?: string | null,
 ): string {
   const utm = asRecord(payload.utm);
   const campaign = utm ? payloadText(utm, "utm_campaign") : null;
@@ -326,6 +327,9 @@ export function summarizeJourneyEvent(
       return joinParts([
         orderNumber ? `Возврат по заказу ${orderNumber}` : "Возврат",
         price,
+        invalidReason === "currency_mismatch"
+          ? "валюта не совпадает с заказом"
+          : null,
       ]);
     case "manual_sale_created": {
       const reference = payloadText(payload, "reference");

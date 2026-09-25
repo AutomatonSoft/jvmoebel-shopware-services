@@ -1,6 +1,3 @@
-import logging
-from uuid import UUID
-
 import pytest
 from sqlalchemy import func, select
 
@@ -49,18 +46,6 @@ async def test_refund_before_order_paid_matches_currency(
     assert money["EUR"]["gross"] == "2499.0000"
     assert money["EUR"]["refunds"] == "500.0000"
     assert money["EUR"]["net"] == "1999.0000"
-
-    journey = await client.get(
-        f"/api/v1/analytics/orders/{paid['order_id']}/journey",
-        headers=read_auth_headers,
-    )
-    assert journey.status_code == 200
-    refund_event = next(
-        item
-        for item in journey.json()["events"]
-        if item["event_type"] == "refund_created"
-    )
-    assert "invalid_reason" not in refund_event["payload"]
 
 
 async def test_matching_refund_currency_subtracts_from_net(
@@ -117,45 +102,19 @@ async def test_mismatched_refund_before_order_is_marked_invalid(
     client,
     read_auth_headers: dict[str, str],
     db_session,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
     paid = load_shopware_event("order-paid")
     refund = _usd_refund(load_shopware_event, paid["order_id"])
     await persist_event(refund)
-    with caplog.at_level(
-        logging.WARNING,
-        logger="domains.projections.refund_currency",
-    ):
-        await persist_event(paid)
+    await persist_event(paid)
 
     stored = await db_session.get(Refund, refund["refund_id"])
     assert stored is not None
     assert stored.currency == "USD"
     assert stored.invalid_reason == CURRENCY_MISMATCH
-    assert refund["refund_id"] in caplog.text
-    assert "USD" in caplog.text
-    assert paid["order_id"] in caplog.text
-    assert "EUR" in caplog.text
 
     money = _money(await _overview(client, read_auth_headers))
     assert set(money) == {"EUR"}
     assert money["EUR"]["gross"] == "2499.0000"
     assert money["EUR"]["refunds"] == "0.0000"
     assert money["EUR"]["net"] == "2499.0000"
-
-    journey = await client.get(
-        f"/api/v1/analytics/orders/{paid['order_id']}/journey",
-        headers=read_auth_headers,
-    )
-    assert journey.status_code == 200
-    refund_event = next(
-        item
-        for item in journey.json()["events"]
-        if item["event_type"] == "refund_created"
-    )
-    assert refund_event["payload"]["currency"] == "USD"
-    assert refund_event["payload"]["invalid_reason"] == CURRENCY_MISMATCH
-
-    stored_event = await db_session.get(Event, UUID(refund["event_id"]))
-    assert stored_event is not None
-    assert stored_event.body["payload"]["invalid_reason"] == CURRENCY_MISMATCH

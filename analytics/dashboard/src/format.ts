@@ -326,9 +326,6 @@ export function summarizeJourneyEvent(
       return joinParts([
         orderNumber ? `Возврат по заказу ${orderNumber}` : "Возврат",
         price,
-        payloadText(payload, "invalid_reason") === "currency_mismatch"
-          ? "валюта не совпадает с заказом"
-          : null,
       ]);
     case "manual_sale_created": {
       const reference = payloadText(payload, "reference");
